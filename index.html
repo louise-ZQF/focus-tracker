@@ -308,8 +308,12 @@
       border-radius:14px;
       padding:10px 12px;
       overflow:hidden;
+      min-height:52px;
     }
-    .timeline-task .name{font-weight:800;margin-bottom:4px}
+    .timeline-task .name{font-weight:800;margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .timeline-task .tiny{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .timeline-task-short{display:flex!important;align-items:center!important;padding-top:0!important;padding-bottom:0!important}
+    .timeline-task-short .name{margin-bottom:0!important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
     .bar-group{display:flex; flex-direction:column; gap:10px}
     .bar-row{display:grid;grid-template-columns:88px 1fr 54px;align-items:center;gap:10px}
     .bar-track{
@@ -2522,10 +2526,11 @@ function renderTodayTaskTable(targetId, simple = false){
         sMin = Math.max(minStart, Math.min(sMin, minEnd));
         eMin = Math.max(sMin + 10, Math.min(eMin, minEnd));
         const top = ((sMin - minStart) / totalMinutes) * height;
-        const blockH = Math.max(28, ((eMin - sMin) / totalMinutes) * height);
-        return `<div class="timeline-task" style="top:${top}px;height:${blockH}px">
+        const blockH = Math.max(52, ((eMin - sMin) / totalMinutes) * height);
+        const shortBlock = blockH < 66;
+        return `<div class="timeline-task${shortBlock ? ' timeline-task-short' : ''}" style="top:${top}px;height:${blockH}px">
           <div class="name">${escapeHtml(t.name)}</div>
-          <div class="tiny">${formatTime(start)} - ${t.endTime ? formatTime(end) : '进行中'} ｜ ${escapeHtml(t.category || '-') } ｜ ${formatDuration(getTaskDurationMs(t))}</div>
+          ${shortBlock ? '' : `<div class="tiny">${formatTime(start)} - ${t.endTime ? formatTime(end) : '进行中'} ｜ ${escapeHtml(t.category || '-') } ｜ ${formatDuration(getTaskDurationMs(t))}</div>`}
         </div>`;
       }).join('');
  
