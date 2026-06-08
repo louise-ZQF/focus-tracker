@@ -1252,6 +1252,14 @@ td button {
     .link-note{ color:var(--muted); }
     .link-row .btn-danger{ margin-left:auto; }
     body.dark .link-title{ color:#4aa3ff; }
+    .task-group{ border:1px solid var(--line); border-radius:14px; margin-bottom:10px; overflow:hidden; background:var(--card); }
+    .task-group-head{ display:flex; align-items:center; gap:10px; padding:10px 12px; cursor:pointer; background:#f5f5f7; user-select:none; }
+    .task-group-head:hover{ background:#eef0f3; }
+    .task-group-arrow{ font-size:12px; color:var(--muted); width:14px; display:inline-block; }
+    .task-group-body{ padding:0 12px 6px; }
+    .task-group-body table th:first-child, .task-group-body table td:first-child{ width:34px; }
+    body.dark .task-group-head{ background:#161617; }
+    body.dark .task-group-head:hover{ background:#1f1f21; }
 </style>
 </head>
 <body>
@@ -2364,29 +2372,46 @@ function renderTasks(){
       <input id="todayAddInput" type="text" placeholder="在 ${selectedDate} 添加任务（可留空只记科目）" onkeydown="if(event.key==='Enter'){addTodayTaskFromInput();}" />
       <button class="btn-primary" onclick="addTodayTaskFromInput()">添加</button>
     </div>`;
-  wrap.innerHTML = addForm + (tasks.length ? `
-    <table>
-      <thead><tr><th>✓</th><th>科目 / 任务</th><th>时长</th><th>状态</th><th>操作</th></tr></thead>
-      <tbody>
-        ${tasks.map(t=>{
-          const done = t.status==='已完成';
-          const running = t.status==='进行中';
-          const nameExtra = (t.name && t.name!==t.category) ? ' '+escapeHtml(t.name) : '';
-          return `<tr>
-            <td>${running ? '<span class="tiny">—</span>' : `<input type="checkbox" ${done?'checked':''} onclick="toggleTaskDone('${t.id}')">`}</td>
-            <td><span style="${done?'text-decoration:line-through;color:var(--muted)':''}">${categoryBadge(t.category || '-')}${nameExtra}</span></td>
-            <td>${formatDuration(getTaskDurationMs(t))}</td>
-            <td>${statusPill(t.status)}</td>
-            <td>
-              ${(t.status === '待开始' || t.status === '中断') ? `<button class="btn-success" onclick="startTodoTask('${t.id}')">${t.status === '中断' ? '继续' : '开始'}</button> ` : ''}
-              <button class="btn-soft" onclick="editTask('${t.id}')">改</button>
-              <button class="btn-danger" onclick="deleteTask('${t.id}')">删</button>
-            </td>
-          </tr>`;
-        }).join('')}
-      </tbody>
-    </table>
-  ` : `<div class="empty">${selectedDate} 暂无任务，上面可直接添加。</div>`);
+  const order = ['📌 计划','📕 政治','📗 英语','📘 数学','📙 408'];
+  const byCat = {};
+  tasks.forEach(t=>{ const c=t.category||'其它'; (byCat[c]=byCat[c]||[]).push(t); });
+  const cats = order.filter(c=>byCat[c]);
+  Object.keys(byCat).forEach(c=>{ if(!cats.includes(c)) cats.push(c); });
+  const groupsHtml = cats.map(c=>{
+    const items = byCat[c];
+    const doneN = items.filter(t=>t.status==='已完成').length;
+    const collapsed = !!taskCollapsed[c];
+    const rows = items.map(t=>{
+      const done = t.status==='已完成';
+      const running = t.status==='进行中';
+      const label = (t.name && t.name!==t.category) ? escapeHtml(t.name) : '<span class="tiny">（无名称）</span>';
+      return `<tr>
+        <td>${running ? '<span class="tiny">—</span>' : `<input type="checkbox" ${done?'checked':''} onclick="toggleTaskDone('${t.id}')">`}</td>
+        <td><span style="${done?'text-decoration:line-through;color:var(--muted)':''}">${label}</span></td>
+        <td>${formatDuration(getTaskDurationMs(t))}</td>
+        <td>${statusPill(t.status)}</td>
+        <td>
+          ${(t.status === '待开始' || t.status === '中断') ? `<button class="btn-success" onclick="startTodoTask('${t.id}')">${t.status === '中断' ? '继续' : '开始'}</button> ` : ''}
+          <button class="btn-soft" onclick="editTask('${t.id}')">改</button>
+          <button class="btn-danger" onclick="deleteTask('${t.id}')">删</button>
+        </td>
+      </tr>`;
+    }).join('');
+    return `<div class="task-group">
+      <div class="task-group-head" onclick="toggleTaskGroup('${c}')">
+        <span class="task-group-arrow">${collapsed?'▸':'▾'}</span>
+        ${categoryBadge(c)}
+        <span class="pill" style="margin-left:auto">${doneN}/${items.length}</span>
+      </div>
+      <div class="task-group-body" style="${collapsed?'display:none':''}">
+        <table>
+          <thead><tr><th>✓</th><th>任务</th><th>时长</th><th>状态</th><th>操作</th></tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>
+    </div>`;
+  }).join('');
+  wrap.innerHTML = addForm + (tasks.length ? groupsHtml : `<div class="empty">${selectedDate} 暂无任务，上面可直接添加。</div>`);
 }
  
  
@@ -3547,6 +3572,10 @@ function importData(file){
       renderAll();
     }
 
+    // ===== 任务按科目折叠 =====
+    let taskCollapsed = {};
+    function toggleTaskGroup(cat){ taskCollapsed[cat] = !taskCollapsed[cat]; renderTasks(); }
+
     function bindEvents(){
 
       document.getElementById('selectedDate').value = selectedDate;
@@ -3696,6 +3725,7 @@ function renderAll(){
     window.addTodayTaskFromInput = addTodayTaskFromInput;
     window.deleteLink = deleteLink;
     window.editTask = editTask;
+    window.toggleTaskGroup = toggleTaskGroup;
 
 // 页面加载后执行一次
     bindEvents();
