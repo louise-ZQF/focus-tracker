@@ -3228,7 +3228,7 @@ function importData(file){
       state.tasks.forEach(t=>{ if(!t.date) return; const ms=getTaskDurationMs(t); if(ms>0) m[t.date]=(m[t.date]||0)+ms/60000; });
       return m;
     }
-    function _hmLevel(min){ if(!min) return 0; if(min<30) return 1; if(min<60) return 2; if(min<120) return 3; return 4; }
+    function _hmLevel(min){ if(!min) return 0; if(min<60) return 1; if(min<180) return 2; if(min<360) return 3; return 4; }
     function renderHeatmap(){
       const host = document.getElementById('heatmapWrap');
       if(!host) return;
