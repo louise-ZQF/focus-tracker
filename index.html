@@ -1234,16 +1234,6 @@ td button {
         <h1>曾庆锋の学习系统</h1>
         <p id="nowText">正在读取当前时间...</p>
         <p class="hero-caption">您已成功登录学习中心 · 11408（政治·英语·数学·408）！</p>
-        <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-top:8px">
-          <div style="display:flex;align-items:center;gap:6px;background:rgba(255,255,255,.16);border-radius:12px;padding:6px 12px">
-            <span style="color:rgba(255,255,255,.85);font-size:14px">🎯 目标学校</span>
-            <input id="targetSchoolInput" type="text" placeholder="如：浙江大学" style="width:140px;background:#fff;border:2px solid #ff3b30;color:#ff3b30;border-radius:8px;padding:4px 8px;font-size:14px;font-weight:700" />
-          </div>
-          <div style="display:flex;align-items:center;gap:6px;background:rgba(255,255,255,.16);border-radius:12px;padding:6px 12px">
-            <span style="color:rgba(255,255,255,.85);font-size:14px">📊 目标分数</span>
-            <input id="targetScoreInput" type="number" placeholder="如：400" min="0" max="500" step="5" style="width:80px;background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.3);color:#fff;border-radius:8px;padding:4px 8px;font-size:14px" />
-          </div>
-        </div>
         <div class="toolbar">
           <div class="toolbar-left">
             <div>
@@ -3652,10 +3642,6 @@ function importData(file){
       document.getElementById('importFile').addEventListener('change', e=>{
         if(e.target.files && e.target.files[0]) importData(e.target.files[0]);
       });
-      const _tsi=document.getElementById('targetSchoolInput');
-      if(_tsi){ _tsi.value=state.targetSchool||''; _tsi.addEventListener('change',e=>{state.targetSchool=e.target.value;saveState();}); }
-      const _tssi=document.getElementById('targetScoreInput');
-      if(_tssi){ _tssi.value=state.targetScore||''; _tssi.addEventListener('change',e=>{state.targetScore=e.target.value;saveState();renderGoalRing();}); }
       const _exam=document.getElementById('examDateInput');
       if(_exam){ _exam.value=state.examDate||'2026-12-19'; _exam.addEventListener('change', e=>{ state.examDate=e.target.value||'2026-12-19'; saveState(); renderCountdown(); renderReport(); }); }
       const _goal=document.getElementById('goalHoursInput');
