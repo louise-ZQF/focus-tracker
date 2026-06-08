@@ -100,7 +100,12 @@
     }
     .hero-mini .label{font-size:13px;color:rgba(255,255,255,.7)}
     .hero-mini .value{margin-top:8px;font-size:22px;font-weight:700;letter-spacing:.3px}
-    .hero-right .hero-mini{background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.16)}
+    .hero-right .hero-mini:nth-child(1){background:rgba(233,208,190,.18)}
+    .hero-right .hero-mini:nth-child(2){background:rgba(215,180,160,.18)}
+    .hero-right .hero-mini:nth-child(3){background:rgba(205,169,145,.17)}
+    .hero-right .hero-mini:nth-child(4){background:rgba(224,191,170,.16)}
+    .hero-right .hero-mini:nth-child(5){background:rgba(214,183,149,.16)}
+    .hero-right .hero-mini:nth-child(6){background:rgba(204,171,157,.16)}
     .toolbar{
       margin-top:18px;
       display:flex;
@@ -147,7 +152,16 @@
       box-shadow: 0 8px 16px rgba(0,0,0,0.15);
     }
 
-    .tab.active{background:var(--primary)!important; border-color:var(--primary)!important}
+    /* 9个按钮的专属颜色分配 */
+    .tabs .tab:nth-child(1).active{background:var(--m-teal)!important; border-color:var(--m-teal)!important}
+    .tabs .tab:nth-child(2).active{background:var(--m-lake)!important; border-color:var(--m-lake)!important}
+    .tabs .tab:nth-child(3).active{background:var(--m-sage)!important; border-color:var(--m-sage)!important}
+    .tabs .tab:nth-child(4).active{background:var(--m-purple)!important; border-color:var(--m-purple)!important}
+    .tabs .tab:nth-child(5).active{background:#b794f4!important; border-color:#b794f4!important} /* 投稿 */
+    .tabs .tab:nth-child(6).active{background:var(--m-lavender)!important; border-color:var(--m-lavender)!important}
+    .tabs .tab:nth-child(7).active{background:var(--m-peach)!important; border-color:var(--m-peach)!important}
+    .tabs .tab:nth-child(8).active{background:var(--m-rose)!important; border-color:var(--m-rose)!important}
+    .tabs .tab:nth-child(9).active{background:var(--m-olive)!important; border-color:var(--m-olive)!important}
     .tab:hover{transform:translateY(-1px)}
     .section{display:none;margin-top:18px}
     .section.active{display:block}
@@ -294,12 +308,8 @@
       border-radius:14px;
       padding:10px 12px;
       overflow:hidden;
-      min-height:52px;
     }
-    .timeline-task .name{font-weight:800;margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-    .timeline-task .tiny{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-    .timeline-task-short{display:flex!important;align-items:center!important;padding-top:0!important;padding-bottom:0!important}
-    .timeline-task-short .name{margin-bottom:0!important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .timeline-task .name{font-weight:800;margin-bottom:4px}
     .bar-group{display:flex; flex-direction:column; gap:10px}
     .bar-row{display:grid;grid-template-columns:88px 1fr 54px;align-items:center;gap:10px}
     .bar-track{
@@ -354,11 +364,18 @@
     }
     .inline-form button, .focus-form button {
       flex: 0 0 auto;
-      height: 42px;
+      height: 42px; /* 按钮高度对齐 */
       padding: 0 20px;
     }
     .spacer{height:4px}
-
+ 
+    .hero{
+      background:
+        radial-gradient(circle at top right, rgba(255,255,255,.20), transparent 34%),
+        linear-gradient(135deg,#d9b69f 0%, #c89e84 52%, #b98f78 100%);
+      overflow:hidden;
+      position:relative;
+    }
     .hero::after{
       content:'';
       position:absolute; inset:auto -60px -60px auto;
@@ -624,24 +641,45 @@
  
  
     
-    /* 今日状态页统一配色 */
-    #section-overview .grid.cols-4 .card,
-    #section-overview .grid.cols-2 .card{
-      background:linear-gradient(180deg,#fcfefd 0%,#f2f7f6 100%);
-      border-color:#d8e6e3;
+    /* 今日状态页改为偏暖色系，和首页淡橙主视觉更统一 */
+    #section-overview .grid.cols-4 .card:nth-child(1){
+      background:linear-gradient(180deg,#fffaf6 0%, #f7efe8 100%);
+      border-color:#ead9cb;
     }
+    #section-overview .grid.cols-4 .card:nth-child(2){
+      background:linear-gradient(180deg,#fffaf7 0%, #f4ece6 100%);
+      border-color:#e7d7cb;
+    }
+    #section-overview .grid.cols-4 .card:nth-child(3){
+      background:linear-gradient(180deg,#fff9f5 0%, #f6eee8 100%);
+      border-color:#ead9cf;
+    }
+    #section-overview .grid.cols-4 .card:nth-child(4){
+      background:linear-gradient(180deg,#fff8f4 0%, #f3ebe5 100%);
+      border-color:#e5d6cb;
+    }
+ 
+    #section-overview .grid.cols-2 .card:nth-child(1){
+      background:linear-gradient(180deg,#fffaf7 0%, #f7efe9 100%);
+      border-color:#ead9ce;
+    }
+    #section-overview .grid.cols-2 .card:nth-child(2){
+      background:linear-gradient(180deg,#fffaf6 0%, #f6eee7 100%);
+      border-color:#e8d9cd;
+    }
+ 
     #section-overview .pill{
-      background:#eef4f2;
-      border-color:#d5e3df;
-      color:#56706c;
+      background:#f7eee7;
+      border-color:#e8d7cb;
+      color:#846b5f;
     }
     #section-overview .pill.good{
-      background:#edf5f1;
-      border-color:#cfe0d8;
-      color:#557a69;
+      background:#efe8dd;
+      border-color:#dfcfbf;
+      color:#7b6758;
     }
     #section-overview .tiny{
-      color:var(--muted);
+      color:#8b786d;
     }
  
 @media (max-width:1100px){
@@ -758,6 +796,17 @@
       padding: 12px; margin-top: 5px; border: 1px solid var(--m-purple-line);
     }
 /* --- 最终修正案：解决颜色、重叠、外露和高度对齐 --- */
+
+
+
+  position: fixed;
+  top: 0; left: 0; width: 100%; height: 100%;
+  background: rgba(0,0,0,0.5);
+  backdrop-filter: blur(4px);
+  z-index: 9999;
+  align-items: center;
+  justify-content: center;
+}
 
     /* 2. 统一论文和投稿的淡紫色系 */
     .sub-card, .thesis-card { 
@@ -896,6 +945,7 @@
     }
 
 
+    }
 /* --- 按钮 & 选项卡完美居中与尺寸恢复 --- */
 button {
   display: inline-flex !important;
@@ -1231,9 +1281,11 @@ td button {
     
     <section class="hero">
       <div class="hero-main">
+        <div class="quote-kicker">Daily Inspiration / 每日好运签</div>
         <h1>曾庆锋の学习系统</h1>
         <p id="nowText">正在读取当前时间...</p>
         <p class="hero-caption">您已成功登录学习中心 · 11408（政治·英语·数学·408）！</p>
+        <p id="quoteText" class="hero-quote">“ 今日自律沉淀，明日自有收获。 ”</p>
         <div class="toolbar">
           <div class="toolbar-left">
             <div>
@@ -1715,9 +1767,6 @@ function defaultState(){
     muyuCount: 0,
     examDate: '2026-12-19',
     dailyGoalHours: 8,
-    targetSchool: '',
-    targetScore: '',
-    manualStartTime: null,
     darkMode: false,
     exercises: [],
     reflections: [],
@@ -1742,9 +1791,6 @@ function loadState(){
           muyuCount: parsed.muyuCount || 0,
           examDate: parsed.examDate || '2026-12-19',
           dailyGoalHours: (parsed.dailyGoalHours != null ? parsed.dailyGoalHours : 8),
-          targetSchool: parsed.targetSchool || '',
-          targetScore: parsed.targetScore || '',
-          manualStartTime: parsed.manualStartTime || null,
           darkMode: parsed.darkMode || false,
           exercises: parsed.exercises || [],
           reflections: parsed.reflections || [],
@@ -1961,40 +2007,7 @@ function maybeAutoFinishPomodoro(){
   }
 } // <--- 注意：maybeAutoFinishPomodoro 应该在这里就结束了！
 
-// 2. 这是你新加的补录函数，它应该是独立的
-function addBackfillTask() {
-  const name = (document.getElementById('taskNameInput').value || '').trim();
-  const category = document.getElementById('taskCategoryInput').value || '📕 政治';
-  // 这里确保调用了获取日期的函数
-  const date = getTaskFormDate(); 
-  
-  if (!name) {
-    showToast('请输入任务名称后再补录。');
-    return;
-  }
-
-  const now = new Date();
-  const task = {
-    id: `${Date.now()}_${Math.random().toString(36).slice(2,8)}`,
-    name,
-    category,
-    focusMode: 'up',
-    startTime: new Date(date + 'T09:00:00').toISOString(), 
-    endTime: new Date(date + 'T11:00:00').toISOString(),   
-    durationMs: 7200000, 
-    status: '已完成',
-    date: date,
-    createdAt: now.toISOString()
-  };
-
-  state.tasks.unshift(task);
-  saveState();
-  document.getElementById('taskNameInput').value = ''; 
-  showToast(`已补录任务：${name}`);
-  renderAll();
-} // <--- 补录函数结束
-
-// 3. 这是原本就有的结束任务函数
+// 结束任务函数
 function finishTask(mode = '完成'){
   const active = getActiveTask();
   if(!active){
@@ -2006,10 +2019,9 @@ function finishTask(mode = '完成'){
   let ms = (active.durationMs || 0) + (new Date(active.endTime).getTime() - new Date(active.startTime).getTime());
   if(mode !== '中断'){
     const input = prompt('本次专注分钟数（忘记/有误可直接修改后回车）：', Math.round(ms/60000));
-    if(input !== null){
-      const v = parseInt(input);
-      if(!isNaN(v) && v >= 0){ ms = v*60000; active.endTime = new Date(new Date(active.startTime).getTime()+ms).toISOString(); }
-    }
+    if(input === null) return;
+    const v = parseInt(input);
+    if(!isNaN(v) && v >= 0){ ms = v*60000; active.endTime = new Date(new Date(active.startTime).getTime()+ms).toISOString(); }
   }
   active.durationMs = ms;
   active.status = mode === '中断' ? '中断' : '已完成';
@@ -2205,38 +2217,12 @@ function renderHero(){
  
 function renderOverview(){
       const td = todayStr();
-      const manual = state.manualStartTime || '';
-      let startStr;
-      if (manual) {
-        startStr = manual;
-      } else {
-        const starts = state.tasks.filter(t=>t.date===td && t.startTime).map(t=>new Date(t.startTime)).sort((a,b)=>a-b);
-        startStr = starts.length ? formatTime(starts[0]) : '--:--';
-      }
+      const starts = state.tasks.filter(t=>t.date===td && t.startTime).map(t=>new Date(t.startTime)).sort((a,b)=>a-b);
+      const startStr = starts.length ? formatTime(starts[0]) : '--:--';
       const setT=(id,v)=>{const e=document.getElementById(id); if(e) e.textContent=v;};
       setT('ovStudyStart', startStr);
       setT('heroStudyStart', startStr);
-      setT('ovStudyStartNote', manual ? `已手动设置为 ${startStr}` : (startStr !== '--:--' ? `最早从 ${startStr} 开始学习` : '今天还没开始学习'));
-      // make start time clickable for manual adjust
-      ['ovStudyStart','heroStudyStart'].forEach(id=>{
-        const el=document.getElementById(id);
-        if(el){
-          el.style.cursor='pointer';
-          el.title='点击调整开始时间';
-          el.onclick=()=>{
-            const v=prompt('调整今日开始时间 (如 08:30，留空则恢复自动)：', manual || startStr);
-            if(v===null) return;
-            if(v.trim()===''){
-              state.manualStartTime=null;
-            } else {
-              state.manualStartTime=v.trim();
-            }
-            saveState();
-            renderOverview();
-            renderHero();
-          };
-        }
-      });
+      setT('ovStudyStartNote', starts.length ? `最早从 ${startStr} 开始学习` : '今天还没开始学习');
 
       const _d0 = new Date(td+'T12:00:00'); const _wd=_d0.getDay()||7;
       const _mon = new Date(_d0); _mon.setDate(_d0.getDate()-_wd+1);
@@ -2342,7 +2328,8 @@ function renderTasks(){
   const wrap = document.getElementById('taskTableWrap');
   if(!wrap) return;
   const addForm = `<div class="inline-form" style="margin-bottom:12px">
-      <select id="todayAddCat" style="max-width:160px;height:38px;cursor:pointer">
+      <select id="todayAddCat" style="max-width:140px">
+        <option value="📌 计划">📌 计划</option>
         <option value="📕 政治">📕 政治</option>
         <option value="📗 英语">📗 英语</option>
         <option value="📘 数学">📘 数学</option>
@@ -2351,22 +2338,24 @@ function renderTasks(){
       <input id="todayAddInput" type="text" placeholder="在 ${selectedDate} 添加任务（可留空只记科目）" onkeydown="if(event.key==='Enter'){addTodayTaskFromInput();}" />
       <button class="btn-primary" onclick="addTodayTaskFromInput()">添加</button>
     </div>`;
-  const order = ['📕 政治','📗 英语','📘 数学','📙 408'];
+  const FIXED_CATS = ['📕 政治','📗 英语','📘 数学','📙 408'];
   const byCat = {};
   tasks.forEach(t=>{ const c=t.category||'其它'; (byCat[c]=byCat[c]||[]).push(t); });
-  const cats = order.filter(c=>byCat[c]);
+  const cats = [...FIXED_CATS];
   Object.keys(byCat).forEach(c=>{ if(!cats.includes(c)) cats.push(c); });
   const groupsHtml = cats.map(c=>{
-    const items = byCat[c];
+    const items = byCat[c] || [];
     const doneN = items.filter(t=>t.status==='已完成').length;
     const collapsed = !!taskCollapsed[c];
-    const rows = items.map(t=>{
+    const rows = items.length ? items.map(t=>{
       const done = t.status==='已完成';
+      const interrupted = t.status==='中断';
       const running = t.status==='进行中';
       const label = (t.name && t.name!==t.category) ? escapeHtml(t.name) : '<span class="tiny">（无名称）</span>';
       return `<tr>
         <td>${running ? '<span class="tiny">—</span>' : `<input type="checkbox" ${done?'checked':''} onclick="toggleTaskDone('${t.id}')">`}</td>
-        <td><span style="${done?'text-decoration:line-through;color:var(--muted)':''}">${label}</span></td>
+        <td><span style="${done?'text-decoration:line-through;color:var(--muted)':(interrupted?'color:var(--danger,#e03)':'')}">
+          ${label}</span></td>
         <td>${formatDuration(getTaskDurationMs(t))}</td>
         <td>${statusPill(t.status)}</td>
         <td>
@@ -2375,7 +2364,7 @@ function renderTasks(){
           <button class="btn-danger" onclick="deleteTask('${t.id}')">删</button>
         </td>
       </tr>`;
-    }).join('');
+    }).join('') : `<tr><td colspan="5" style="text-align:center;padding:12px;color:var(--muted)">暂无任务</td></tr>`;
     return `<div class="task-group">
       <div class="task-group-head" onclick="toggleTaskGroup('${c}')">
         <span class="task-group-arrow">${collapsed?'▸':'▾'}</span>
@@ -2390,7 +2379,7 @@ function renderTasks(){
       </div>
     </div>`;
   }).join('');
-  wrap.innerHTML = addForm + (tasks.length ? groupsHtml : `<div class="empty">${selectedDate} 暂无任务，上面可直接添加。</div>`);
+  wrap.innerHTML = addForm + groupsHtml;
 }
  
  
@@ -2462,11 +2451,10 @@ function renderTodayTaskTable(targetId, simple = false){
         sMin = Math.max(minStart, Math.min(sMin, minEnd));
         eMin = Math.max(sMin + 10, Math.min(eMin, minEnd));
         const top = ((sMin - minStart) / totalMinutes) * height;
-        const blockH = Math.max(52, ((eMin - sMin) / totalMinutes) * height);
-        const shortBlock = blockH < 66;
-        return `<div class="timeline-task${shortBlock ? ' timeline-task-short' : ''}" style="top:${top}px;height:${blockH}px">
+        const blockH = Math.max(28, ((eMin - sMin) / totalMinutes) * height);
+        return `<div class="timeline-task" style="top:${top}px;height:${blockH}px">
           <div class="name">${escapeHtml(t.name)}</div>
-          ${shortBlock ? '' : `<div class="tiny">${formatTime(start)} - ${t.endTime ? formatTime(end) : '进行中'} ｜ ${escapeHtml(t.category || '-') } ｜ ${formatDuration(getTaskDurationMs(t))}</div>`}
+          <div class="tiny">${formatTime(start)} - ${t.endTime ? formatTime(end) : '进行中'} ｜ ${escapeHtml(t.category || '-') } ｜ ${formatDuration(getTaskDurationMs(t))}</div>
         </div>`;
       }).join('');
  
@@ -2645,32 +2633,21 @@ function renderCalendarSidebar() {
       <button class="btn-primary" onclick="addCalendarPlanFromInput()">添加计划</button>
     </div>`;
   selectedPendingWrap.innerHTML = _calAddForm + (selectedTasks.length ? `
-    <div class="task-group" id="calTaskGroup">
-      <div class="task-group-head" onclick="toggleCalTaskGroup()" style="justify-content:space-between">
-        <span style="display:flex;align-items:center;gap:8px">
-          <span class="task-group-arrow" id="calTaskArrow">▸</span>
-          <span>${selectedDate} 任务列表</span>
-        </span>
-        <span class="pill">${selectedTasks.length} 项</span>
-      </div>
-      <div class="task-group-body" id="calTaskBody" style="display:none">
-        <table>
-          <thead><tr><th>任务</th><th>状态</th><th>操作</th></tr></thead>
-          <tbody>
-            ${selectedTasks.map(t => `
-              <tr>
-                <td>${t.status === '已完成' ? '✅' : '⏳'} ${escapeHtml(t.name)}</td>
-                <td>${statusPill(t.status)}</td>
-                <td>
-                  ${t.status === '待开始' ? `<button class="btn-success" onclick="startTodoTask('${t.id}')">开始</button>` : ''}
-                  <button class="btn-danger" onclick="deleteTask('${t.id}')">删</button>
-                </td>
-              </tr>
-            `).join('')}
-          </tbody>
-        </table>
-      </div>
-    </div>
+    <table>
+      <thead><tr><th>任务</th><th>状态</th><th>操作</th></tr></thead>
+      <tbody>
+        ${selectedTasks.map(t => `
+          <tr>
+            <td>${t.status === '已完成' ? '✅' : '⏳'} ${escapeHtml(t.name)}</td>
+            <td>${statusPill(t.status)}</td>
+            <td>
+              ${t.status === '待开始' ? `<button class="btn-success" onclick="startTodoTask('${t.id}')">开始</button>` : ''}
+              <button class="btn-danger" onclick="deleteTask('${t.id}')">删</button>
+            </td>
+          </tr>
+        `).join('')}
+      </tbody>
+    </table>
   ` : `<div class="empty">该日期暂无记录</div>`);
 
   // 2. 全部任务概览（增加筛选切换）
@@ -2713,19 +2690,6 @@ function renderCalendarSidebar() {
 window.setCalendarFilter = function(mode) {
   calendarSidebarMode = mode;
   renderCalendarSidebar();
-};
-
-window.toggleCalTaskGroup = function() {
-  const body = document.getElementById('calTaskBody');
-  const arrow = document.getElementById('calTaskArrow');
-  if(!body || !arrow) return;
-  if(body.style.display === 'none'){
-    body.style.display = 'block';
-    arrow.textContent = '▾';
-  } else {
-    body.style.display = 'none';
-    arrow.textContent = '▸';
-  }
 };
  
     function renderStats(){
@@ -3207,7 +3171,7 @@ function importData(file){
     }
     function _createPlan(dateStr, name, category){
       name=(name||'').trim();
-      category = category || '📕 政治';
+      category = category || '📌 计划';
       if(!name){ showToast('请输入计划内容。'); return; }
       const now=new Date();
       state.tasks.unshift({
@@ -3373,9 +3337,8 @@ function importData(file){
         end=new Date(today.getFullYear(), today.getMonth()+1, 0);
         const wd=start.getDay()||7; start=new Date(start); start.setDate(start.getDate()-wd+1);
       }else{
-        start=new Date(today.getFullYear(), 0, 1);
+        start=new Date(today); start.setDate(today.getDate()-363);
         const wd=start.getDay()||7; start.setDate(start.getDate()-wd+1);
-        end=new Date(today.getFullYear(), 11, 31);
       }
       const days=[];
       for(let d=new Date(start); d<=end; d.setDate(d.getDate()+1)) days.push(new Date(d));
@@ -3642,6 +3605,9 @@ function importData(file){
       document.getElementById('importFile').addEventListener('change', e=>{
         if(e.target.files && e.target.files[0]) importData(e.target.files[0]);
       });
+      showQuote();
+      const _qEl = document.getElementById('quoteText');
+      if(_qEl){ _qEl.style.cursor='pointer'; _qEl.title='点击换一句'; _qEl.addEventListener('click', rotateQuote); }
       const _exam=document.getElementById('examDateInput');
       if(_exam){ _exam.value=state.examDate||'2026-12-19'; _exam.addEventListener('change', e=>{ state.examDate=e.target.value||'2026-12-19'; saveState(); renderCountdown(); renderReport(); }); }
       const _goal=document.getElementById('goalHoursInput');
@@ -3728,7 +3694,6 @@ function renderAll(){
     window.deleteLink = deleteLink;
     window.editTask = editTask;
     window.toggleTaskGroup = toggleTaskGroup;
-    window.toggleCalTaskGroup = toggleCalTaskGroup;
 
 // 页面加载后执行一次
     bindEvents();
@@ -3745,6 +3710,7 @@ function renderAll(){
       }
     }, 1000);
 
+    setInterval(rotateQuote, 12000);
   </script>
 
 </body>
