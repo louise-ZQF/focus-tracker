@@ -276,19 +276,6 @@
       border-radius:16px;
       background:#f7fbfa;
     }
-    /* 时间轴 */
-    .time-axis{ border:1px solid var(--line); border-radius:18px; background:var(--card); overflow:hidden; }
-    .ta-header{ padding:8px 20px; border-bottom:1px solid var(--line); background:#f9f9fb; }
-    .ta-labels{ display:flex; justify-content:space-between; font-size:11px; color:var(--muted); font-weight:600; }
-    .ta-body{ padding:10px 0; min-height:60px; }
-    .ta-row{ position:relative; height:44px; margin:0 16px 6px; }
-    .ta-bar{ position:absolute; top:0; height:100%; border-radius:8px; display:flex; align-items:center; gap:10px; padding:0 12px; min-width:56px; overflow:hidden; white-space:nowrap; transition:opacity .15s; cursor:default; }
-    .ta-bar:hover{ opacity:.82; }
-    .ta-time{ font-size:11px; font-weight:700; color:rgba(255,255,255,.92); flex-shrink:0; }
-    .ta-name{ font-size:13px; font-weight:600; color:#fff; overflow:hidden; text-overflow:ellipsis; }
-    .ta-dur{ font-size:11px; color:rgba(255,255,255,.72); margin-left:auto; flex-shrink:0; }
-    body.dark .time-axis{ border-color:#2a2a2c; }
-    body.dark .ta-header{ background:#161617; border-color:#2a2a2c; }
     .bar-group{display:flex; flex-direction:column; gap:10px}
     .bar-row{display:grid;grid-template-columns:88px 1fr 54px;align-items:center;gap:10px}
     .bar-track{
@@ -1199,9 +1186,9 @@ td button {
     body.dark th,body.dark td{ border-color:#2a2a2c !important; }
     body.dark .empty{ background:#161617; border-color:#2a2a2c; color:#a1a1a6; }
     body.dark .footer-note,body.dark .muyu-label{ color:#a1a1a6; }
-    .hm-col{ display:grid; grid-template-rows:repeat(7, 13px); gap:3px; }
-    .hm-cell{ width:13px; height:13px; border-radius:3px; display:inline-block; background:#ebedf0; cursor:pointer; }
-    .hm-cell:hover{ outline:1px solid #0071e3; }
+    .hm-col{ display:grid; grid-template-rows:repeat(7, 14px); gap:3px; }
+    .hm-cell{ width:14px; height:14px; border-radius:2px; display:inline-block; background:#ebedf0; cursor:pointer; }
+    .hm-cell:hover{ outline:1.5px solid rgba(0,0,0,.3); outline-offset:-1px; }
     .refl-chip{ display:inline-block; margin:4px 6px 0 0; padding:6px 12px; border-radius:980px; background:#f0f4ff; color:#0071e3; border:1px solid #cfe0ff; cursor:pointer; font-size:12px; font-weight:600; }
     .refl-chip:hover{ background:#0071e3; color:#fff; }
     .refl-date{ font-weight:800; margin:18px 0 10px; color:var(--text); }
@@ -1392,31 +1379,22 @@ td button {
         </div>
       </div>
 
-      <div class="grid cols-2" style="margin-top:16px">
-        <div class="card">
-          <div class="card-title">
-            <h3>今日任务列表</h3>
-            <span class="pill" id="taskDayCount">0 项</span>
-          </div>
-          <div class="inline-form" style="margin-bottom:12px" id="taskAddFormWrap">
-            <select id="todayAddCat" style="max-width:160px;height:38px;cursor:pointer">
-              <option value="📕 政治">📕 政治</option>
-              <option value="📗 英语">📗 英语</option>
-              <option value="📘 数学">📘 数学</option>
-              <option value="📙 408">📙 408</option>
-            </select>
-            <input id="todayAddInput" type="text" placeholder="添加任务（可留空只记科目）" onkeydown="if(event.key==='Enter'){addTodayTaskFromInput();}" />
-            <button class="btn-primary" onclick="addTodayTaskFromInput()">添加</button>
-          </div>
-          <div id="taskTableWrap"></div>
+      <div class="card" style="margin-top:16px">
+        <div class="card-title">
+          <h3>今日任务列表</h3>
+          <span class="pill" id="taskDayCount">0 项</span>
         </div>
-        <div class="card">
-          <div class="card-title">
-            <h3>今日日程表</h3>
-            <span class="pill">06:00 - 24:00</span>
-          </div>
-          <div id="timelineWrap"></div>
+        <div class="inline-form" style="margin-bottom:12px" id="taskAddFormWrap">
+          <select id="todayAddCat" style="max-width:160px;height:38px;cursor:pointer">
+            <option value="📕 政治">📕 政治</option>
+            <option value="📗 英语">📗 英语</option>
+            <option value="📘 数学">📘 数学</option>
+            <option value="📙 408">📙 408</option>
+          </select>
+          <input id="todayAddInput" type="text" placeholder="添加任务（可留空只记科目）" onkeydown="if(event.key==='Enter'){addTodayTaskFromInput();}" />
+          <button class="btn-primary" onclick="addTodayTaskFromInput()">添加</button>
         </div>
+        <div id="taskTableWrap"></div>
       </div>
 
       <div class="card" style="margin-top:16px">
@@ -2207,7 +2185,6 @@ function renderOverview(){
       setT('ovFocusToday', _fmtH(_sumMs(t=>t.date===td)));
       setT('ovFocusWeek', _fmtH(_sumMs(t=>t.date>=_monS&&t.date<=_sunS)));
       setT('ovFocusTotal', _fmtH(_sumMs(()=>true)));
-      renderTimeline();
     }
  
     function renderAttendance(){
@@ -2388,53 +2365,6 @@ function renderTodayTaskTable(targetId, simple = false){
       `;
     }
  
-    function renderTimeline(){
-      const allTasks = getTasksByDate(selectedDate).filter(t=>t.startTime && getTaskDurationMs(t) >= 300000);
-      if(!allTasks.length){
-        document.getElementById('timelineWrap').innerHTML = '<div class="empty">暂无日程安排（专注需≥5分钟）</div>';
-        return;
-      }
-      const startHour = 6, endHour = 24;
-      const totalMin = (endHour - startHour) * 60;
-
-      function catColor(cat){
-        if(!cat) return '#86868b';
-        if(cat.includes('政治')) return '#ff3b30';
-        if(cat.includes('英语')) return '#0071e3';
-        if(cat.includes('数学')) return '#34c759';
-        if(cat.includes('408')) return '#af52de';
-        return '#86868b';
-      }
-
-      const evts = allTasks.map(t=>{
-        const start = new Date(t.startTime);
-        const end = t.endTime ? new Date(t.endTime) : new Date();
-        let sMin = start.getHours()*60 + start.getMinutes();
-        let eMin = end.getHours()*60 + end.getMinutes();
-        sMin = Math.max(startHour*60, Math.min(sMin, endHour*60));
-        eMin = Math.max(sMin + 5, Math.min(eMin, endHour*60));
-        return { t, sMin, eMin };
-      });
-      evts.sort((a,b)=>a.sMin - b.sMin);
-
-      const rows = evts.map(({t, sMin, eMin})=>{
-        const start = new Date(t.startTime);
-        const end = t.endTime ? new Date(t.endTime) : new Date();
-        const dur = getTaskDurationMs(t);
-        const leftPct = ((sMin - startHour*60) / totalMin) * 100;
-        const wPct = Math.max(1.8, ((eMin - sMin) / totalMin) * 100);
-        const color = catColor(t.category);
-        return `<div class="ta-row"><div class="ta-bar" style="left:${leftPct}%;width:${wPct}%;background:${color}" title="${escapeHtml(t.name)}"><span class="ta-time">${formatTime(start)}-${t.endTime?formatTime(end):'now'}</span><span class="ta-name">${escapeHtml(t.name)}</span><span class="ta-dur">${formatDuration(dur)}</span></div></div>`;
-      }).join('');
-
-      const labels = [];
-      for(let h=startHour; h<=endHour; h+=2){
-        labels.push(`<span>${pad(h%24)}:00</span>`);
-      }
-
-      document.getElementById('timelineWrap').innerHTML =
-        `<div class="time-axis"><div class="ta-header"><div class="ta-labels">${labels.join('')}</div></div><div class="ta-body">${rows}</div></div>`;
-    }
     function renderLeave(){
       document.getElementById('leaveCountPill').textContent = `${state.leaveRecords.length} 条`;
       document.getElementById('leaveTableWrap').innerHTML = state.leaveRecords.length ? `
@@ -3300,43 +3230,85 @@ function importData(file){
     }
     function _hmLevel(min){ if(!min) return 0; if(min<30) return 1; if(min<60) return 2; if(min<120) return 3; return 4; }
     function renderHeatmap(){
-      const host=document.getElementById('heatmapWrap');
+      const host = document.getElementById('heatmapWrap');
       if(!host) return;
-      const mins=_dailyFocusMin();
-      const colors=['#ebedf0','#9be9a8','#40c463','#30a14e','#216e39'];
-      const today=new Date(todayStr()+'T12:00:00');
-      let start, end=new Date(today);
-      if(heatmapScope==='week'){
-        const wd=today.getDay()||7; start=new Date(today); start.setDate(today.getDate()-wd+1);
-      }else if(heatmapScope==='month'){
-        start=new Date(today.getFullYear(), today.getMonth(), 1);
-        end=new Date(today.getFullYear(), today.getMonth()+1, 0);
-        const wd=start.getDay()||7; start=new Date(start); start.setDate(start.getDate()-wd+1);
-      }else{
-        start=new Date(today.getFullYear(), 0, 1);
-        const wd=start.getDay()||7; start.setDate(start.getDate()-wd+1);
-        end=new Date(today);
+      const mins = _dailyFocusMin();
+      const colors = ['#ebedf0', '#9be9a8', '#40c463', '#30a14e', '#216e39'];
+      const today = new Date(todayStr() + 'T12:00:00');
+
+      let startDate, endDate;
+      if(heatmapScope === 'week'){
+        const wd = today.getDay() || 7;
+        startDate = new Date(today); startDate.setDate(today.getDate() - wd + 1);
+        endDate = new Date(startDate); endDate.setDate(startDate.getDate() + 6);
+      } else if(heatmapScope === 'month'){
+        startDate = new Date(today.getFullYear(), today.getMonth(), 1);
+        endDate = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+      } else {
+        startDate = new Date(today.getFullYear(), 0, 1);
+        endDate = today;
       }
-      const days=[];
-      for(let d=new Date(start); d<=end; d.setDate(d.getDate()+1)) days.push(new Date(d));
-      const weeks=[];
-      for(let i=0;i<days.length;i+=7) weeks.push(days.slice(i,i+7));
-      const tds=todayStr();
-      const grid=weeks.map(w=>`<div class="hm-col">${
-        w.map(d=>{
-          const ds=toDateStr(d);
-          const outside = heatmapScope==='month' && d.getMonth()!==today.getMonth();
-          const min=mins[ds]||0;
-          const bg = outside ? 'transparent' : colors[_hmLevel(min)];
-          const click = outside ? '' : `onclick="showHeatmapDay('${ds}')"`;
-          const ttl = outside ? '' : `${ds}：${Math.round(min)} 分钟`;
-          const ring = ds===tds ? 'box-shadow:0 0 0 1.5px #0071e3;' : '';
-          const vis = outside ? 'visibility:hidden;' : '';
-          return `<span class="hm-cell" ${click} title="${ttl}" style="background:${bg};${ring}${vis}"></span>`;
-        }).join('')
-      }</div>`).join('');
-      const legend=`<div style="display:flex;align-items:center;gap:4px;margin-top:10px;font-size:11px;color:var(--muted)">少 ${colors.map(c=>`<span class="hm-cell" style="background:${c};cursor:default"></span>`).join('')} 多</div>`;
-      host.innerHTML=`<div style="display:flex; gap:3px; align-items:flex-start; min-width:max-content">${grid}</div>${legend}`;
+
+      const startDay = startDate.getDay();
+      startDate.setDate(startDate.getDate() - startDay);
+      const endDay = endDate.getDay();
+      endDate.setDate(endDate.getDate() + (6 - endDay));
+
+      const weeks = [];
+      let d = new Date(startDate);
+      while(d <= endDate){
+        const week = [];
+        for(let i = 0; i < 7; i++){ week.push(new Date(d)); d.setDate(d.getDate() + 1); }
+        weeks.push(week);
+      }
+
+      const tds = todayStr();
+      const months = ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
+      const days = ['日','一','二','三','四','五','六'];
+
+      // Month labels
+      let monthTags = '';
+      weeks.forEach((week, wi) => {
+        const mid = week[3];
+        if(mid.getDate() <= 7 || wi === 0){
+          monthTags += `<span style="position:absolute;left:${wi*17}px">${months[mid.getMonth()]}</span>`;
+        }
+      });
+
+      // Day labels
+      let dayTags = '';
+      for(let i = 0; i < 7; i++){
+        dayTags += `<span style="font-size:10px;color:var(--muted);line-height:14px;text-align:right;width:16px">${i%2===0?days[i]:''}</span>`;
+      }
+
+      // Week columns
+      let colsHtml = '';
+      weeks.forEach((week, wi) => {
+        colsHtml += '<div class="hm-col">';
+        week.forEach(d => {
+          const ds = toDateStr(d);
+          const min = mins[ds] || 0;
+          const bg = colors[_hmLevel(min)];
+          const isToday = ds === tds;
+          const ring = isToday ? 'box-shadow:inset 0 0 0 1.5px #1d1d1f;' : '';
+          const future = d > today;
+          const opacity = future ? 'opacity:0.25' : '';
+          colsHtml += `<span class="hm-cell" onclick="showHeatmapDay('${ds}')" title="${ds}：${Math.round(min)}分钟" style="background:${bg};${ring}${opacity}"></span>`;
+        });
+        colsHtml += '</div>';
+      });
+
+      const legend = '<div style="display:flex;align-items:center;gap:4px;margin-top:8px;font-size:11px;color:var(--muted)">少 ' +
+        colors.map(c => `<span class="hm-cell" style="background:${c};cursor:default;width:14px;height:14px"></span>`).join('') + ' 多</div>';
+
+      host.innerHTML =
+        '<div style="display:flex;gap:6px">' +
+          '<div style="display:grid;grid-template-rows:repeat(7,14px);gap:3px;padding-top:16px">' + dayTags + '</div>' +
+          '<div>' +
+            '<div style="position:relative;height:16px;font-size:11px;color:var(--muted);margin-bottom:2px">' + monthTags + '</div>' +
+            '<div style="display:flex;gap:3px">' + colsHtml + '</div>' +
+          '</div>' +
+        '</div>' + legend;
     }
     function showHeatmapDay(ds){
       const detail=document.getElementById('heatmapDetail');
