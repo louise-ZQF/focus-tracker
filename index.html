@@ -1242,6 +1242,9 @@ td button {
     .refl-item::before{ background:#0071e3 !important; }
     body.dark .refl-chip{ background:#1c2533; color:#4aa3ff; border-color:#2a3a4d; }
     body.dark .refl-item{ border-left-color:#3a3a3c; }
+    input[type="checkbox"]{ width:18px !important; height:18px !important; min-height:0 !important; border-radius:4px !important; padding:0 !important; accent-color:#0071e3; cursor:pointer; box-shadow:none !important; line-height:normal !important; }
+    .muyu-widget{ cursor:grab; touch-action:none; }
+    .muyu-widget:active{ cursor:grabbing; }
 </style>
 </head>
 <body>
@@ -1280,7 +1283,6 @@ td button {
             <button class="btn-soft" id="importBtn">导入数据</button>
             <input type="file" id="importFile" accept=".json" style="display:none" />
             <button class="btn-soft" id="darkModeBtn">🌙 深色</button>
-            <button class="btn-danger" id="resetBtn">清空全部数据</button>
           </div>
         </div>
       </div>
@@ -1734,7 +1736,8 @@ function defaultState(){
     dailyGoalHours: 8,
     darkMode: false,
     exercises: [],
-    reflections: []
+    reflections: [],
+    muyuPos: null
   };
 }
  
@@ -1756,7 +1759,8 @@ function loadState(){
           dailyGoalHours: (parsed.dailyGoalHours != null ? parsed.dailyGoalHours : 8),
           darkMode: parsed.darkMode || false,
           exercises: parsed.exercises || [],
-          reflections: parsed.reflections || []
+          reflections: parsed.reflections || [],
+          muyuPos: parsed.muyuPos || null
         };
       }catch(e){
         return defaultState();
@@ -2321,27 +2325,32 @@ function renderTasks(){
   if(cnt) cnt.textContent = `${selectedDate} · ${tasks.length} 项`;
   const wrap = document.getElementById('taskTableWrap');
   if(!wrap) return;
-  wrap.innerHTML = tasks.length ? `
+  const addForm = `<div class="inline-form" style="margin-bottom:12px">
+      <input id="todayAddInput" type="text" placeholder="在 ${selectedDate} 添加任务 / 计划" onkeydown="if(event.key==='Enter'){addTodayTaskFromInput();}" />
+      <button class="btn-primary" onclick="addTodayTaskFromInput()">添加</button>
+    </div>`;
+  wrap.innerHTML = addForm + (tasks.length ? `
     <table>
-      <thead><tr><th>科目</th><th>日期</th><th>开始</th><th>结束</th><th>时长</th><th>状态</th><th>操作</th></tr></thead>
+      <thead><tr><th>✓</th><th>科目 / 任务</th><th>时长</th><th>状态</th><th>操作</th></tr></thead>
       <tbody>
-        ${tasks.map(t=>`
-          <tr>
-            <td>${categoryBadge(t.category || t.name || '-')}</td>
-            <td>${t.date || '-'}</td>
-            <td>${t.startTime ? formatTime(new Date(t.startTime)) : '-'}</td>
-            <td>${t.endTime ? formatTime(new Date(t.endTime)) : '-'}</td>
+        ${tasks.map(t=>{
+          const done = t.status==='已完成';
+          const running = t.status==='进行中';
+          const nameExtra = (t.name && t.name!==t.category) ? ' '+escapeHtml(t.name) : '';
+          return `<tr>
+            <td>${running ? '<span class="tiny">—</span>' : `<input type="checkbox" ${done?'checked':''} onclick="toggleTaskDone('${t.id}')">`}</td>
+            <td><span style="${done?'text-decoration:line-through;color:var(--muted)':''}">${categoryBadge(t.category || '-')}${nameExtra}</span></td>
             <td>${formatDuration(getTaskDurationMs(t))}</td>
             <td>${statusPill(t.status)}</td>
             <td>
               ${(t.status === '待开始' || t.status === '中断') ? `<button class="btn-success" onclick="startTodoTask('${t.id}')">${t.status === '中断' ? '继续' : '开始'}</button> ` : ''}
-              <button class="btn-danger" onclick="deleteTask('${t.id}')">删除</button>
+              <button class="btn-danger" onclick="deleteTask('${t.id}')">删</button>
             </td>
-          </tr>
-        `).join('')}
+          </tr>`;
+        }).join('')}
       </tbody>
     </table>
-  ` : `<div class="empty">当前日期暂无专注记录。</div>`;
+  ` : `<div class="empty">${selectedDate} 暂无任务，上面可直接添加。</div>`);
 }
  
  
@@ -2757,7 +2766,8 @@ function importData(file){
             dailyGoalHours: (parsed.dailyGoalHours != null ? parsed.dailyGoalHours : 8),
             darkMode: parsed.darkMode || false,
             exercises: parsed.exercises || [],
-            reflections: parsed.reflections || []
+            reflections: parsed.reflections || [],
+            muyuPos: parsed.muyuPos || null
           };
           localStorage.setItem(STORAGE_KEY, JSON.stringify(merged));
           location.reload();
@@ -3377,6 +3387,57 @@ function importData(file){
       wrap.innerHTML=html;
     }
 
+    // ===== 今日任务清单 + 木鱼拖动 =====
+    function toggleTaskDone(id){
+      const t=state.tasks.find(x=>x.id===id);
+      if(!t) return;
+      if(t.status==='进行中'){ showToast('进行中的任务请用「结束并记录」。'); renderAll(); return; }
+      if(t.status==='已完成'){ t.status='待开始'; }
+      else { t.status='已完成'; if(!t.endTime){ t.endTime=new Date().toISOString(); } }
+      saveState();
+      renderAll();
+    }
+    function addTodayTaskFromInput(){
+      const el=document.getElementById('todayAddInput');
+      if(!el) return;
+      _createPlan(selectedDate, el.value);
+      el.value='';
+    }
+    function makeMuyuDraggable(){
+      const w=document.getElementById('muyuWidget');
+      if(!w) return;
+      if(state.muyuPos && state.muyuPos.left){ w.style.left=state.muyuPos.left; w.style.top=state.muyuPos.top; w.style.bottom='auto'; }
+      let dragging=false, moved=false, sx=0, sy=0, ox=0, oy=0;
+      const move=(e)=>{
+        if(!dragging) return;
+        const p=e.touches?e.touches[0]:e;
+        const dx=p.clientX-sx, dy=p.clientY-sy;
+        if(Math.abs(dx)>4||Math.abs(dy)>4) moved=true;
+        let nl=Math.max(0,Math.min(window.innerWidth-w.offsetWidth, ox+dx));
+        let nt=Math.max(0,Math.min(window.innerHeight-w.offsetHeight, oy+dy));
+        w.style.left=nl+'px'; w.style.top=nt+'px'; w.style.bottom='auto';
+        if(e.cancelable) e.preventDefault();
+      };
+      const end=()=>{
+        if(!dragging) return;
+        dragging=false;
+        document.removeEventListener('mousemove',move); document.removeEventListener('mouseup',end);
+        document.removeEventListener('touchmove',move); document.removeEventListener('touchend',end);
+        window._muyuJustDragged = moved;
+        if(moved){ state.muyuPos={left:w.style.left, top:w.style.top}; saveState(); }
+      };
+      const start=(e)=>{
+        dragging=true; moved=false;
+        const p=e.touches?e.touches[0]:e;
+        sx=p.clientX; sy=p.clientY;
+        const r=w.getBoundingClientRect(); ox=r.left; oy=r.top;
+        document.addEventListener('mousemove',move); document.addEventListener('mouseup',end);
+        document.addEventListener('touchmove',move,{passive:false}); document.addEventListener('touchend',end);
+      };
+      w.addEventListener('mousedown',start);
+      w.addEventListener('touchstart',start,{passive:false});
+    }
+
     function bindEvents(){
 
       document.getElementById('selectedDate').value = selectedDate;
@@ -3438,7 +3499,6 @@ function importData(file){
       document.getElementById('importFile').addEventListener('change', e=>{
         if(e.target.files && e.target.files[0]) importData(e.target.files[0]);
       });
-      document.getElementById('resetBtn').addEventListener('click', resetAll);
       showQuote();
       const _qEl = document.getElementById('quoteText');
       if(_qEl){ _qEl.style.cursor='pointer'; _qEl.title='点击换一句'; _qEl.addEventListener('click', rotateQuote); }
@@ -3455,6 +3515,7 @@ function importData(file){
       if(_exBtn) _exBtn.addEventListener('click', addExercise);
       const _rfBtn=document.getElementById('addReflectBtn');
       if(_rfBtn) _rfBtn.addEventListener('click', addReflection);
+      makeMuyuDraggable();
       document.querySelectorAll('.hm-scope-btn').forEach(btn=>{
         btn.addEventListener('click', ()=>{
           heatmapScope=btn.dataset.hm;
@@ -3465,6 +3526,7 @@ function importData(file){
       const muyuBtn = document.getElementById('muyuBtn');
       if (muyuBtn) {
           muyuBtn.addEventListener('click', function() {
+              if(window._muyuJustDragged){ window._muyuJustDragged=false; return; }
               // 1. 逻辑：功德次数 +1
               state.muyuCount = (state.muyuCount || 0) + 1;
               saveState(); // 保存到本地，刷新不丢失
@@ -3519,6 +3581,8 @@ function renderAll(){
     window.deleteExercise = deleteExercise;
     window.showHeatmapDay = showHeatmapDay;
     window.deleteReflection = deleteReflection;
+    window.toggleTaskDone = toggleTaskDone;
+    window.addTodayTaskFromInput = addTodayTaskFromInput;
 
 // 页面加载后执行一次
     bindEvents();
