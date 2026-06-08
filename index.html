@@ -276,40 +276,19 @@
       border-radius:16px;
       background:#f7fbfa;
     }
-    .timeline{
-      position:relative;
-      border:1px solid var(--line);
-      border-radius:18px;
-      background:#fff;
-      overflow:hidden;
-    }
-    .timeline-grid{
-      position:relative;
-      height:720px;
-      background:
-        repeating-linear-gradient(
-          to bottom,
-          #f4f8f7 0px,
-          #f4f8f7 59px,
-          #dbe6e3 60px
-        );
-    }
-    .timeline-label{
-      position:absolute; left:12px; font-size:12px; color:#64748b;
-      transform:translateY(-50%);
-      background:rgba(252,254,253,.9); padding:2px 6px; border-radius:999px;
-    }
-    .timeline-task{
-      position:absolute;
-      left:90px; right:16px;
-      background:linear-gradient(135deg,#e3efec 0%,#f2f7f6 100%);
-      border:1px solid #c9ddd9;
-      border-left:5px solid var(--primary);
-      border-radius:14px;
-      padding:10px 12px;
-      overflow:hidden;
-    }
-    .timeline-task .name{font-weight:800;margin-bottom:4px}
+    /* 时间轴 */
+    .time-axis{ border:1px solid var(--line); border-radius:18px; background:var(--card); overflow:hidden; }
+    .ta-header{ padding:8px 20px; border-bottom:1px solid var(--line); background:#f9f9fb; }
+    .ta-labels{ display:flex; justify-content:space-between; font-size:11px; color:var(--muted); font-weight:600; }
+    .ta-body{ padding:10px 0; min-height:60px; }
+    .ta-row{ position:relative; height:44px; margin:0 16px 6px; }
+    .ta-bar{ position:absolute; top:0; height:100%; border-radius:8px; display:flex; align-items:center; gap:10px; padding:0 12px; min-width:56px; overflow:hidden; white-space:nowrap; transition:opacity .15s; cursor:default; }
+    .ta-bar:hover{ opacity:.82; }
+    .ta-time{ font-size:11px; font-weight:700; color:rgba(255,255,255,.92); flex-shrink:0; }
+    .ta-name{ font-size:13px; font-weight:600; color:#fff; overflow:hidden; text-overflow:ellipsis; }
+    .ta-dur{ font-size:11px; color:rgba(255,255,255,.72); margin-left:auto; flex-shrink:0; }
+    body.dark .time-axis{ border-color:#2a2a2c; }
+    body.dark .ta-header{ background:#161617; border-color:#2a2a2c; }
     .bar-group{display:flex; flex-direction:column; gap:10px}
     .bar-row{display:grid;grid-template-columns:88px 1fr 54px;align-items:center;gap:10px}
     .bar-track{
@@ -1273,7 +1252,6 @@ td button {
         <h1>曾庆锋の学习系统</h1>
         <p id="nowText">正在读取当前时间...</p>
         <p class="hero-caption">您已成功登录学习中心 · 11408（政治·英语·数学·408）！</p>
-        <p id="quoteText" class="hero-quote">“ 今日自律沉淀，明日自有收获。 ”</p>
         <div class="toolbar">
           <div class="toolbar-left">
             <div>
@@ -2411,82 +2389,52 @@ function renderTodayTaskTable(targetId, simple = false){
     }
  
     function renderTimeline(){
- 
-      const tasks = getTasksByDate(selectedDate).filter(t=>t.startTime && getTaskDurationMs(t) >= 300000);
-      if(!tasks.length){
-        document.getElementById('timelineWrap').innerHTML = `<div class="empty">暂无日程安排（专注需≥5分钟）</div>`;
+      const allTasks = getTasksByDate(selectedDate).filter(t=>t.startTime && getTaskDurationMs(t) >= 300000);
+      if(!allTasks.length){
+        document.getElementById('timelineWrap').innerHTML = '<div class="empty">暂无日程安排（专注需≥5分钟）</div>';
         return;
       }
-      const startHour = 6;
-      const endHour = 24;
-      const totalMinutes = (endHour - startHour) * 60;
-      const height = 720;
- 
-      const hourLabels = [];
-      for(let h=startHour; h<=24; h+=2){
-        const top = ((h - startHour) * 60 / totalMinutes) * height;
-        hourLabels.push(`<div class="timeline-label" style="top:${top}px">${pad(h % 24)}:00</div>`);
+      const startHour = 6, endHour = 24;
+      const totalMin = (endHour - startHour) * 60;
+
+      function catColor(cat){
+        if(!cat) return '#86868b';
+        if(cat.includes('政治')) return '#ff3b30';
+        if(cat.includes('英语')) return '#0071e3';
+        if(cat.includes('数学')) return '#34c759';
+        if(cat.includes('408')) return '#af52de';
+        return '#86868b';
       }
- 
-      // 计算位置 + 重叠检测
-      const evts = tasks.map(t=>{
+
+      const evts = allTasks.map(t=>{
         const start = new Date(t.startTime);
         const end = t.endTime ? new Date(t.endTime) : new Date();
         let sMin = start.getHours()*60 + start.getMinutes();
         let eMin = end.getHours()*60 + end.getMinutes();
-        const minStart = startHour*60;
-        const minEnd = endHour*60;
-        sMin = Math.max(minStart, Math.min(sMin, minEnd));
-        eMin = Math.max(sMin + 5, Math.min(eMin, minEnd));
-        const top = ((sMin - minStart) / totalMinutes) * height;
-        const blockH = Math.max(68, ((eMin - sMin) / totalMinutes) * height);
-        return { t, start: sMin, end: eMin, top, blockH, col: 0, cols: 1 };
+        sMin = Math.max(startHour*60, Math.min(sMin, endHour*60));
+        eMin = Math.max(sMin + 5, Math.min(eMin, endHour*60));
+        return { t, sMin, eMin };
       });
-      evts.sort((a,b)=>a.start - b.start);
+      evts.sort((a,b)=>a.sMin - b.sMin);
 
-      // Google Calendar 重叠分组+贪心列分配
-      const groups = [];
-      let cur = [evts[0]], gEnd = evts[0].end;
-      for(let i=1; i<evts.length; i++){
-        if(evts[i].start >= gEnd + 2){ groups.push(cur); cur = []; gEnd = 0; }
-        cur.push(evts[i]);
-        gEnd = Math.max(gEnd, evts[i].end);
-      }
-      groups.push(cur);
-      groups.forEach(g => {
-        const cols = [];
-        g.forEach(e => {
-          let placed = false;
-          for(let i=0; i<cols.length; i++){
-            if(cols[i] <= e.start){ cols[i] = e.end; e.col = i; placed = true; break; }
-          }
-          if(!placed){ e.col = cols.length; cols.push(e.end); }
-        });
-        g.forEach(e => { e.cols = cols.length; });
-      });
-
-      const fullW = 720, gap = 8;
-      const taskBlocks = evts.map(({t, top, blockH, col, cols})=>{
+      const rows = evts.map(({t, sMin, eMin})=>{
         const start = new Date(t.startTime);
         const end = t.endTime ? new Date(t.endTime) : new Date();
-        const w = cols > 1 ? ((fullW - gap*(cols-1)) / cols) : (fullW - 16);
-        const l = 90 + col * (w + gap);
-        return `<div class="timeline-task" style="top:${top}px;height:${blockH}px;min-height:68px;left:${l}px;width:${w}px">
-          <div class="name">${escapeHtml(t.name)}</div>
-          <div class="tiny">${formatTime(start)} - ${t.endTime ? formatTime(end) : '进行中'} ｜ ${escapeHtml(t.category || '-') } ｜ ${formatDuration(getTaskDurationMs(t))}</div>
-        </div>`;
+        const dur = getTaskDurationMs(t);
+        const leftPct = ((sMin - startHour*60) / totalMin) * 100;
+        const wPct = Math.max(1.8, ((eMin - sMin) / totalMin) * 100);
+        const color = catColor(t.category);
+        return `<div class="ta-row"><div class="ta-bar" style="left:${leftPct}%;width:${wPct}%;background:${color}" title="${escapeHtml(t.name)}"><span class="ta-time">${formatTime(start)}-${t.endTime?formatTime(end):'now'}</span><span class="ta-name">${escapeHtml(t.name)}</span><span class="ta-dur">${formatDuration(dur)}</span></div></div>`;
       }).join('');
- 
-      document.getElementById('timelineWrap').innerHTML = `
-        <div class="timeline">
-          <div class="timeline-grid">
-            ${hourLabels.join('')}
-            ${taskBlocks}
-          </div>
-        </div>
-      `;
+
+      const labels = [];
+      for(let h=startHour; h<=endHour; h+=2){
+        labels.push(`<span>${pad(h%24)}:00</span>`);
+      }
+
+      document.getElementById('timelineWrap').innerHTML =
+        `<div class="time-axis"><div class="ta-header"><div class="ta-labels">${labels.join('')}</div></div><div class="ta-body">${rows}</div></div>`;
     }
- 
     function renderLeave(){
       document.getElementById('leaveCountPill').textContent = `${state.leaveRecords.length} 条`;
       document.getElementById('leaveTableWrap').innerHTML = state.leaveRecords.length ? `
