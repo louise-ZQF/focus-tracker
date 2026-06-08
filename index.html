@@ -1292,7 +1292,20 @@ td button {
         </div>
       </div>
     </div>
- 
+
+    <div class="card" style="margin-top:16px">
+      <div class="card-title">
+        <h3>🔥 专注热力图</h3>
+        <div class="button-row">
+          <button class="btn-primary hm-scope-btn" data-hm="year">年</button>
+          <button class="btn-soft hm-scope-btn" data-hm="month">月</button>
+          <button class="btn-soft hm-scope-btn" data-hm="week">周</button>
+        </div>
+      </div>
+      <div id="heatmapWrap" style="overflow-x:auto; padding-bottom:6px"></div>
+      <div id="heatmapDetail" class="tiny" style="margin-top:10px">点击某个小块查看当天学了什么。</div>
+    </div>
+
     <div class="tabs">
       <button class="tab active" data-tab="overview">今日学习</button>
       <button class="tab" data-tab="submission">模考成绩</button>
@@ -1397,18 +1410,6 @@ td button {
         <div id="taskTableWrap"></div>
       </div>
 
-      <div class="card" style="margin-top:16px">
-        <div class="card-title">
-          <h3>🔥 专注热力图</h3>
-          <div class="button-row">
-            <button class="btn-primary hm-scope-btn" data-hm="year">年</button>
-            <button class="btn-soft hm-scope-btn" data-hm="month">月</button>
-            <button class="btn-soft hm-scope-btn" data-hm="week">周</button>
-          </div>
-        </div>
-        <div id="heatmapWrap" style="overflow-x:auto; padding-bottom:6px"></div>
-        <div id="heatmapDetail" class="tiny" style="margin-top:10px">点击某个小块查看当天学了什么。</div>
-      </div>
     </section>
  
  
@@ -1472,8 +1473,10 @@ td button {
           <div class="card-title"><h2>🏃 添加锻炼</h2><span class="pill good">动起来</span></div>
           <div class="inline-form">
             <div><label>项目</label><select id="exTypeInput">
-              <option>跑步</option><option>健身</option><option>球类</option><option>骑行</option>
-              <option>游泳</option><option>瑜伽/拉伸</option><option>散步</option><option>其它</option>
+              <option>跑步</option><option>步行</option><option>骑行</option><option>游泳</option>
+              <option>瑜伽</option><option>力量训练</option><option>HIIT</option><option>普拉提</option>
+              <option>椭圆机</option><option>划船</option><option>徒步</option><option>舞蹈</option>
+              <option>核心训练</option><option>柔韧性</option><option>太极</option><option>其它</option>
             </select></div>
             <div><label>时长（分钟）</label><input id="exMinInput" type="number" placeholder="如 30" /></div>
             <div><label>日期</label><input id="exDateInput" type="date" /></div>
@@ -3228,7 +3231,7 @@ function importData(file){
       state.tasks.forEach(t=>{ if(!t.date) return; const ms=getTaskDurationMs(t); if(ms>0) m[t.date]=(m[t.date]||0)+ms/60000; });
       return m;
     }
-    function _hmLevel(min){ if(!min) return 0; if(min<60) return 1; if(min<180) return 2; if(min<360) return 3; return 4; }
+    function _hmLevel(min){ if(!min) return 0; if(min<120) return 1; if(min<240) return 2; if(min<480) return 3; return 4; }
     function renderHeatmap(){
       const host = document.getElementById('heatmapWrap');
       if(!host) return;
@@ -3613,6 +3616,7 @@ function renderAll(){
       renderGoalRing();
       renderExercise();
       renderTasks();
+      renderHeatmap();
       renderTodoCalendar();
       renderStats();
       renderReport();
