@@ -100,12 +100,7 @@
     }
     .hero-mini .label{font-size:13px;color:rgba(255,255,255,.7)}
     .hero-mini .value{margin-top:8px;font-size:22px;font-weight:700;letter-spacing:.3px}
-    .hero-right .hero-mini:nth-child(1){background:rgba(233,208,190,.18)}
-    .hero-right .hero-mini:nth-child(2){background:rgba(215,180,160,.18)}
-    .hero-right .hero-mini:nth-child(3){background:rgba(205,169,145,.17)}
-    .hero-right .hero-mini:nth-child(4){background:rgba(224,191,170,.16)}
-    .hero-right .hero-mini:nth-child(5){background:rgba(214,183,149,.16)}
-    .hero-right .hero-mini:nth-child(6){background:rgba(204,171,157,.16)}
+    .hero-right .hero-mini{background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.16)}
     .toolbar{
       margin-top:18px;
       display:flex;
@@ -152,16 +147,7 @@
       box-shadow: 0 8px 16px rgba(0,0,0,0.15);
     }
 
-    /* 9个按钮的专属颜色分配 */
-    .tabs .tab:nth-child(1).active{background:var(--m-teal)!important; border-color:var(--m-teal)!important}
-    .tabs .tab:nth-child(2).active{background:var(--m-lake)!important; border-color:var(--m-lake)!important}
-    .tabs .tab:nth-child(3).active{background:var(--m-sage)!important; border-color:var(--m-sage)!important}
-    .tabs .tab:nth-child(4).active{background:var(--m-purple)!important; border-color:var(--m-purple)!important}
-    .tabs .tab:nth-child(5).active{background:#b794f4!important; border-color:#b794f4!important} /* 投稿 */
-    .tabs .tab:nth-child(6).active{background:var(--m-lavender)!important; border-color:var(--m-lavender)!important}
-    .tabs .tab:nth-child(7).active{background:var(--m-peach)!important; border-color:var(--m-peach)!important}
-    .tabs .tab:nth-child(8).active{background:var(--m-rose)!important; border-color:var(--m-rose)!important}
-    .tabs .tab:nth-child(9).active{background:var(--m-olive)!important; border-color:var(--m-olive)!important}
+    .tab.active{background:var(--primary)!important; border-color:var(--primary)!important}
     .tab:hover{transform:translateY(-1px)}
     .section{display:none;margin-top:18px}
     .section.active{display:block}
@@ -368,18 +354,11 @@
     }
     .inline-form button, .focus-form button {
       flex: 0 0 auto;
-      height: 42px; /* 按钮高度对齐 */
+      height: 42px;
       padding: 0 20px;
     }
     .spacer{height:4px}
- 
-    .hero{
-      background:
-        radial-gradient(circle at top right, rgba(255,255,255,.20), transparent 34%),
-        linear-gradient(135deg,#d9b69f 0%, #c89e84 52%, #b98f78 100%);
-      overflow:hidden;
-      position:relative;
-    }
+
     .hero::after{
       content:'';
       position:absolute; inset:auto -60px -60px auto;
@@ -645,45 +624,24 @@
  
  
     
-    /* 今日状态页改为偏暖色系，和首页淡橙主视觉更统一 */
-    #section-overview .grid.cols-4 .card:nth-child(1){
-      background:linear-gradient(180deg,#fffaf6 0%, #f7efe8 100%);
-      border-color:#ead9cb;
+    /* 今日状态页统一配色 */
+    #section-overview .grid.cols-4 .card,
+    #section-overview .grid.cols-2 .card{
+      background:linear-gradient(180deg,#fcfefd 0%,#f2f7f6 100%);
+      border-color:#d8e6e3;
     }
-    #section-overview .grid.cols-4 .card:nth-child(2){
-      background:linear-gradient(180deg,#fffaf7 0%, #f4ece6 100%);
-      border-color:#e7d7cb;
-    }
-    #section-overview .grid.cols-4 .card:nth-child(3){
-      background:linear-gradient(180deg,#fff9f5 0%, #f6eee8 100%);
-      border-color:#ead9cf;
-    }
-    #section-overview .grid.cols-4 .card:nth-child(4){
-      background:linear-gradient(180deg,#fff8f4 0%, #f3ebe5 100%);
-      border-color:#e5d6cb;
-    }
- 
-    #section-overview .grid.cols-2 .card:nth-child(1){
-      background:linear-gradient(180deg,#fffaf7 0%, #f7efe9 100%);
-      border-color:#ead9ce;
-    }
-    #section-overview .grid.cols-2 .card:nth-child(2){
-      background:linear-gradient(180deg,#fffaf6 0%, #f6eee7 100%);
-      border-color:#e8d9cd;
-    }
- 
     #section-overview .pill{
-      background:#f7eee7;
-      border-color:#e8d7cb;
-      color:#846b5f;
+      background:#eef4f2;
+      border-color:#d5e3df;
+      color:#56706c;
     }
     #section-overview .pill.good{
-      background:#efe8dd;
-      border-color:#dfcfbf;
-      color:#7b6758;
+      background:#edf5f1;
+      border-color:#cfe0d8;
+      color:#557a69;
     }
     #section-overview .tiny{
-      color:#8b786d;
+      color:var(--muted);
     }
  
 @media (max-width:1100px){
