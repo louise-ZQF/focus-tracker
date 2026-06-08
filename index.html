@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>曾庆锋の考研工作系统 · 11408</title>
+  <title>曾庆锋の学习系统 · 11408</title>
   <style>
     :root {
     --bg:#edf3f2;
@@ -1232,6 +1232,16 @@ td button {
     body.dark th,body.dark td{ border-color:#2a2a2c !important; }
     body.dark .empty{ background:#161617; border-color:#2a2a2c; color:#a1a1a6; }
     body.dark .footer-note,body.dark .muyu-label{ color:#a1a1a6; }
+    .hm-col{ display:grid; grid-template-rows:repeat(7, 13px); gap:3px; }
+    .hm-cell{ width:13px; height:13px; border-radius:3px; display:inline-block; background:#ebedf0; cursor:pointer; }
+    .hm-cell:hover{ outline:1px solid #0071e3; }
+    .refl-chip{ display:inline-block; margin:4px 6px 0 0; padding:6px 12px; border-radius:980px; background:#f0f4ff; color:#0071e3; border:1px solid #cfe0ff; cursor:pointer; font-size:12px; font-weight:600; }
+    .refl-chip:hover{ background:#0071e3; color:#fff; }
+    .refl-date{ font-weight:800; margin:18px 0 10px; color:var(--text); }
+    .refl-item{ margin-bottom:14px; border-left:2px solid #d2d2d7; padding-bottom:6px; }
+    .refl-item::before{ background:#0071e3 !important; }
+    body.dark .refl-chip{ background:#1c2533; color:#4aa3ff; border-color:#2a3a4d; }
+    body.dark .refl-item{ border-left-color:#3a3a3c; }
 </style>
 </head>
 <body>
@@ -1254,9 +1264,9 @@ td button {
     <section class="hero">
       <div class="hero-main">
         <div class="quote-kicker">Daily Inspiration / 每日好运签</div>
-        <h1>曾庆锋の考研工作系统</h1>
+        <h1>曾庆锋の学习系统</h1>
         <p id="nowText">正在读取当前时间...</p>
-        <p class="hero-caption">您已成功登录考研上岸中心 · 11408（政治·英语一·数学一·408）！</p>
+        <p class="hero-caption">您已成功登录学习中心 · 11408（政治·英语·数学·408）！</p>
         <p id="quoteText" class="hero-quote">“ 今日自律沉淀，明日自有收获。 ”</p>
         <div class="toolbar">
           <div class="toolbar-left">
@@ -1296,7 +1306,7 @@ td button {
  
     <div class="card" style="margin-top:16px; display:flex; align-items:center; justify-content:space-between; gap:20px; flex-wrap:wrap">
       <div>
-        <div class="tiny">距 2027 考研初试还有</div>
+        <div class="tiny">距 2027 初试还有</div>
         <div style="font-weight:900; color:var(--primary-strong); line-height:1.05; margin:4px 0">
           <span id="countdownDays" style="font-size:46px">--</span>
           <span style="font-size:18px"> 天</span>
@@ -1318,6 +1328,7 @@ td button {
       <button class="tab" data-tab="submission">模考成绩</button>
       <button class="tab" data-tab="calendar">日程日历</button>
       <button class="tab" data-tab="exercise">锻炼管理</button>
+      <button class="tab" data-tab="reflection">反思</button>
       <button class="tab" data-tab="stats">统计分析</button>
     </div>
  
@@ -1347,66 +1358,52 @@ td button {
 
       <div class="card focus-card" style="margin-top:16px">
         <div class="card-title">
-          <h2>专注任务中心</h2>
+          <h2>专注计时</h2>
           <span class="pill" id="focusModeBadge">正计时</span>
         </div>
-        <div class="mode-switch">
-          <button class="mode-btn active" id="focusModeUpBtn">正计时（学习模式）</button>
-          <button class="mode-btn" id="focusModeDownBtn">25 分钟番茄钟</button>
-        </div>
         <div id="focusDisplay" class="focus-display">00:00:00</div>
-        <div id="focusHint" class="focus-hint">点「开始专注」的真实时间会作为你今天的「开始学习时间」。</div>
+        <div id="focusHint" class="focus-hint">选好科目点「开始专注」即可计时；结束时可手动修正这次的专注时长。</div>
         <div class="focus-form">
           <div>
-            <label for="taskNameInput">任务名称</label>
-            <input id="taskNameInput" type="text" placeholder="例如：背政治大题 / 刷数学真题 / 408错题复盘" />
-          </div>
-          <div>
-            <label for="taskCategoryInput">任务分类</label>
+            <label for="taskCategoryInput">科目</label>
             <select id="taskCategoryInput">
               <option value="📕 政治">📕 政治</option>
-              <option value="📗 英语一">📗 英语一</option>
-              <option value="📘 数学一">📘 数学一</option>
-              <option value="📙 408专业课">📙 408专业课</option>
-              <option value="📚 真题/模考">📚 真题/模考</option>
+              <option value="📗 英语">📗 英语</option>
+              <option value="📘 数学">📘 数学</option>
+              <option value="📙 408">📙 408</option>
             </select>
           </div>
           <div>
-            <label for="taskDateInput">任务日期</label>
+            <label for="taskDateInput">日期</label>
             <input id="taskDateInput" type="date" />
           </div>
           <button class="btn-primary" id="startFocusTaskBtn">开始专注</button>
-          <button class="btn-warning" id="addBackfillTaskBtn">补录已完成任务</button>
+          <button class="btn-warning" id="addBackfillTaskBtn">补录专注</button>
           <button class="btn-secondary" id="quickAddTaskBtn">添加待办</button>
         </div>
         <div class="tiny" style="margin-top:10px">
-          选择「任务日期」后点「添加待办」可把任务存到未来某天；到当天再点「开始专注」即可。
+          忘记计时？点「补录专注」选好科目和日期，填入分钟数即可补登。
         </div>
-        <div class="focus-meta">
+        <div class="focus-meta" style="grid-template-columns:repeat(2,minmax(0,1fr))">
           <div class="mini-stat">
             <div class="tiny">当前状态</div>
             <div style="margin-top:8px" id="activeTaskStatusWrap"><span class="pill">空闲</span></div>
           </div>
           <div class="mini-stat">
-            <div class="tiny">当前任务</div>
-            <div style="font-size:20px;font-weight:800;margin-top:8px" id="activeTaskName">-</div>
-          </div>
-          <div class="mini-stat">
-            <div class="tiny">任务分类 / 计时模式</div>
+            <div class="tiny">当前科目</div>
             <div style="margin-top:8px; display:flex; gap:6px; flex-wrap:wrap">
               <span class="soft-tag" id="activeTaskCategory">-</span>
-              <span class="soft-tag" id="activeTaskMode">-</span>
             </div>
           </div>
         </div>
         <div class="mini-stat" style="margin-top:14px">
-          <div class="tiny">已进行 / 剩余时间</div>
+          <div class="tiny">已专注</div>
           <div style="font-size:20px;font-weight:800;margin-top:8px" id="activeTaskElapsed">00:00:00</div>
           <div class="tiny" style="margin-top:6px" id="activeTaskNote">当前暂无进行中的任务。</div>
         </div>
         <div class="spacer"></div>
         <div class="button-row">
-          <button class="btn-success" id="finishTaskBtn">结束任务</button>
+          <button class="btn-success" id="finishTaskBtn">结束并记录</button>
           <button class="btn-danger" id="cancelTaskBtn">中断任务</button>
         </div>
       </div>
@@ -1426,6 +1423,19 @@ td button {
           </div>
           <div id="timelineWrap"></div>
         </div>
+      </div>
+
+      <div class="card" style="margin-top:16px">
+        <div class="card-title">
+          <h3>🔥 专注热力图</h3>
+          <div class="button-row">
+            <button class="btn-primary hm-scope-btn" data-hm="year">年</button>
+            <button class="btn-soft hm-scope-btn" data-hm="month">月</button>
+            <button class="btn-soft hm-scope-btn" data-hm="week">周</button>
+          </div>
+        </div>
+        <div id="heatmapWrap" style="overflow-x:auto; padding-bottom:6px"></div>
+        <div id="heatmapDetail" class="tiny" style="margin-top:10px">点击某个小块查看当天学了什么。</div>
       </div>
     </section>
  
@@ -1620,6 +1630,26 @@ td button {
       </div>
     </section>
  
+    <section class="section" id="section-reflection">
+      <div class="grid cols-2">
+        <div class="card">
+          <div class="card-title"><h2>✍️ 写下此刻的思考</h2><span class="pill good">每日反思</span></div>
+          <textarea id="reflectInput" rows="4" placeholder="今天的复盘、灵感、情绪、计划……想到什么写什么，一天可以写多条。" style="width:100%;resize:vertical"></textarea>
+          <div class="spacer"></div>
+          <button class="btn-primary btn-block" id="addReflectBtn">记录这条思考</button>
+        </div>
+        <div class="card">
+          <div class="card-title"><h3>时间导航</h3><span class="pill" id="reflectCountPill">0 条</span></div>
+          <div class="tiny" style="margin-bottom:8px">点月份，跳到那段时间的思考。</div>
+          <div id="reflectNavWrap"></div>
+        </div>
+      </div>
+      <div class="card" style="margin-top:16px">
+        <div class="card-title"><h2>🕰️ 思考时间轴</h2><span class="pill">最新在上</span></div>
+        <div id="reflectTimelineWrap"></div>
+      </div>
+    </section>
+
     <div class="footer-note">
       单文件本地版。数据保存在当前浏览器的本地存储中；换浏览器或清理浏览器缓存后，数据不会自动同步。
     </div>
@@ -1671,7 +1701,7 @@ td button {
       "现在多流的汗，是录取通知书上的光。",
       "熬过最难的日子，剩下的就是好运。",
       "把焦虑用来刷题，把迷茫用来背书。",
-      "考研不是天才的游戏，是普通人的坚持。",
+      "上岸不是天才的游戏，是普通人的坚持。",
       "你不是在硬撑，你是在变强。",
       "每一个早起的清晨，都在悄悄拉开差距。",
       "答案会迟到，但努力从不缺席。",
@@ -1703,7 +1733,8 @@ function defaultState(){
     examDate: '2026-12-19',
     dailyGoalHours: 8,
     darkMode: false,
-    exercises: []
+    exercises: [],
+    reflections: []
   };
 }
  
@@ -1724,7 +1755,8 @@ function loadState(){
           examDate: parsed.examDate || '2026-12-19',
           dailyGoalHours: (parsed.dailyGoalHours != null ? parsed.dailyGoalHours : 8),
           darkMode: parsed.darkMode || false,
-          exercises: parsed.exercises || []
+          exercises: parsed.exercises || [],
+          reflections: parsed.reflections || []
         };
       }catch(e){
         return defaultState();
@@ -1872,11 +1904,7 @@ function syncTaskDateInput(dateStr){
 }
  
 function startTask(name, onlyTodo = false, category = '📕 政治', mode = 'up', plannedDate = null){
-  name = (name || '').trim();
-  if(!name){
-    showToast('请输入任务名称。');
-    return;
-  }
+  name = (name || '').trim() || category;
   const active = getActiveTask();
   if(active && !onlyTodo){
     showToast(`已有进行中任务：${active.name}
@@ -1908,7 +1936,6 @@ function startTask(name, onlyTodo = false, category = '📕 政治', mode = 'up'
  
   state.tasks.unshift(task);
   saveState();
-  document.getElementById('taskNameInput').value = '';
   showToast(onlyTodo ? `已添加待办：${name}（${taskDate}）` : `任务已开始：${name}`);
   renderAll();
 }
@@ -1924,9 +1951,8 @@ function switchFocusMode(mode){
 }
  
 function startFocusTask(){
-  const name = document.getElementById('taskNameInput').value;
   const category = document.getElementById('taskCategoryInput').value || '📕 政治';
-  startTask(name, false, category, focusMode);
+  startTask(category, false, category, 'up');
 }
 
 // 1. 这是倒计时自动结束的函数
@@ -1983,10 +2009,18 @@ function finishTask(mode = '完成'){
   }
   const now = new Date();
   active.endTime = now.toISOString();
-  active.durationMs += new Date(active.endTime).getTime() - new Date(active.startTime).getTime();
+  let ms = (active.durationMs || 0) + (new Date(active.endTime).getTime() - new Date(active.startTime).getTime());
+  if(mode !== '中断'){
+    const input = prompt('本次专注分钟数（忘记/有误可直接修改后回车）：', Math.round(ms/60000));
+    if(input !== null){
+      const v = parseInt(input);
+      if(!isNaN(v) && v >= 0){ ms = v*60000; active.endTime = new Date(new Date(active.startTime).getTime()+ms).toISOString(); }
+    }
+  }
+  active.durationMs = ms;
   active.status = mode === '中断' ? '中断' : '已完成';
   saveState();
-  showToast(mode === '中断' ? `任务已中断：${active.name}` : `任务已结束：${active.name}`);
+  showToast(mode === '中断' ? '任务已中断' : `已记录 ${active.category||''} ${Math.round(ms/60000)} 分钟`);
   renderAll();
 }
  
@@ -2269,84 +2303,45 @@ function renderOverview(){
  
 function renderTasks(){
   const active = getActiveTask();
-  const focusModeBadge = document.getElementById('focusModeBadge');
-  const upBtn = document.getElementById('focusModeUpBtn');
-  const downBtn = document.getElementById('focusModeDownBtn');
-  const activeMode = active ? (active.focusMode || 'up') : focusMode;
- 
-  if(upBtn && downBtn){
-    upBtn.className = activeMode === 'up' ? 'mode-btn active' : 'mode-btn';
-    downBtn.className = activeMode === 'down' ? 'mode-btn active' : 'mode-btn';
-  }
-  if(focusModeBadge) focusModeBadge.textContent = activeMode === 'down' ? '25 分钟番茄钟' : '正计时';
-  document.getElementById('focusHint').textContent = activeMode === 'down'
-    ? '番茄钟会在 25 分钟后自动结束当前专注任务，并把这次专注记入今日任务。'
-    : '正计时会从 00:00:00 开始累计，适合长时间刷题、背书和真题演练。';
- 
-  let focusDisplay = activeMode === 'down' ? formatDuration(25 * 60 * 1000) : '00:00:00';
-  if(active){
-    if(active.focusMode === 'down' && active.targetMinutes){
-      focusDisplay = formatDuration(Math.max(0, active.targetMinutes * 60000 - getTaskDurationMs(active)));
-    }else{
-      focusDisplay = formatDuration(getTaskDurationMs(active));
-    }
-  }
-  document.getElementById('focusDisplay').textContent = focusDisplay;
- 
-  document.getElementById('activeTaskStatusWrap').innerHTML = active ? '<span class="pill warn">进行中</span>' : '<span class="pill">空闲</span>';
-  document.getElementById('activeTaskName').textContent = active ? active.name : '-';
-  document.getElementById('activeTaskCategory').className = `soft-tag ${active ? getCategoryClass(active.category || '') : ''}`;
-  document.getElementById('activeTaskCategory').textContent = active ? (active.category || '未分类') : '-';
-  document.getElementById('activeTaskMode').textContent = active ? (active.focusMode === 'down' ? '番茄钟' : '正计时') : '-';
-  document.getElementById('activeTaskElapsed').textContent = active
-    ? (active.focusMode === 'down' && active.targetMinutes
-        ? `剩余 ${formatDuration(Math.max(0, active.targetMinutes * 60000 - getTaskDurationMs(active)))}`
-        : `已进行 ${formatDuration(getTaskDurationMs(active))}`)
-    : '00:00:00';
-  document.getElementById('activeTaskNote').textContent = active
-    ? `${active.startTime ? formatDateTime(new Date(active.startTime)) : '-'} 开始`
-    : '当前暂无进行中的任务。';
- 
+  const badge = document.getElementById('focusModeBadge');
+  if(badge) badge.textContent = '正计时';
+  const disp = document.getElementById('focusDisplay');
+  if(disp) disp.textContent = active ? formatDuration(getTaskDurationMs(active)) : '00:00:00';
+  const stWrap = document.getElementById('activeTaskStatusWrap');
+  if(stWrap) stWrap.innerHTML = active ? '<span class="pill warn">进行中</span>' : '<span class="pill">空闲</span>';
+  const catEl = document.getElementById('activeTaskCategory');
+  if(catEl){ catEl.className = `soft-tag ${active ? getCategoryClass(active.category||'') : ''}`; catEl.textContent = active ? (active.category||'未分类') : '-'; }
+  const elap = document.getElementById('activeTaskElapsed');
+  if(elap) elap.textContent = active ? `已专注 ${formatDuration(getTaskDurationMs(active))}` : '00:00:00';
+  const note = document.getElementById('activeTaskNote');
+  if(note) note.textContent = active ? `${active.startTime ? formatDateTime(new Date(active.startTime)) : '-'} 开始` : '当前暂无进行中的任务。';
+
   const tasks = getTasksByDate(selectedDate);
-  document.getElementById('taskDayCount').textContent = `${selectedDate} · ${tasks.length} 项`;
-  document.getElementById('taskTableWrap').innerHTML = tasks.length ? `
+  const cnt = document.getElementById('taskDayCount');
+  if(cnt) cnt.textContent = `${selectedDate} · ${tasks.length} 项`;
+  const wrap = document.getElementById('taskTableWrap');
+  if(!wrap) return;
+  wrap.innerHTML = tasks.length ? `
     <table>
-      <thead>
-        <tr>
-          <th>任务名称</th>
-          <th>分类</th>
-          <th>计划日期</th>
-          <th>模式</th>
-          <th>开始时间</th>
-          <th>结束时间</th>
-          <th>持续时间</th>
-          <th>状态</th>
-          <th>操作</th>
-        </tr>
-      </thead>
+      <thead><tr><th>科目</th><th>日期</th><th>开始</th><th>结束</th><th>时长</th><th>状态</th><th>操作</th></tr></thead>
       <tbody>
         ${tasks.map(t=>`
           <tr>
-            <td>${escapeHtml(t.name)}</td>
-            <td>${categoryBadge(t.category || '-')}</td>
+            <td>${categoryBadge(t.category || t.name || '-')}</td>
             <td>${t.date || '-'}</td>
-            <td>${t.focusMode === 'down' ? '番茄钟' : '正计时'}</td>
-            <td>${t.startTime ? formatDateTime(new Date(t.startTime)) : '-'}</td>
-            <td>${t.endTime ? formatDateTime(new Date(t.endTime)) : '-'}</td>
+            <td>${t.startTime ? formatTime(new Date(t.startTime)) : '-'}</td>
+            <td>${t.endTime ? formatTime(new Date(t.endTime)) : '-'}</td>
             <td>${formatDuration(getTaskDurationMs(t))}</td>
             <td>${statusPill(t.status)}</td>
             <td>
-              ${(t.status === '待开始' || t.status === '中断')
-  ? `<button class="btn-success" onclick="startTodoTask('${t.id}')">${t.status === '中断' ? '继续' : '开始'}</button> `
-  : ''}
+              ${(t.status === '待开始' || t.status === '中断') ? `<button class="btn-success" onclick="startTodoTask('${t.id}')">${t.status === '中断' ? '继续' : '开始'}</button> ` : ''}
               <button class="btn-danger" onclick="deleteTask('${t.id}')">删除</button>
             </td>
           </tr>
         `).join('')}
       </tbody>
     </table>
-  ` : `<div class="empty">当前日期暂无任务记录。你可以先切换“任务日期”后添加未来待办。</div>`;
- 
+  ` : `<div class="empty">当前日期暂无专注记录。</div>`;
 }
  
  
@@ -2739,7 +2734,7 @@ window.setCalendarFilter = function(mode) {
       const a = document.createElement('a');
       const dateLabel = selectedDate || todayStr();
       a.href = URL.createObjectURL(blob);
-      a.download = `曾庆锋の考研工作系统数据备份_${dateLabel}.json`;
+      a.download = `曾庆锋の学习系统数据备份_${dateLabel}.json`;
       a.click();
       URL.revokeObjectURL(a.href);
     }
@@ -2761,7 +2756,8 @@ function importData(file){
             examDate: parsed.examDate || '2026-12-19',
             dailyGoalHours: (parsed.dailyGoalHours != null ? parsed.dailyGoalHours : 8),
             darkMode: parsed.darkMode || false,
-            exercises: parsed.exercises || []
+            exercises: parsed.exercises || [],
+            reflections: parsed.reflections || []
           };
           localStorage.setItem(STORAGE_KEY, JSON.stringify(merged));
           location.reload();
@@ -2780,23 +2776,24 @@ function importData(file){
  // === 复习进度模块逻辑 ===
 // 补录已完成任务的函数 (任务管理模块用)
     function addBackfillTask() {
-      const name = (document.getElementById('taskNameInput').value || '').trim();
       const category = document.getElementById('taskCategoryInput').value || '📕 政治';
       const date = getTaskFormDate();
-      if (!name) { showToast('请输入任务名称。'); return; }
+      const input = prompt('补录这次专注的分钟数：', '60');
+      if(input === null) return;
+      const mins = parseInt(input) || 0;
+      if(mins <= 0){ showToast('请输入有效的分钟数。'); return; }
       const now = new Date();
-      const task = {
+      const startMs = new Date(date + 'T09:00:00').getTime();
+      state.tasks.unshift({
         id: `${Date.now()}_${Math.random().toString(36).slice(2,8)}`,
-        name, category, focusMode: 'up',
-        startTime: new Date(date + 'T09:00:00').toISOString(),
-        endTime: new Date(date + 'T11:00:00').toISOString(),
-        durationMs: 7200000, status: '已完成',
+        name: category, category, focusMode: 'up',
+        startTime: new Date(startMs).toISOString(),
+        endTime: new Date(startMs + mins*60000).toISOString(),
+        durationMs: mins*60000, status: '已完成',
         date: date, createdAt: now.toISOString()
-      };
-      state.tasks.unshift(task);
+      });
       saveState();
-      document.getElementById('taskNameInput').value = '';
-      showToast(`已补录任务：${name}`);
+      showToast(`已补录 ${category} ${mins} 分钟`);
       renderAll();
     }
     // 保存/更新论文信息
@@ -3236,6 +3233,8 @@ function importData(file){
       document.getElementById('exNoteInput').value='';
       showToast(`已记录锻炼：${type} ${minutes} 分钟`);
       renderExercise();
+      renderHeatmap();
+      renderReflections();
     }
     function deleteExercise(id){
       state.exercises=(state.exercises||[]).filter(e=>e.id!==id);
@@ -3269,6 +3268,115 @@ function importData(file){
         </tr>`).join('')}</tbody></table>` : `<div class="empty">还没有锻炼记录，动起来吧！</div>`;
     }
 
+    // ===== 专注热力图（GitHub 风）=====
+    let heatmapScope = 'year';
+    function _dailyFocusMin(){
+      const m={};
+      state.tasks.forEach(t=>{ if(!t.date) return; const ms=getTaskDurationMs(t); if(ms>0) m[t.date]=(m[t.date]||0)+ms/60000; });
+      return m;
+    }
+    function _hmLevel(min){ if(!min) return 0; if(min<30) return 1; if(min<60) return 2; if(min<120) return 3; return 4; }
+    function renderHeatmap(){
+      const host=document.getElementById('heatmapWrap');
+      if(!host) return;
+      const mins=_dailyFocusMin();
+      const colors=['#ebedf0','#9be9a8','#40c463','#30a14e','#216e39'];
+      const today=new Date(todayStr()+'T12:00:00');
+      let start, end=new Date(today);
+      if(heatmapScope==='week'){
+        const wd=today.getDay()||7; start=new Date(today); start.setDate(today.getDate()-wd+1);
+      }else if(heatmapScope==='month'){
+        start=new Date(today.getFullYear(), today.getMonth(), 1);
+        end=new Date(today.getFullYear(), today.getMonth()+1, 0);
+        const wd=start.getDay()||7; start=new Date(start); start.setDate(start.getDate()-wd+1);
+      }else{
+        start=new Date(today); start.setDate(today.getDate()-363);
+        const wd=start.getDay()||7; start.setDate(start.getDate()-wd+1);
+      }
+      const days=[];
+      for(let d=new Date(start); d<=end; d.setDate(d.getDate()+1)) days.push(new Date(d));
+      const weeks=[];
+      for(let i=0;i<days.length;i+=7) weeks.push(days.slice(i,i+7));
+      const tds=todayStr();
+      const grid=weeks.map(w=>`<div class="hm-col">${
+        w.map(d=>{
+          const ds=toDateStr(d);
+          const outside = heatmapScope==='month' && d.getMonth()!==today.getMonth();
+          const min=mins[ds]||0;
+          const bg = outside ? 'transparent' : colors[_hmLevel(min)];
+          const click = outside ? '' : `onclick="showHeatmapDay('${ds}')"`;
+          const ttl = outside ? '' : `${ds}：${Math.round(min)} 分钟`;
+          const ring = ds===tds ? 'box-shadow:0 0 0 1.5px #0071e3;' : '';
+          const vis = outside ? 'visibility:hidden;' : '';
+          return `<span class="hm-cell" ${click} title="${ttl}" style="background:${bg};${ring}${vis}"></span>`;
+        }).join('')
+      }</div>`).join('');
+      const legend=`<div style="display:flex;align-items:center;gap:4px;margin-top:10px;font-size:11px;color:var(--muted)">少 ${colors.map(c=>`<span class="hm-cell" style="background:${c};cursor:default"></span>`).join('')} 多</div>`;
+      host.innerHTML=`<div style="display:flex; gap:3px; align-items:flex-start; min-width:max-content">${grid}</div>${legend}`;
+    }
+    function showHeatmapDay(ds){
+      const detail=document.getElementById('heatmapDetail');
+      if(!detail) return;
+      const tasks=state.tasks.filter(t=>t.date===ds && getTaskDurationMs(t)>0);
+      if(!tasks.length){ detail.innerHTML=`<strong>${ds}</strong>：当天没有专注记录。`; return; }
+      const total=tasks.reduce((a,t)=>a+getTaskDurationMs(t),0)/60000;
+      detail.innerHTML=`<strong>${ds}</strong>　共 ${Math.round(total)} 分钟：　`+tasks.map(t=>`${escapeHtml(t.category||t.name||'-')} ${formatDuration(getTaskDurationMs(t))}`).join('　·　');
+    }
+
+    // ===== 每日反思 =====
+    function weekdayCn(ds){ const w=['周日','周一','周二','周三','周四','周五','周六']; const dt=new Date(ds+'T12:00:00'); return isNaN(dt.getTime())?'':w[dt.getDay()]; }
+    function addReflection(){
+      const el=document.getElementById('reflectInput');
+      const text=(el.value||'').trim();
+      if(!text){ showToast('写点什么再记录吧。'); return; }
+      const now=new Date();
+      if(!state.reflections) state.reflections=[];
+      state.reflections.unshift({ id:`${Date.now()}_${Math.random().toString(36).slice(2,8)}`, text, ts:now.toISOString(), date:todayStr() });
+      saveState();
+      el.value='';
+      showToast('已记录这条思考 ✍️');
+      renderReflections();
+    }
+    function deleteReflection(id){
+      if(!confirm('确定删除这条思考吗？')) return;
+      state.reflections=(state.reflections||[]).filter(r=>r.id!==id);
+      saveState();
+      renderReflections();
+    }
+    function renderReflections(){
+      const list=(state.reflections||[]).slice().sort((a,b)=>(b.ts||'').localeCompare(a.ts||''));
+      const pill=document.getElementById('reflectCountPill'); if(pill) pill.textContent=`${list.length} 条`;
+      const months={};
+      list.forEach(r=>{ const m=(r.date||r.ts||'').slice(0,7); months[m]=(months[m]||0)+1; });
+      const nav=document.getElementById('reflectNavWrap');
+      if(nav){
+        const keys=Object.keys(months).sort().reverse();
+        nav.innerHTML = keys.length ? keys.map(m=>`<span class="refl-chip" onclick="document.getElementById('refl-m-${m}')&&document.getElementById('refl-m-${m}').scrollIntoView({behavior:'smooth',block:'start'})">${m}　${months[m]} 条</span>`).join('') : '<div class="tiny">还没有反思。</div>';
+      }
+      const wrap=document.getElementById('reflectTimelineWrap');
+      if(!wrap) return;
+      if(!list.length){ wrap.innerHTML='<div class="empty">还没有思考记录。写下第一条吧 ✍️</div>'; return; }
+      let html='', lastDate=null, lastMonth=null;
+      list.forEach(r=>{
+        const d=(r.date||r.ts||'').slice(0,10);
+        const m=d.slice(0,7);
+        if(d!==lastDate){
+          const anchor = m!==lastMonth ? ` id="refl-m-${m}"` : '';
+          html+=`<div class="refl-date"${anchor}>${d}　<span class="tiny">${weekdayCn(d)}</span></div>`;
+          lastDate=d; lastMonth=m;
+        }
+        const t=r.ts? formatTime(new Date(r.ts)) : '';
+        html+=`<div class="timeline-item refl-item">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
+            <strong style="color:var(--primary-strong);font-size:13px">${t}</strong>
+            <button class="btn-danger" style="padding:2px 10px;height:26px" onclick="deleteReflection('${r.id}')">删</button>
+          </div>
+          <div style="margin-top:4px;white-space:pre-wrap;line-height:1.7">${escapeHtml(r.text)}</div>
+        </div>`;
+      });
+      wrap.innerHTML=html;
+    }
+
     function bindEvents(){
 
       document.getElementById('selectedDate').value = selectedDate;
@@ -3290,16 +3398,11 @@ function importData(file){
  
       document.getElementById('startFocusTaskBtn').addEventListener('click', startFocusTask);
       document.getElementById('addBackfillTaskBtn').addEventListener('click', addBackfillTask);
-      document.getElementById('focusModeUpBtn').addEventListener('click', ()=>switchFocusMode('up'));
-      document.getElementById('focusModeDownBtn').addEventListener('click', ()=>switchFocusMode('down'));
       document.getElementById('addSubmissionBtn').addEventListener('click', saveSubmission);
-      document.getElementById('quickAddTaskBtn').addEventListener('click', ()=>startTask(
-        document.getElementById('taskNameInput').value,
-        true,
-        document.getElementById('taskCategoryInput').value || '📕 政治',
-        focusMode,
-        getTaskFormDate()
-      ));
+      document.getElementById('quickAddTaskBtn').addEventListener('click', ()=>{
+        const _cat=document.getElementById('taskCategoryInput').value || '📕 政治';
+        startTask(_cat, true, _cat, 'up', getTaskFormDate());
+      });
       document.getElementById('finishTaskBtn').addEventListener('click', ()=>finishTask('完成'));
       document.getElementById('cancelTaskBtn').addEventListener('click', ()=>finishTask('中断'));
       document.querySelectorAll('.stat-scope-btn').forEach(btn=>{
@@ -3350,6 +3453,15 @@ function importData(file){
       if(_exDate && !_exDate.value) _exDate.value=todayStr();
       const _exBtn=document.getElementById('addExerciseBtn');
       if(_exBtn) _exBtn.addEventListener('click', addExercise);
+      const _rfBtn=document.getElementById('addReflectBtn');
+      if(_rfBtn) _rfBtn.addEventListener('click', addReflection);
+      document.querySelectorAll('.hm-scope-btn').forEach(btn=>{
+        btn.addEventListener('click', ()=>{
+          heatmapScope=btn.dataset.hm;
+          document.querySelectorAll('.hm-scope-btn').forEach(b=>{ b.className = b.dataset.hm===heatmapScope ? 'btn-primary hm-scope-btn' : 'btn-soft hm-scope-btn'; });
+          renderHeatmap();
+        });
+      });
       const muyuBtn = document.getElementById('muyuBtn');
       if (muyuBtn) {
           muyuBtn.addEventListener('click', function() {
@@ -3405,6 +3517,8 @@ function renderAll(){
     window.addCalendarPlan = addCalendarPlan;
     window.addCalendarPlanFromInput = addCalendarPlanFromInput;
     window.deleteExercise = deleteExercise;
+    window.showHeatmapDay = showHeatmapDay;
+    window.deleteReflection = deleteReflection;
 
 // 页面加载后执行一次
     bindEvents();
