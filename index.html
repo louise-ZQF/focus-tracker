@@ -1432,6 +1432,16 @@ td button {
             <h3>今日任务列表</h3>
             <span class="pill" id="taskDayCount">0 项</span>
           </div>
+          <div class="inline-form" style="margin-bottom:12px" id="taskAddFormWrap">
+            <select id="todayAddCat" style="max-width:160px;height:38px;cursor:pointer">
+              <option value="📕 政治">📕 政治</option>
+              <option value="📗 英语">📗 英语</option>
+              <option value="📘 数学">📘 数学</option>
+              <option value="📙 408">📙 408</option>
+            </select>
+            <input id="todayAddInput" type="text" placeholder="添加任务（可留空只记科目）" onkeydown="if(event.key==='Enter'){addTodayTaskFromInput();}" />
+            <button class="btn-primary" onclick="addTodayTaskFromInput()">添加</button>
+          </div>
           <div id="taskTableWrap"></div>
         </div>
         <div class="card">
@@ -2327,17 +2337,8 @@ function renderTasks(){
   if(cnt) cnt.textContent = `${selectedDate} · ${tasks.length} 项`;
   const wrap = document.getElementById('taskTableWrap');
   if(!wrap) return;
-  const addForm = `<div class="inline-form" style="margin-bottom:12px">
-      <select id="todayAddCat" style="max-width:140px">
-        <option value="📌 计划">📌 计划</option>
-        <option value="📕 政治">📕 政治</option>
-        <option value="📗 英语">📗 英语</option>
-        <option value="📘 数学">📘 数学</option>
-        <option value="📙 408">📙 408</option>
-      </select>
-      <input id="todayAddInput" type="text" placeholder="在 ${selectedDate} 添加任务（可留空只记科目）" onkeydown="if(event.key==='Enter'){addTodayTaskFromInput();}" />
-      <button class="btn-primary" onclick="addTodayTaskFromInput()">添加</button>
-    </div>`;
+  const addInput = document.getElementById('todayAddInput');
+  if(addInput) addInput.placeholder = `在 ${selectedDate} 添加任务（可留空只记科目）`;
   const FIXED_CATS = ['📕 政治','📗 英语','📘 数学','📙 408'];
   const byCat = {};
   tasks.forEach(t=>{ const c=t.category||'其它'; (byCat[c]=byCat[c]||[]).push(t); });
@@ -2379,7 +2380,7 @@ function renderTasks(){
       </div>
     </div>`;
   }).join('');
-  wrap.innerHTML = addForm + groupsHtml;
+  wrap.innerHTML = groupsHtml;
 }
  
  
@@ -2451,8 +2452,8 @@ function renderTodayTaskTable(targetId, simple = false){
         sMin = Math.max(minStart, Math.min(sMin, minEnd));
         eMin = Math.max(sMin + 10, Math.min(eMin, minEnd));
         const top = ((sMin - minStart) / totalMinutes) * height;
-        const blockH = Math.max(28, ((eMin - sMin) / totalMinutes) * height);
-        return `<div class="timeline-task" style="top:${top}px;height:${blockH}px">
+        const blockH = Math.max(68, ((eMin - sMin) / totalMinutes) * height);
+        return `<div class="timeline-task" style="top:${top}px;height:${blockH}px;min-height:68px">
           <div class="name">${escapeHtml(t.name)}</div>
           <div class="tiny">${formatTime(start)} - ${t.endTime ? formatTime(end) : '进行中'} ｜ ${escapeHtml(t.category || '-') } ｜ ${formatDuration(getTaskDurationMs(t))}</div>
         </div>`;
@@ -3171,7 +3172,7 @@ function importData(file){
     }
     function _createPlan(dateStr, name, category){
       name=(name||'').trim();
-      category = category || '📌 计划';
+      category = category || '📕 政治';
       if(!name){ showToast('请输入计划内容。'); return; }
       const now=new Date();
       state.tasks.unshift({
@@ -3337,8 +3338,9 @@ function importData(file){
         end=new Date(today.getFullYear(), today.getMonth()+1, 0);
         const wd=start.getDay()||7; start=new Date(start); start.setDate(start.getDate()-wd+1);
       }else{
-        start=new Date(today); start.setDate(today.getDate()-363);
+        start=new Date(today.getFullYear(), 0, 1);
         const wd=start.getDay()||7; start.setDate(start.getDate()-wd+1);
+        end=new Date(today);
       }
       const days=[];
       for(let d=new Date(start); d<=end; d.setDate(d.getDate()+1)) days.push(new Date(d));
@@ -3438,7 +3440,7 @@ function importData(file){
       const el=document.getElementById('todayAddInput');
       if(!el) return;
       const catEl=document.getElementById('todayAddCat');
-      const cat = catEl ? catEl.value : '📌 计划';
+      const cat = catEl ? catEl.value : '📕 政治';
       const name = (el.value||'').trim() || cat;
       _createPlan(selectedDate, name, cat);
       el.value='';
