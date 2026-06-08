@@ -1245,6 +1245,13 @@ td button {
     input[type="checkbox"]{ width:18px !important; height:18px !important; min-height:0 !important; border-radius:4px !important; padding:0 !important; accent-color:#0071e3; cursor:pointer; box-shadow:none !important; line-height:normal !important; }
     .muyu-widget{ cursor:grab; touch-action:none; }
     .muyu-widget:active{ cursor:grabbing; }
+    .link-row{ display:flex; align-items:center; gap:10px; padding:10px 2px; border-bottom:1px solid var(--line); flex-wrap:wrap; }
+    .link-row:last-child{ border-bottom:none; }
+    .link-title{ font-weight:700; color:#0071e3; text-decoration:none; }
+    .link-title:hover{ text-decoration:underline; }
+    .link-note{ color:var(--muted); }
+    .link-row .btn-danger{ margin-left:auto; }
+    body.dark .link-title{ color:#4aa3ff; }
 </style>
 </head>
 <body>
@@ -1331,6 +1338,7 @@ td button {
       <button class="tab" data-tab="calendar">日程日历</button>
       <button class="tab" data-tab="exercise">锻炼管理</button>
       <button class="tab" data-tab="reflection">反思</button>
+      <button class="tab" data-tab="links">网址</button>
       <button class="tab" data-tab="stats">统计分析</button>
     </div>
  
@@ -1632,6 +1640,23 @@ td button {
       </div>
     </section>
  
+    <section class="section" id="section-links">
+      <div class="card">
+        <div class="card-title"><h2>🔖 收藏网址</h2><span class="pill" id="linkCountPill">0 条</span></div>
+        <div class="inline-form">
+          <div><label>科目</label><select id="linkSubjectInput">
+            <option>政治</option><option>英语</option><option>数学</option><option>408</option><option>综合 / 其它</option>
+          </select></div>
+          <div><label>名称</label><input id="linkTitleInput" type="text" placeholder="如：肖秀荣公众号" /></div>
+          <div><label>网址</label><input id="linkUrlInput" type="text" placeholder="https://..." /></div>
+          <div><label>备注</label><input id="linkNoteInput" type="text" placeholder="可选" /></div>
+          <button class="btn-primary" id="addLinkBtn">添加</button>
+        </div>
+        <div class="tiny" style="margin-top:8px">点下面卡片里的链接标题即可在新标签打开；按科目自动分组。</div>
+      </div>
+      <div id="linksWrap" style="margin-top:16px"></div>
+    </section>
+
     <section class="section" id="section-reflection">
       <div class="grid cols-2">
         <div class="card">
@@ -1737,7 +1762,8 @@ function defaultState(){
     darkMode: false,
     exercises: [],
     reflections: [],
-    muyuPos: null
+    muyuPos: null,
+    links: []
   };
 }
  
@@ -1760,7 +1786,8 @@ function loadState(){
           darkMode: parsed.darkMode || false,
           exercises: parsed.exercises || [],
           reflections: parsed.reflections || [],
-          muyuPos: parsed.muyuPos || null
+          muyuPos: parsed.muyuPos || null,
+          links: parsed.links || []
         };
       }catch(e){
         return defaultState();
@@ -2326,7 +2353,14 @@ function renderTasks(){
   const wrap = document.getElementById('taskTableWrap');
   if(!wrap) return;
   const addForm = `<div class="inline-form" style="margin-bottom:12px">
-      <input id="todayAddInput" type="text" placeholder="在 ${selectedDate} 添加任务 / 计划" onkeydown="if(event.key==='Enter'){addTodayTaskFromInput();}" />
+      <select id="todayAddCat" style="max-width:140px">
+        <option value="📌 计划">📌 计划</option>
+        <option value="📕 政治">📕 政治</option>
+        <option value="📗 英语">📗 英语</option>
+        <option value="📘 数学">📘 数学</option>
+        <option value="📙 408">📙 408</option>
+      </select>
+      <input id="todayAddInput" type="text" placeholder="在 ${selectedDate} 添加任务（可留空只记科目）" onkeydown="if(event.key==='Enter'){addTodayTaskFromInput();}" />
       <button class="btn-primary" onclick="addTodayTaskFromInput()">添加</button>
     </div>`;
   wrap.innerHTML = addForm + (tasks.length ? `
@@ -2767,7 +2801,8 @@ function importData(file){
             darkMode: parsed.darkMode || false,
             exercises: parsed.exercises || [],
             reflections: parsed.reflections || [],
-            muyuPos: parsed.muyuPos || null
+            muyuPos: parsed.muyuPos || null,
+            links: parsed.links || []
           };
           localStorage.setItem(STORAGE_KEY, JSON.stringify(merged));
           location.reload();
@@ -3134,18 +3169,19 @@ function importData(file){
       _createPlan(selectedDate, el.value);
       el.value='';
     }
-    function _createPlan(dateStr, name){
+    function _createPlan(dateStr, name, category){
       name=(name||'').trim();
+      category = category || '📌 计划';
       if(!name){ showToast('请输入计划内容。'); return; }
       const now=new Date();
       state.tasks.unshift({
         id:`${Date.now()}_${Math.random().toString(36).slice(2,8)}`,
-        name, category:'📌 计划', focusMode:'up', targetMinutes:null,
+        name, category, focusMode:'up', targetMinutes:null,
         startTime:null, endTime:null, durationMs:0,
         status:'待开始', date:dateStr, createdAt:now.toISOString()
       });
       saveState();
-      showToast(`已为 ${dateStr} 添加计划：${name}`);
+      showToast(`已添加：${name}（${dateStr}）`);
       renderAll();
     }
 
@@ -3245,6 +3281,7 @@ function importData(file){
       renderExercise();
       renderHeatmap();
       renderReflections();
+      renderLinks();
     }
     function deleteExercise(id){
       state.exercises=(state.exercises||[]).filter(e=>e.id!==id);
@@ -3400,7 +3437,10 @@ function importData(file){
     function addTodayTaskFromInput(){
       const el=document.getElementById('todayAddInput');
       if(!el) return;
-      _createPlan(selectedDate, el.value);
+      const catEl=document.getElementById('todayAddCat');
+      const cat = catEl ? catEl.value : '📌 计划';
+      const name = (el.value||'').trim() || cat;
+      _createPlan(selectedDate, name, cat);
       el.value='';
     }
     function makeMuyuDraggable(){
@@ -3436,6 +3476,51 @@ function importData(file){
       };
       w.addEventListener('mousedown',start);
       w.addEventListener('touchstart',start,{passive:false});
+    }
+
+    // ===== 网址收藏 =====
+    function addLink(){
+      const subject=document.getElementById('linkSubjectInput').value;
+      const title=(document.getElementById('linkTitleInput').value||'').trim();
+      let url=(document.getElementById('linkUrlInput').value||'').trim();
+      const note=(document.getElementById('linkNoteInput').value||'').trim();
+      if(!url){ showToast('请输入网址。'); return; }
+      if(!/^https?:\/\//i.test(url)) url='https://'+url;
+      if(!state.links) state.links=[];
+      state.links.unshift({ id:`${Date.now()}_${Math.random().toString(36).slice(2,8)}`, subject, title:title||url, url, note, createdAt:new Date().toISOString() });
+      saveState();
+      document.getElementById('linkTitleInput').value='';
+      document.getElementById('linkUrlInput').value='';
+      document.getElementById('linkNoteInput').value='';
+      showToast('网址已收藏 🔖');
+      renderLinks();
+    }
+    function deleteLink(id){
+      state.links=(state.links||[]).filter(l=>l.id!==id);
+      saveState();
+      renderLinks();
+    }
+    function renderLinks(){
+      const list=state.links||[];
+      const pill=document.getElementById('linkCountPill'); if(pill) pill.textContent=`${list.length} 条`;
+      const wrap=document.getElementById('linksWrap');
+      if(!wrap) return;
+      if(!list.length){ wrap.innerHTML='<div class="card"><div class="empty">还没有收藏网址，上面添加第一条吧 🔖</div></div>'; return; }
+      const order=['政治','英语','数学','408','综合 / 其它'];
+      const groups={};
+      list.forEach(l=>{ const sName=l.subject||'综合 / 其它'; (groups[sName]=groups[sName]||[]).push(l); });
+      const keys=order.filter(k=>groups[k]);
+      Object.keys(groups).forEach(k=>{ if(!keys.includes(k)) keys.push(k); });
+      wrap.innerHTML=keys.map(sName=>`
+        <div class="card" style="margin-bottom:16px">
+          <div class="card-title"><h3>${escapeHtml(sName)}</h3><span class="pill">${groups[sName].length} 条</span></div>
+          <div>${groups[sName].map(l=>`
+            <div class="link-row">
+              <a href="${encodeURI(l.url)}" target="_blank" rel="noopener" class="link-title">🔗 ${escapeHtml(l.title||l.url)}</a>
+              ${l.note?`<span class="tiny link-note">${escapeHtml(l.note)}</span>`:''}
+              <button class="btn-danger" style="padding:2px 10px;height:26px" onclick="deleteLink('${l.id}')">删</button>
+            </div>`).join('')}</div>
+        </div>`).join('');
     }
 
     function bindEvents(){
@@ -3516,6 +3601,8 @@ function importData(file){
       const _rfBtn=document.getElementById('addReflectBtn');
       if(_rfBtn) _rfBtn.addEventListener('click', addReflection);
       makeMuyuDraggable();
+      const _lkBtn=document.getElementById('addLinkBtn');
+      if(_lkBtn) _lkBtn.addEventListener('click', addLink);
       document.querySelectorAll('.hm-scope-btn').forEach(btn=>{
         btn.addEventListener('click', ()=>{
           heatmapScope=btn.dataset.hm;
@@ -3583,6 +3670,7 @@ function renderAll(){
     window.deleteReflection = deleteReflection;
     window.toggleTaskDone = toggleTaskDone;
     window.addTodayTaskFromInput = addTodayTaskFromInput;
+    window.deleteLink = deleteLink;
 
 // 页面加载后执行一次
     bindEvents();
