@@ -1934,7 +1934,7 @@ function syncTaskDateInput(dateStr){
   if(el) el.value = dateStr || selectedDate || todayStr();
 }
  
-function startTask(name, onlyTodo = false, category = '📕 政治', mode = 'up', plannedDate = null){
+function startTask(name, onlyTodo = false, category = '📕 政治', mode = 'up', plannedDate = null, hidden = false){
   name = (name || '').trim() || category;
   const active = getActiveTask();
   if(active && !onlyTodo){
@@ -1956,6 +1956,7 @@ function startTask(name, onlyTodo = false, category = '📕 政治', mode = 'up'
     name,
     category,
     focusMode: mode,
+    hidden: hidden,
     targetMinutes: mode === 'down' ? 25 : null,
     startTime: onlyTodo ? null : now.toISOString(),
     endTime: null,
@@ -1983,7 +1984,7 @@ function switchFocusMode(mode){
  
 function startFocusTask(){
   const category = document.getElementById('taskCategoryInput').value || '📕 政治';
-  startTask(category, false, category, 'up');
+  startTask(category, false, category, 'up', null, true);
 }
 
 // 1. 这是倒计时自动结束的函数
@@ -2347,7 +2348,7 @@ function renderTasks(){
   const note = document.getElementById('activeTaskNote');
   if(note) note.textContent = active ? `${active.startTime ? formatDateTime(new Date(active.startTime)) : '-'} 开始` : '当前暂无进行中的任务。';
 
-  const tasks = getTasksByDate(selectedDate);
+  const tasks = getTasksByDate(selectedDate).filter(t=>!t.hidden);
   const cnt = document.getElementById('taskDayCount');
   if(cnt) cnt.textContent = `${selectedDate} · ${tasks.length} 项`;
   const wrap = document.getElementById('taskTableWrap');
@@ -2378,6 +2379,7 @@ function renderTasks(){
             <td>${statusPill(t.status)}</td>
             <td>
               ${(t.status === '待开始' || t.status === '中断') ? `<button class="btn-success" onclick="startTodoTask('${t.id}')">${t.status === '中断' ? '继续' : '开始'}</button> ` : ''}
+              <button class="btn-soft" onclick="editTask('${t.id}')">改</button>
               <button class="btn-danger" onclick="deleteTask('${t.id}')">删</button>
             </td>
           </tr>`;
@@ -2823,22 +2825,27 @@ function importData(file){
     function addBackfillTask() {
       const category = document.getElementById('taskCategoryInput').value || '📕 政治';
       const date = getTaskFormDate();
-      const input = prompt('补录这次专注的分钟数：', '60');
-      if(input === null) return;
-      const mins = parseInt(input) || 0;
+      const timeStr = (prompt('补录的开始时间（24小时制，如 14:30）：', '09:00') || '').trim();
+      if(timeStr === '') return;
+      const mt = timeStr.match(/^(\d{1,2}):(\d{2})$/);
+      if(!mt){ showToast('时间格式应为 HH:MM，例如 14:30'); return; }
+      const minsStr = prompt('专注时长（分钟）：', '60');
+      if(minsStr === null) return;
+      const mins = parseInt(minsStr) || 0;
       if(mins <= 0){ showToast('请输入有效的分钟数。'); return; }
-      const now = new Date();
-      const startMs = new Date(date + 'T09:00:00').getTime();
+      const startD = new Date(date + 'T00:00:00');
+      startD.setHours(parseInt(mt[1]), parseInt(mt[2]), 0, 0);
+      const startMs = startD.getTime();
       state.tasks.unshift({
         id: `${Date.now()}_${Math.random().toString(36).slice(2,8)}`,
-        name: category, category, focusMode: 'up',
+        name: category, category, focusMode: 'up', hidden: true,
         startTime: new Date(startMs).toISOString(),
         endTime: new Date(startMs + mins*60000).toISOString(),
         durationMs: mins*60000, status: '已完成',
-        date: date, createdAt: now.toISOString()
+        date: date, createdAt: new Date().toISOString()
       });
       saveState();
-      showToast(`已补录 ${category} ${mins} 分钟`);
+      showToast(`已补录 ${category}：${timeStr} 起 ${mins} 分钟（已计入专注，不进任务列表）`);
       renderAll();
     }
     // 保存/更新论文信息
@@ -3523,6 +3530,23 @@ function importData(file){
         </div>`).join('');
     }
 
+    // ===== 修改已创建任务 =====
+    function editTask(id){
+      const t=state.tasks.find(x=>x.id===id);
+      if(!t) return;
+      const name=prompt('任务名称：', t.name||'');
+      if(name===null) return;
+      const date=prompt('日期（YYYY-MM-DD）：', t.date||todayStr());
+      if(date===null) return;
+      const nm=(name||'').trim();
+      if(nm) t.name=nm;
+      const d=(date||'').trim();
+      if(/^\d{4}-\d{2}-\d{2}$/.test(d)) t.date=d;
+      saveState();
+      showToast('已修改任务');
+      renderAll();
+    }
+
     function bindEvents(){
 
       document.getElementById('selectedDate').value = selectedDate;
@@ -3671,6 +3695,7 @@ function renderAll(){
     window.toggleTaskDone = toggleTaskDone;
     window.addTodayTaskFromInput = addTodayTaskFromInput;
     window.deleteLink = deleteLink;
+    window.editTask = editTask;
 
 // 页面加载后执行一次
     bindEvents();
