@@ -1281,11 +1281,19 @@ td button {
     
     <section class="hero">
       <div class="hero-main">
-        <div class="quote-kicker">Daily Inspiration / 每日好运签</div>
         <h1>曾庆锋の学习系统</h1>
         <p id="nowText">正在读取当前时间...</p>
         <p class="hero-caption">您已成功登录学习中心 · 11408（政治·英语·数学·408）！</p>
-        <p id="quoteText" class="hero-quote">“ 今日自律沉淀，明日自有收获。 ”</p>
+        <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-top:8px">
+          <div style="display:flex;align-items:center;gap:6px;background:rgba(255,255,255,.16);border-radius:12px;padding:6px 12px">
+            <span style="color:rgba(255,255,255,.85);font-size:14px">🎯 目标学校</span>
+            <input id="targetSchoolInput" type="text" placeholder="如：浙江大学" style="width:140px;background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.3);color:#fff;border-radius:8px;padding:4px 8px;font-size:14px" />
+          </div>
+          <div style="display:flex;align-items:center;gap:6px;background:rgba(255,255,255,.16);border-radius:12px;padding:6px 12px">
+            <span style="color:rgba(255,255,255,.85);font-size:14px">📊 目标分数</span>
+            <input id="targetScoreInput" type="number" placeholder="如：400" min="0" max="500" step="5" style="width:80px;background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.3);color:#fff;border-radius:8px;padding:4px 8px;font-size:14px" />
+          </div>
+        </div>
         <div class="toolbar">
           <div class="toolbar-left">
             <div>
@@ -1767,6 +1775,9 @@ function defaultState(){
     muyuCount: 0,
     examDate: '2026-12-19',
     dailyGoalHours: 8,
+    targetSchool: '',
+    targetScore: '',
+    manualStartTime: null,
     darkMode: false,
     exercises: [],
     reflections: [],
@@ -1791,6 +1802,9 @@ function loadState(){
           muyuCount: parsed.muyuCount || 0,
           examDate: parsed.examDate || '2026-12-19',
           dailyGoalHours: (parsed.dailyGoalHours != null ? parsed.dailyGoalHours : 8),
+          targetSchool: parsed.targetSchool || '',
+          targetScore: parsed.targetScore || '',
+          manualStartTime: parsed.manualStartTime || null,
           darkMode: parsed.darkMode || false,
           exercises: parsed.exercises || [],
           reflections: parsed.reflections || [],
@@ -2251,12 +2265,38 @@ function renderHero(){
  
 function renderOverview(){
       const td = todayStr();
-      const starts = state.tasks.filter(t=>t.date===td && t.startTime).map(t=>new Date(t.startTime)).sort((a,b)=>a-b);
-      const startStr = starts.length ? formatTime(starts[0]) : '--:--';
+      const manual = state.manualStartTime || '';
+      let startStr;
+      if (manual) {
+        startStr = manual;
+      } else {
+        const starts = state.tasks.filter(t=>t.date===td && t.startTime).map(t=>new Date(t.startTime)).sort((a,b)=>a-b);
+        startStr = starts.length ? formatTime(starts[0]) : '--:--';
+      }
       const setT=(id,v)=>{const e=document.getElementById(id); if(e) e.textContent=v;};
       setT('ovStudyStart', startStr);
       setT('heroStudyStart', startStr);
-      setT('ovStudyStartNote', starts.length ? `最早从 ${startStr} 开始学习` : '今天还没开始学习');
+      setT('ovStudyStartNote', manual ? `已手动设置为 ${startStr}` : (startStr !== '--:--' ? `最早从 ${startStr} 开始学习` : '今天还没开始学习'));
+      // make start time clickable for manual adjust
+      ['ovStudyStart','heroStudyStart'].forEach(id=>{
+        const el=document.getElementById(id);
+        if(el){
+          el.style.cursor='pointer';
+          el.title='点击调整开始时间';
+          el.onclick=()=>{
+            const v=prompt('调整今日开始时间 (如 08:30，留空则恢复自动)：', manual || startStr);
+            if(v===null) return;
+            if(v.trim()===''){
+              state.manualStartTime=null;
+            } else {
+              state.manualStartTime=v.trim();
+            }
+            saveState();
+            renderOverview();
+            renderHero();
+          };
+        }
+      });
 
       const _d0 = new Date(td+'T12:00:00'); const _wd=_d0.getDay()||7;
       const _mon = new Date(_d0); _mon.setDate(_d0.getDate()-_wd+1);
@@ -2362,8 +2402,7 @@ function renderTasks(){
   const wrap = document.getElementById('taskTableWrap');
   if(!wrap) return;
   const addForm = `<div class="inline-form" style="margin-bottom:12px">
-      <select id="todayAddCat" style="max-width:140px">
-        <option value="📌 计划">📌 计划</option>
+      <select id="todayAddCat" style="max-width:160px;height:38px;cursor:pointer">
         <option value="📕 政治">📕 政治</option>
         <option value="📗 英语">📗 英语</option>
         <option value="📘 数学">📘 数学</option>
@@ -2372,7 +2411,7 @@ function renderTasks(){
       <input id="todayAddInput" type="text" placeholder="在 ${selectedDate} 添加任务（可留空只记科目）" onkeydown="if(event.key==='Enter'){addTodayTaskFromInput();}" />
       <button class="btn-primary" onclick="addTodayTaskFromInput()">添加</button>
     </div>`;
-  const order = ['📌 计划','📕 政治','📗 英语','📘 数学','📙 408'];
+  const order = ['📕 政治','📗 英语','📘 数学','📙 408'];
   const byCat = {};
   tasks.forEach(t=>{ const c=t.category||'其它'; (byCat[c]=byCat[c]||[]).push(t); });
   const cats = order.filter(c=>byCat[c]);
@@ -2665,21 +2704,32 @@ function renderCalendarSidebar() {
       <button class="btn-primary" onclick="addCalendarPlanFromInput()">添加计划</button>
     </div>`;
   selectedPendingWrap.innerHTML = _calAddForm + (selectedTasks.length ? `
-    <table>
-      <thead><tr><th>任务</th><th>状态</th><th>操作</th></tr></thead>
-      <tbody>
-        ${selectedTasks.map(t => `
-          <tr>
-            <td>${t.status === '已完成' ? '✅' : '⏳'} ${escapeHtml(t.name)}</td>
-            <td>${statusPill(t.status)}</td>
-            <td>
-              ${t.status === '待开始' ? `<button class="btn-success" onclick="startTodoTask('${t.id}')">开始</button>` : ''}
-              <button class="btn-danger" onclick="deleteTask('${t.id}')">删</button>
-            </td>
-          </tr>
-        `).join('')}
-      </tbody>
-    </table>
+    <div class="task-group" id="calTaskGroup">
+      <div class="task-group-head" onclick="toggleCalTaskGroup()" style="justify-content:space-between">
+        <span style="display:flex;align-items:center;gap:8px">
+          <span class="task-group-arrow" id="calTaskArrow">▸</span>
+          <span>${selectedDate} 任务列表</span>
+        </span>
+        <span class="pill">${selectedTasks.length} 项</span>
+      </div>
+      <div class="task-group-body" id="calTaskBody" style="display:none">
+        <table>
+          <thead><tr><th>任务</th><th>状态</th><th>操作</th></tr></thead>
+          <tbody>
+            ${selectedTasks.map(t => `
+              <tr>
+                <td>${t.status === '已完成' ? '✅' : '⏳'} ${escapeHtml(t.name)}</td>
+                <td>${statusPill(t.status)}</td>
+                <td>
+                  ${t.status === '待开始' ? `<button class="btn-success" onclick="startTodoTask('${t.id}')">开始</button>` : ''}
+                  <button class="btn-danger" onclick="deleteTask('${t.id}')">删</button>
+                </td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>
   ` : `<div class="empty">该日期暂无记录</div>`);
 
   // 2. 全部任务概览（增加筛选切换）
@@ -2722,6 +2772,19 @@ function renderCalendarSidebar() {
 window.setCalendarFilter = function(mode) {
   calendarSidebarMode = mode;
   renderCalendarSidebar();
+};
+
+window.toggleCalTaskGroup = function() {
+  const body = document.getElementById('calTaskBody');
+  const arrow = document.getElementById('calTaskArrow');
+  if(!body || !arrow) return;
+  if(body.style.display === 'none'){
+    body.style.display = 'block';
+    arrow.textContent = '▾';
+  } else {
+    body.style.display = 'none';
+    arrow.textContent = '▸';
+  }
 };
  
     function renderStats(){
@@ -3203,7 +3266,7 @@ function importData(file){
     }
     function _createPlan(dateStr, name, category){
       name=(name||'').trim();
-      category = category || '📌 计划';
+      category = category || '📕 政治';
       if(!name){ showToast('请输入计划内容。'); return; }
       const now=new Date();
       state.tasks.unshift({
@@ -3369,8 +3432,9 @@ function importData(file){
         end=new Date(today.getFullYear(), today.getMonth()+1, 0);
         const wd=start.getDay()||7; start=new Date(start); start.setDate(start.getDate()-wd+1);
       }else{
-        start=new Date(today); start.setDate(today.getDate()-363);
+        start=new Date(today.getFullYear(), 0, 1);
         const wd=start.getDay()||7; start.setDate(start.getDate()-wd+1);
+        end=new Date(today.getFullYear(), 11, 31);
       }
       const days=[];
       for(let d=new Date(start); d<=end; d.setDate(d.getDate()+1)) days.push(new Date(d));
@@ -3637,9 +3701,10 @@ function importData(file){
       document.getElementById('importFile').addEventListener('change', e=>{
         if(e.target.files && e.target.files[0]) importData(e.target.files[0]);
       });
-      showQuote();
-      const _qEl = document.getElementById('quoteText');
-      if(_qEl){ _qEl.style.cursor='pointer'; _qEl.title='点击换一句'; _qEl.addEventListener('click', rotateQuote); }
+      const _tsi=document.getElementById('targetSchoolInput');
+      if(_tsi){ _tsi.value=state.targetSchool||''; _tsi.addEventListener('change',e=>{state.targetSchool=e.target.value;saveState();}); }
+      const _tssi=document.getElementById('targetScoreInput');
+      if(_tssi){ _tssi.value=state.targetScore||''; _tssi.addEventListener('change',e=>{state.targetScore=e.target.value;saveState();renderGoalRing();}); }
       const _exam=document.getElementById('examDateInput');
       if(_exam){ _exam.value=state.examDate||'2026-12-19'; _exam.addEventListener('change', e=>{ state.examDate=e.target.value||'2026-12-19'; saveState(); renderCountdown(); renderReport(); }); }
       const _goal=document.getElementById('goalHoursInput');
@@ -3726,6 +3791,7 @@ function renderAll(){
     window.deleteLink = deleteLink;
     window.editTask = editTask;
     window.toggleTaskGroup = toggleTaskGroup;
+    window.toggleCalTaskGroup = toggleCalTaskGroup;
 
 // 页面加载后执行一次
     bindEvents();
@@ -3742,7 +3808,6 @@ function renderAll(){
       }
     }, 1000);
 
-    setInterval(rotateQuote, 12000);
   </script>
 
 </body>
