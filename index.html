@@ -1474,7 +1474,7 @@ td button {
               <button class="btn-soft" id="calendarNextBtn">下个月</button>
               <span class="pill" id="calendarMonthLabel">-</span>
             </div>
-            <div class="tiny">仅显示“待开始”任务。点击某一天会同步到顶部“查看日期”，方便继续编辑或开始任务。</div>
+            <div class="tiny">显示当天全部任务。点击日期同步到顶部查看，可勾选完成任务。</div>
           </div>
  
           <div class="calendar-board">
@@ -2176,16 +2176,14 @@ function finishTask(mode = '完成'){
 // 获取特定日期的任务（用于日历展示）
 function getCalendarTasksByDate(dateStr) {
   return state.tasks
-    .filter(t => t.date === dateStr && (t.status === '待开始' || t.status === '已完成'))
+    .filter(t => t.date === dateStr)
     .sort((a, b) => {
-      // 待开始排在前面
-      const order = { '待开始': 0, '已完成': 1 };
-      return order[a.status] - order[b.status];
+      const order = { '进行中': 0, '待开始': 1, '已完成': 2, '中断': 3 };
+      return (order[a.status]||9) - (order[b.status]||9);
     });
 }
 
-// 增加一个全局变量来控制侧边栏的显示模式
-let calendarSidebarMode = '待开始'; // 可选值：'待开始', '已完成', '全部'
+let calendarSidebarMode = '全部';
  
     function getMonthPhoneCount(dateStr){
       const month = dateStr.slice(0,7);
@@ -2414,9 +2412,9 @@ function renderTodayTaskTable(targetId, simple = false){
  
     function renderTimeline(){
  
-      const tasks = getTasksByDate(selectedDate).filter(t=>t.startTime);
+      const tasks = getTasksByDate(selectedDate).filter(t=>t.startTime && getTaskDurationMs(t) >= 300000);
       if(!tasks.length){
-        document.getElementById('timelineWrap').innerHTML = `<div class="empty">暂无日程安排</div>`;
+        document.getElementById('timelineWrap').innerHTML = `<div class="empty">暂无日程安排（专注需≥5分钟）</div>`;
         return;
       }
       const startHour = 6;
@@ -2430,7 +2428,8 @@ function renderTodayTaskTable(targetId, simple = false){
         hourLabels.push(`<div class="timeline-label" style="top:${top}px">${pad(h % 24)}:00</div>`);
       }
  
-      const taskBlocks = tasks.map(t=>{
+      // 计算位置 + 重叠检测
+      const evts = tasks.map(t=>{
         const start = new Date(t.startTime);
         const end = t.endTime ? new Date(t.endTime) : new Date();
         let sMin = start.getHours()*60 + start.getMinutes();
@@ -2438,10 +2437,41 @@ function renderTodayTaskTable(targetId, simple = false){
         const minStart = startHour*60;
         const minEnd = endHour*60;
         sMin = Math.max(minStart, Math.min(sMin, minEnd));
-        eMin = Math.max(sMin + 10, Math.min(eMin, minEnd));
+        eMin = Math.max(sMin + 5, Math.min(eMin, minEnd));
         const top = ((sMin - minStart) / totalMinutes) * height;
         const blockH = Math.max(68, ((eMin - sMin) / totalMinutes) * height);
-        return `<div class="timeline-task" style="top:${top}px;height:${blockH}px;min-height:68px">
+        return { t, start: sMin, end: eMin, top, blockH, col: 0, cols: 1 };
+      });
+      evts.sort((a,b)=>a.start - b.start);
+
+      // Google Calendar 重叠分组+贪心列分配
+      const groups = [];
+      let cur = [evts[0]], gEnd = evts[0].end;
+      for(let i=1; i<evts.length; i++){
+        if(evts[i].start >= gEnd + 2){ groups.push(cur); cur = []; gEnd = 0; }
+        cur.push(evts[i]);
+        gEnd = Math.max(gEnd, evts[i].end);
+      }
+      groups.push(cur);
+      groups.forEach(g => {
+        const cols = [];
+        g.forEach(e => {
+          let placed = false;
+          for(let i=0; i<cols.length; i++){
+            if(cols[i] <= e.start){ cols[i] = e.end; e.col = i; placed = true; break; }
+          }
+          if(!placed){ e.col = cols.length; cols.push(e.end); }
+        });
+        g.forEach(e => { e.cols = cols.length; });
+      });
+
+      const fullW = 720, gap = 8;
+      const taskBlocks = evts.map(({t, top, blockH, col, cols})=>{
+        const start = new Date(t.startTime);
+        const end = t.endTime ? new Date(t.endTime) : new Date();
+        const w = cols > 1 ? ((fullW - gap*(cols-1)) / cols) : (fullW - 16);
+        const l = 90 + col * (w + gap);
+        return `<div class="timeline-task" style="top:${top}px;height:${blockH}px;min-height:68px;left:${l}px;width:${w}px">
           <div class="name">${escapeHtml(t.name)}</div>
           <div class="tiny">${formatTime(start)} - ${t.endTime ? formatTime(end) : '进行中'} ｜ ${escapeHtml(t.category || '-') } ｜ ${formatDuration(getTaskDurationMs(t))}</div>
         </div>`;
@@ -2623,18 +2653,23 @@ function renderCalendarSidebar() {
     </div>`;
   selectedPendingWrap.innerHTML = _calAddForm + (selectedTasks.length ? `
     <table>
-      <thead><tr><th>任务</th><th>状态</th><th>操作</th></tr></thead>
+      <thead><tr><th>✓</th><th>任务</th><th>状态</th><th>操作</th></tr></thead>
       <tbody>
-        ${selectedTasks.map(t => `
+        ${selectedTasks.map(t => {
+          const done = t.status === '已完成';
+          const running = t.status === '进行中';
+          const interrupted = t.status === '中断';
+          return `
           <tr>
-            <td>${t.status === '已完成' ? '✅' : '⏳'} ${escapeHtml(t.name)}</td>
+            <td>${running ? '<span class="tiny">—</span>' : `<input type="checkbox" ${done?'checked':''} onclick="toggleTaskDone('${t.id}')">`}</td>
+            <td>${done ? '<s>' + escapeHtml(t.name) + '</s>' : escapeHtml(t.name)}</td>
             <td>${statusPill(t.status)}</td>
             <td>
-              ${t.status === '待开始' ? `<button class="btn-success" onclick="startTodoTask('${t.id}')">开始</button>` : ''}
-              <button class="btn-danger" onclick="deleteTask('${t.id}')">删</button>
+              ${(t.status === '待开始' || interrupted) ? `<button class="btn-success" onclick="startTodoTask('${t.id}')">${interrupted ? '继续' : '开始'}</button> ` : ''}
+              ${running ? '' : `<button class="btn-danger" onclick="deleteTask('${t.id}')">删</button>`}
             </td>
           </tr>
-        `).join('')}
+        `}).join('')}
       </tbody>
     </table>
   ` : `<div class="empty">该日期暂无记录</div>`);
@@ -2661,15 +2696,19 @@ function renderCalendarSidebar() {
     <table>
       <thead><tr><th>日期</th><th>任务</th><th>操作</th></tr></thead>
       <tbody>
-        ${filteredAll.slice(0, 50).map(t => `
+        ${filteredAll.slice(0, 50).map(t => {
+          const done = t.status === '已完成';
+          return `
           <tr>
             <td class="tiny">${t.date || '-'}</td>
-            <td style="font-size:12px">${t.status === '已完成' ? '✅' : '⏳'} ${escapeHtml(t.name)}</td>
+            <td style="font-size:12px">${done ? '<s>' + escapeHtml(t.name) + '</s>' : escapeHtml(t.name)}</td>
             <td>
                <button class="btn-soft" style="padding:4px 8px" onclick="switchCalendarDate('${t.date}')">看</button>
+               ${!done ? `<button class="btn-success" style="padding:4px 8px" onclick="toggleTaskDone('${t.id}')">✓</button>` : ''}
+               <button class="btn-danger" style="padding:4px 8px" onclick="deleteTask('${t.id}')">✕</button>
             </td>
           </tr>
-        `).join('')}
+        `}).join('')}
       </tbody>
     </table>
   ` : `<div class="empty">暂无数据</div>`);
