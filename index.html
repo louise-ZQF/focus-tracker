@@ -1152,6 +1152,86 @@ td button {
     body.dark .footer-note{ color:#9fb2ae; }
     body.dark .toast{ background:#2b3531; }
     body.dark .calendar-task-item{ background:#26302d; border-color:#3a4744; color:#cfe0db; }
+    /* ===== Apple 风格主题 ===== */
+    :root{
+      --bg:#f5f5f7; --card:#ffffff; --line:#e3e3e8; --text:#1d1d1f; --muted:#6e6e73;
+      --primary:#0071e3; --primary-strong:#0077ed; --primary-soft:#f0f4ff;
+      --good:#1a9e4b; --warn:#b25e00; --bad:#d23b3b;
+      --shadow:0 4px 24px rgba(0,0,0,.06); --radius:18px;
+    }
+    body{ background:#f5f5f7 !important; color:#1d1d1f; -webkit-font-smoothing:antialiased; letter-spacing:-.01em; }
+    .container{ width:min(1120px, calc(100vw - 40px)); }
+    .hero{ background:#fff !important; color:#1d1d1f !important; border:1px solid #e3e3e8; box-shadow:var(--shadow); border-radius:24px !important; }
+    .hero::after{ display:none !important; }
+    .hero h1{ font-size:44px !important; font-weight:700 !important; letter-spacing:-.02em; color:#1d1d1f; }
+    .hero p, .hero .hero-caption{ color:#6e6e73 !important; }
+    .hero .quote-kicker{ color:#86868b !important; }
+    .hero .hero-quote{ color:#1d1d1f !important; font-style:normal; font-weight:600; }
+    .hero .toolbar label{ color:#6e6e73 !important; }
+    .hero input[type="date"]{ background:#f5f5f7 !important; color:#1d1d1f !important; border:1px solid #d2d2d7 !important; }
+    .hero-mini{ background:#f5f5f7 !important; border:none !important; color:#1d1d1f; }
+    .hero-mini .label{ color:#86868b !important; }
+    .hero .btn-secondary, .hero .btn-soft{ background:#f5f5f7 !important; color:#1d1d1f !important; border:1px solid #d2d2d7 !important; }
+    .hero .btn-danger{ background:#fff0f0 !important; color:#d23b3b !important; border:1px solid #ffd4d4 !important; }
+    .tab{ background:#fff !important; border:1px solid #d2d2d7 !important; color:#1d1d1f !important; box-shadow:none !important; height:auto !important; padding:9px 18px !important; font-size:15px !important; font-weight:600 !important; }
+    .tab:hover{ transform:none !important; background:#fafafa !important; }
+    .tab.active,
+    .tabs .tab:nth-child(1).active,.tabs .tab:nth-child(2).active,.tabs .tab:nth-child(3).active,.tabs .tab:nth-child(4).active,.tabs .tab:nth-child(5).active,.tabs .tab:nth-child(6).active{ background:#1d1d1f !important; border-color:#1d1d1f !important; color:#fff !important; box-shadow:none !important; }
+    .card{ background:#fff !important; border:1px solid #e3e3e8 !important; border-radius:18px !important; box-shadow:0 4px 20px rgba(0,0,0,.05) !important; }
+    .mini-stat,.chart-card,.period-card,.calendar-board{ background:#f5f5f7 !important; border:1px solid #ececf0 !important; border-radius:14px !important; }
+    #section-overview .grid.cols-4 .card, #section-overview .grid.cols-2 .card{ background:#fff !important; border:1px solid #e3e3e8 !important; }
+    #section-overview .pill{ background:#f5f5f7 !important; color:#6e6e73 !important; border:1px solid #e3e3e8 !important; }
+    #section-overview .pill.good{ background:#e7f7ec !important; color:#1a9e4b !important; }
+    #section-overview .tiny{ color:#86868b !important; }
+    .card h2,.card h3{ font-weight:700 !important; letter-spacing:-.01em; }
+    button{ border-radius:980px !important; font-weight:600 !important; }
+    .btn-primary{ background:#0071e3 !important; color:#fff !important; }
+    .btn-primary:hover{ background:#0077ed !important; }
+    .btn-secondary{ background:#f5f5f7 !important; color:#1d1d1f !important; border:1px solid #d2d2d7 !important; }
+    .btn-soft{ background:#f5f5f7 !important; color:#1d1d1f !important; }
+    .btn-success{ background:#e7f7ec !important; color:#1a9e4b !important; }
+    .btn-warning{ background:#fff4e5 !important; color:#b25e00 !important; }
+    .btn-danger{ background:#fff0f0 !important; color:#d23b3b !important; }
+    .pill{ background:#f5f5f7; color:#6e6e73; border:1px solid #e3e3e8; box-shadow:none; }
+    .pill.good{ background:#e7f7ec; color:#1a9e4b; border-color:#cdeed7; }
+    .pill.warn{ background:#fff4e5; color:#b25e00; border-color:#ffe3bf; }
+    .pill.bad{ background:#fff0f0; color:#d23b3b; border-color:#ffd4d4; }
+    input,select,textarea{ border:1px solid #d2d2d7 !important; border-radius:12px !important; background:#fff !important; }
+    input:focus,select:focus,textarea:focus{ border-color:#0071e3 !important; box-shadow:0 0 0 3px rgba(0,113,227,.15) !important; }
+    .mode-btn{ border-radius:980px !important; }
+    .mode-btn.active{ box-shadow:none !important; }
+    #focusModeUpBtn.active{ background:#0071e3 !important; }
+    #focusModeDownBtn.active{ background:#1d1d1f !important; }
+    .focus-display{ color:#1d1d1f !important; font-weight:800; }
+    .soft-tag{ background:#f5f5f7; border:1px solid #e3e3e8; color:#6e6e73; }
+    .cat-badge{ border-radius:980px; }
+    .calendar-cell{ background:#fff; }
+    .calendar-cell.today{ box-shadow:inset 0 0 0 2px #0071e3; background:#f0f6ff; }
+    .calendar-cell.today .calendar-date .num{ background:#0071e3; }
+    .cal-add{ background:#f0f4ff; color:#0071e3; border-color:#cfe0ff; }
+    .cal-add:hover{ background:#0071e3; color:#fff; }
+    .progress-fill,.bar-fill{ background:linear-gradient(90deg,#0a84ff,#0071e3) !important; }
+    #section-submission h2, #submissionModal h2{ color:#1d1d1f !important; }
+    .sub-card{ border-left:6px solid #0071e3 !important; }
+    .footer-note{ color:#86868b; }
+    .muyu-label{ color:#6e6e73; }
+    /* Apple 深色 */
+    body.dark{ --bg:#000; --card:#1d1d1f; --line:#2a2a2c; --text:#f5f5f7; --muted:#a1a1a6; --primary-soft:#1c1c1e; background:#000 !important; color:#f5f5f7; }
+    body.dark .hero{ background:#1d1d1f !important; color:#f5f5f7 !important; border-color:#2a2a2c; }
+    body.dark .hero h1{ color:#f5f5f7; }
+    body.dark .hero-mini{ background:#000 !important; }
+    body.dark .card{ background:#1d1d1f !important; border-color:#2a2a2c !important; color:#f5f5f7; }
+    body.dark .mini-stat, body.dark .chart-card, body.dark .calendar-board, body.dark .calendar-cell{ background:#161617 !important; border-color:#2a2a2c !important; }
+    body.dark #section-overview .grid.cols-4 .card, body.dark #section-overview .grid.cols-2 .card{ background:#1d1d1f !important; border-color:#2a2a2c !important; }
+    body.dark input, body.dark select, body.dark textarea{ background:#2a2a2c !important; color:#f5f5f7 !important; border-color:#3a3a3c !important; }
+    body.dark .tab{ background:#1d1d1f !important; border-color:#2a2a2c !important; color:#f5f5f7 !important; }
+    body.dark .tab.active,
+    body.dark .tabs .tab:nth-child(1).active,body.dark .tabs .tab:nth-child(2).active,body.dark .tabs .tab:nth-child(3).active,body.dark .tabs .tab:nth-child(4).active,body.dark .tabs .tab:nth-child(5).active{ background:#f5f5f7 !important; color:#000 !important; border-color:#f5f5f7 !important; }
+    body.dark .btn-secondary, body.dark .btn-soft{ background:#2a2a2c !important; color:#f5f5f7 !important; border-color:#3a3a3c !important; }
+    body.dark .pill{ background:#2a2a2c; color:#a1a1a6; border-color:#3a3a3c; }
+    body.dark th,body.dark td{ border-color:#2a2a2c !important; }
+    body.dark .empty{ background:#161617; border-color:#2a2a2c; color:#a1a1a6; }
+    body.dark .footer-note,body.dark .muyu-label{ color:#a1a1a6; }
 </style>
 </head>
 <body>
@@ -1196,15 +1276,15 @@ td button {
       </div>
       <div class="hero-right">
         <div class="hero-mini">
-          <div class="label">今日已完成打卡时段</div>
-          <div class="value" id="heroAttendanceCount">0 / 3</div>
+          <div class="label">今日开始学习</div>
+          <div class="value" id="heroStudyStart">--:--</div>
         </div>
         <div class="hero-mini">
           <div class="label">当前进行中任务</div>
           <div class="value" id="heroTaskName">-</div>
         </div>
         <div class="hero-mini">
-          <div class="label">今日任务时长</div>
+          <div class="label">今日学习时长</div>
           <div class="value" id="heroTaskHours">0.0 h</div>
         </div>
         <div class="hero-mini">
@@ -1234,56 +1314,110 @@ td button {
     </div>
  
     <div class="tabs">
-      <button class="tab active" data-tab="overview">今日状态</button>
-      <button class="tab" data-tab="attendance">打卡记录</button>
-     <button class="tab" data-tab="submission">模考成绩</button>
-      <button class="tab" data-tab="tasks">任务管理</button>
+      <button class="tab active" data-tab="overview">今日学习</button>
+      <button class="tab" data-tab="submission">模考成绩</button>
       <button class="tab" data-tab="calendar">日程日历</button>
+      <button class="tab" data-tab="exercise">锻炼管理</button>
       <button class="tab" data-tab="stats">统计分析</button>
     </div>
  
-    <section class="section active" id="section-overview">
+        <section class="section active" id="section-overview">
       <div class="grid cols-4">
         <div class="card">
-          <div class="card-title"><h3>上午打卡</h3><span id="summaryMorning" class="pill">未完成</span></div>
-          <div class="tiny">上班：<span id="summaryMorningIn">-</span></div>
-          <div class="tiny">下班：<span id="summaryMorningOut">-</span></div>
+          <div class="card-title"><h3>开始学习</h3><span class="pill good">今天</span></div>
+          <div class="big-number" id="ovStudyStart">--:--</div>
+          <div class="tiny" id="ovStudyStartNote">今天还没开始学习</div>
         </div>
         <div class="card">
-          <div class="card-title"><h3>下午打卡</h3><span id="summaryAfternoon" class="pill">未完成</span></div>
-          <div class="tiny">上班：<span id="summaryAfternoonIn">-</span></div>
-          <div class="tiny">下班：<span id="summaryAfternoonOut">-</span></div>
+          <div class="card-title"><h3>今日专注</h3><span class="pill good">实时</span></div>
+          <div class="big-number" id="ovFocusToday">0.0 h</div>
+          <div class="tiny">今日累计学习</div>
         </div>
         <div class="card">
-          <div class="card-title"><h3>晚上打卡</h3><span id="summaryEvening" class="pill">未完成</span></div>
-          <div class="tiny">上班：<span id="summaryEveningIn">-</span></div>
-          <div class="tiny">下班：<span id="summaryEveningOut">-</span></div>
+          <div class="card-title"><h3>本周专注</h3><span class="pill">本周</span></div>
+          <div class="big-number" id="ovFocusWeek">0.0 h</div>
+          <div class="tiny">本周累计学习</div>
         </div>
         <div class="card">
-          <div class="card-title"><h3>今日状态</h3><span class="pill good">实时</span></div>
-          <div class="tiny">进行中任务：<span id="summaryTask">-</span></div>
+          <div class="card-title"><h3>累计专注</h3><span class="pill">总计</span></div>
+          <div class="big-number" id="ovFocusTotal">0.0 h</div>
+          <div class="tiny">开始记录以来</div>
         </div>
       </div>
- 
-      <div class="card" style="margin-top:16px">
+
+      <div class="card focus-card" style="margin-top:16px">
         <div class="card-title">
-          <h3>⏱️ 专注时间</h3>
-          <span class="pill good">已记录</span>
+          <h2>专注任务中心</h2>
+          <span class="pill" id="focusModeBadge">正计时</span>
         </div>
-        <div class="stats-row" style="grid-template-columns:repeat(3,minmax(0,1fr))">
-          <div class="mini-stat"><div class="tiny">今日专注</div><div class="big-number" id="ovFocusToday">0.0 h</div></div>
-          <div class="mini-stat"><div class="tiny">本周专注</div><div class="big-number" id="ovFocusWeek">0.0 h</div></div>
-          <div class="mini-stat"><div class="tiny">累计专注</div><div class="big-number" id="ovFocusTotal">0.0 h</div></div>
+        <div class="mode-switch">
+          <button class="mode-btn active" id="focusModeUpBtn">正计时（学习模式）</button>
+          <button class="mode-btn" id="focusModeDownBtn">25 分钟番茄钟</button>
+        </div>
+        <div id="focusDisplay" class="focus-display">00:00:00</div>
+        <div id="focusHint" class="focus-hint">点「开始专注」的真实时间会作为你今天的「开始学习时间」。</div>
+        <div class="focus-form">
+          <div>
+            <label for="taskNameInput">任务名称</label>
+            <input id="taskNameInput" type="text" placeholder="例如：背政治大题 / 刷数学真题 / 408错题复盘" />
+          </div>
+          <div>
+            <label for="taskCategoryInput">任务分类</label>
+            <select id="taskCategoryInput">
+              <option value="📕 政治">📕 政治</option>
+              <option value="📗 英语一">📗 英语一</option>
+              <option value="📘 数学一">📘 数学一</option>
+              <option value="📙 408专业课">📙 408专业课</option>
+              <option value="📚 真题/模考">📚 真题/模考</option>
+            </select>
+          </div>
+          <div>
+            <label for="taskDateInput">任务日期</label>
+            <input id="taskDateInput" type="date" />
+          </div>
+          <button class="btn-primary" id="startFocusTaskBtn">开始专注</button>
+          <button class="btn-warning" id="addBackfillTaskBtn">补录已完成任务</button>
+          <button class="btn-secondary" id="quickAddTaskBtn">添加待办</button>
+        </div>
+        <div class="tiny" style="margin-top:10px">
+          选择「任务日期」后点「添加待办」可把任务存到未来某天；到当天再点「开始专注」即可。
+        </div>
+        <div class="focus-meta">
+          <div class="mini-stat">
+            <div class="tiny">当前状态</div>
+            <div style="margin-top:8px" id="activeTaskStatusWrap"><span class="pill">空闲</span></div>
+          </div>
+          <div class="mini-stat">
+            <div class="tiny">当前任务</div>
+            <div style="font-size:20px;font-weight:800;margin-top:8px" id="activeTaskName">-</div>
+          </div>
+          <div class="mini-stat">
+            <div class="tiny">任务分类 / 计时模式</div>
+            <div style="margin-top:8px; display:flex; gap:6px; flex-wrap:wrap">
+              <span class="soft-tag" id="activeTaskCategory">-</span>
+              <span class="soft-tag" id="activeTaskMode">-</span>
+            </div>
+          </div>
+        </div>
+        <div class="mini-stat" style="margin-top:14px">
+          <div class="tiny">已进行 / 剩余时间</div>
+          <div style="font-size:20px;font-weight:800;margin-top:8px" id="activeTaskElapsed">00:00:00</div>
+          <div class="tiny" style="margin-top:6px" id="activeTaskNote">当前暂无进行中的任务。</div>
+        </div>
+        <div class="spacer"></div>
+        <div class="button-row">
+          <button class="btn-success" id="finishTaskBtn">结束任务</button>
+          <button class="btn-danger" id="cancelTaskBtn">中断任务</button>
         </div>
       </div>
- 
+
       <div class="grid cols-2" style="margin-top:16px">
         <div class="card">
           <div class="card-title">
             <h3>今日任务列表</h3>
-            <span class="pill" id="todayTaskTotal">0 项</span>
+            <span class="pill" id="taskDayCount">0 项</span>
           </div>
-          <div id="todayTaskTableWrap"></div>
+          <div id="taskTableWrap"></div>
         </div>
         <div class="card">
           <div class="card-title">
@@ -1295,171 +1429,9 @@ td button {
       </div>
     </section>
  
-    <section class="section" id="section-attendance">
-      <div class="card">
-        <div class="card-title">
-          <h2>打卡记录</h2>
-          <span class="pill" id="attendanceLeaveHint">正常打卡日</span>
-        </div>
-        <div class="grid cols-3">
-          <div class="period-card">
-            <div class="card-title">
-              <h3>上午打卡</h3>
-              <span class="pill">06:00 - 14:00</span>
-            </div>
-            <div class="period-meta">
-              <span class="pill">上班范围 06:00 - 12:00</span>
-              <span class="pill">下班范围 09:00 - 14:00</span>
-              <span class="pill good">合格：08:00前上班，12:00前下班</span>
-            </div>
-            <div class="button-row">
-              <button class="btn-primary" data-period="morning" data-type="in">上午上班</button>
-              <button class="btn-secondary" data-period="morning" data-type="out">上午下班</button>
-            </div>
-            <div class="record-grid">
-              <div class="record-item"><div class="tiny">上班</div><div id="morningInTime">-</div></div>
-              <div class="record-item"><div class="tiny">下班</div><div id="morningOutTime">-</div></div>
-              <div class="record-item"><div class="tiny">上班状态</div><div id="morningInStatus">-</div></div>
-              <div class="record-item"><div class="tiny">下班状态</div><div id="morningOutStatus">-</div></div>
-            </div>
-          </div>
- 
-          <div class="period-card">
-            <div class="card-title">
-              <h3>下午打卡</h3>
-              <span class="pill">12:00 - 20:00</span>
-            </div>
-            <div class="period-meta">
-              <span class="pill">上班范围 12:00 - 17:00</span>
-              <span class="pill">下班范围 14:00 - 20:00</span>
-              <span class="pill good">合格：14:00前上班，18:00前下班</span>
-            </div>
-            <div class="button-row">
-              <button class="btn-primary" data-period="afternoon" data-type="in">下午上班</button>
-              <button class="btn-secondary" data-period="afternoon" data-type="out">下午下班</button>
-            </div>
-            <div class="record-grid">
-              <div class="record-item"><div class="tiny">上班</div><div id="afternoonInTime">-</div></div>
-              <div class="record-item"><div class="tiny">下班</div><div id="afternoonOutTime">-</div></div>
-              <div class="record-item"><div class="tiny">上班状态</div><div id="afternoonInStatus">-</div></div>
-              <div class="record-item"><div class="tiny">下班状态</div><div id="afternoonOutStatus">-</div></div>
-            </div>
-          </div>
- 
-          <div class="period-card">
-            <div class="card-title">
-              <h3>晚上打卡</h3>
-              <span class="pill">17:00 - 24:00</span>
-            </div>
-            <div class="period-meta">
-              <span class="pill">上班范围 17:00 - 22:00</span>
-              <span class="pill">下班范围 20:00 - 24:00</span>
-              <span class="pill good">合格：19:00前上班，21:00 - 22:00下班</span>
-            </div>
-            <div class="button-row">
-              <button class="btn-primary" data-period="evening" data-type="in">晚上上班</button>
-              <button class="btn-secondary" data-period="evening" data-type="out">晚上下班</button>
-            </div>
-            <div class="record-grid">
-              <div class="record-item"><div class="tiny">上班</div><div id="eveningInTime">-</div></div>
-              <div class="record-item"><div class="tiny">下班</div><div id="eveningOutTime">-</div></div>
-              <div class="record-item"><div class="tiny">上班状态</div><div id="eveningInStatus">-</div></div>
-              <div class="record-item"><div class="tiny">下班状态</div><div id="eveningOutStatus">-</div></div>
-            </div>
-          </div>
-        </div>
- 
-        <div class="spacer"></div>
-        <h3>当前日期打卡总览</h3>
-        <div id="attendanceTableWrap"></div>
-      </div>
-    </section>
  
  
     
-    <section class="section" id="section-tasks">
-      <div class="grid cols-2">
-        <div class="card focus-card">
-          <div class="card-title">
-            <h2>专注任务中心</h2>
-            <span class="pill" id="focusModeBadge">正计时</span>
-          </div>
- 
-          <div class="mode-switch">
-            <button class="mode-btn active" id="focusModeUpBtn">正计时（学习模式）</button>
-            <button class="mode-btn" id="focusModeDownBtn">25 分钟番茄钟</button>
-          </div>
- 
-          <div id="focusDisplay" class="focus-display">00:00:00</div>
-          <div id="focusHint" class="focus-hint">正计时会从 00:00:00 开始累计；番茄钟会在 25 分钟后自动结束当前专注任务。</div>
- 
-          <div class="focus-form">
-            <div>
-              <label for="taskNameInput">任务名称</label>
-              <input id="taskNameInput" type="text" placeholder="例如：背政治大题 / 刷数学真题 / 408错题复盘" />
-            </div>
-            <div>
-              <label for="taskCategoryInput">任务分类</label>
-              <select id="taskCategoryInput">
-                <option value="📕 政治">📕 政治</option>
-                <option value="📗 英语一">📗 英语一</option>
-                <option value="📘 数学一">📘 数学一</option>
-                <option value="📙 408专业课">📙 408专业课</option>
-                <option value="📚 真题/模考">📚 真题/模考</option>
-              </select>
-            </div>
-            <div>
-              <label for="taskDateInput">任务日期</label>
-              <input id="taskDateInput" type="date" />
-            </div>
-            <button class="btn-primary" id="startFocusTaskBtn">开始专注</button>
-            <button class="btn-warning" id="addBackfillTaskBtn" style="background:#c7a977; color:#fff;">补录已完成任务</button>
-            <button class="btn-secondary" id="quickAddTaskBtn">添加待办</button>
-          </div>
-          <div class="tiny" style="margin-top:10px">
-            现在支持像任务管理器一样提前安排任务。选择“任务日期”后，点击“添加待办”即可把任务存到未来日期；到当天再开始，或直接切换到对应日期查看。
-          </div>
- 
-          <div class="focus-meta">
-            <div class="mini-stat">
-              <div class="tiny">当前状态</div>
-              <div style="margin-top:8px" id="activeTaskStatusWrap"><span class="pill">空闲</span></div>
-            </div>
-            <div class="mini-stat">
-              <div class="tiny">当前任务</div>
-              <div style="font-size:20px;font-weight:800;margin-top:8px" id="activeTaskName">-</div>
-            </div>
-            <div class="mini-stat">
-              <div class="tiny">任务分类 / 计时模式</div>
-              <div style="margin-top:8px; display:flex; gap:6px; flex-wrap:wrap">
-                <span class="soft-tag" id="activeTaskCategory">-</span>
-                <span class="soft-tag" id="activeTaskMode">-</span>
-              </div>
-            </div>
-          </div>
- 
-          <div class="mini-stat" style="margin-top:14px">
-            <div class="tiny">已进行 / 剩余时间</div>
-            <div style="font-size:20px;font-weight:800;margin-top:8px" id="activeTaskElapsed">00:00:00</div>
-            <div class="tiny" style="margin-top:6px" id="activeTaskNote">当前暂无进行中的任务。</div>
-          </div>
- 
-          <div class="spacer"></div>
-          <div class="button-row">
-            <button class="btn-success" id="finishTaskBtn">结束任务</button>
-            <button class="btn-danger" id="cancelTaskBtn">中断任务</button>
-          </div>
-        </div>
- 
-        <div class="card">
-          <div class="card-title">
-            <h2>今日任务列表</h2>
-            <span class="pill" id="taskDayCount">0 项</span>
-          </div>
-          <div id="taskTableWrap"></div>
-        </div>
-      </div>
-    </section>
  
     <section class="section" id="section-calendar">
       <div class="grid cols-2">
@@ -1511,6 +1483,33 @@ td button {
       </div>
     </section>
 
+
+    <section class="section" id="section-exercise">
+      <div class="grid cols-2">
+        <div class="card">
+          <div class="card-title"><h2>🏃 添加锻炼</h2><span class="pill good">动起来</span></div>
+          <div class="inline-form">
+            <div><label>项目</label><select id="exTypeInput">
+              <option>跑步</option><option>健身</option><option>球类</option><option>骑行</option>
+              <option>游泳</option><option>瑜伽/拉伸</option><option>散步</option><option>其它</option>
+            </select></div>
+            <div><label>时长（分钟）</label><input id="exMinInput" type="number" placeholder="如 30" /></div>
+            <div><label>日期</label><input id="exDateInput" type="date" /></div>
+            <div><label>备注</label><input id="exNoteInput" type="text" placeholder="可选" /></div>
+            <button class="btn-primary" id="addExerciseBtn">添加锻炼</button>
+          </div>
+          <div class="stats-row" style="grid-template-columns:repeat(3,minmax(0,1fr)); margin-top:8px">
+            <div class="mini-stat"><div class="tiny">本周次数</div><div class="big-number" id="exWeekCount">0</div></div>
+            <div class="mini-stat"><div class="tiny">本周时长(min)</div><div class="big-number" id="exWeekMin">0</div></div>
+            <div class="mini-stat"><div class="tiny">累计次数</div><div class="big-number" id="exTotalCount">0</div></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title"><h2>锻炼记录</h2><span class="pill" id="exCountPill">0 条</span></div>
+          <div id="exerciseTableWrap"></div>
+        </div>
+      </div>
+    </section>
 
     <!-- 2. 模考成绩模块 (淡紫色系) -->
     <section class="section" id="section-submission">
@@ -1598,8 +1597,8 @@ td button {
         </div>
  
         <div class="stats-row">
-          <div class="mini-stat"><div class="tiny">总打卡天数</div><div class="big-number" id="statAttendanceDays">0</div></div>
-          <div class="mini-stat"><div class="tiny">总任务时长（小时）</div><div class="big-number" id="statTaskHours">0</div></div>
+          <div class="mini-stat"><div class="tiny">学习天数</div><div class="big-number" id="statStudyDays">0</div></div>
+          <div class="mini-stat"><div class="tiny">总学习时长（小时）</div><div class="big-number" id="statTaskHours">0</div></div>
           <div class="mini-stat"><div class="tiny">模考次数</div><div class="big-number" id="statMockCount">0</div></div>
         </div>
 
@@ -1608,22 +1607,14 @@ td button {
           <div id="reportWrap" style="font-size:14px; line-height:1.9; color:var(--text)"></div>
         </div>
  
-        <div class="grid cols-2" style="margin-top:16px">
-          <div class="chart-card">
-            <div class="card-title"><h3>打卡率统计</h3><span class="pill" id="overallRatePill">0%</span></div>
-            <div class="bar-group" id="periodRateBars"></div>
-          </div>
-          <div class="chart-card">
-            <div class="card-title"><h3>每日任务时长</h3><span class="pill">小时</span></div>
+                <div class="grid cols-2" style="margin-top:16px">
+          <div class="chart-card" style="grid-column:1 / -1">
+            <div class="card-title"><h3>每日学习时长</h3><span class="pill">小时</span></div>
             <div class="bar-group" id="taskHourBars"></div>
           </div>
           <div class="chart-card" style="grid-column:1 / -1">
             <div class="card-title"><h3>模考成绩走势 · 分科目（得分率%）</h3><span class="pill">折线对比</span></div>
             <div id="mockLineChart"></div>
-          </div>
-          <div class="chart-card">
-            <div class="card-title"><h3>时段打卡统计</h3><span class="pill">完成率</span></div>
-            <div class="bar-group" id="periodCountBars"></div>
           </div>
         </div>
       </div>
@@ -1711,7 +1702,8 @@ function defaultState(){
     muyuCount: 0,
     examDate: '2026-12-19',
     dailyGoalHours: 8,
-    darkMode: false
+    darkMode: false,
+    exercises: []
   };
 }
  
@@ -1731,7 +1723,8 @@ function loadState(){
           muyuCount: parsed.muyuCount || 0,
           examDate: parsed.examDate || '2026-12-19',
           dailyGoalHours: (parsed.dailyGoalHours != null ? parsed.dailyGoalHours : 8),
-          darkMode: parsed.darkMode || false
+          darkMode: parsed.darkMode || false,
+          exercises: parsed.exercises || []
         };
       }catch(e){
         return defaultState();
@@ -2175,7 +2168,6 @@ let calendarSidebarMode = '待开始'; // 可选值：'待开始', '已完成', 
  
 function renderHero(){
   const today = todayStr();
-  document.getElementById('heroAttendanceCount').textContent = `${calcCompletedPeriods(today)} / 3`;
   const active = getActiveTask();
   document.getElementById('heroTaskName').textContent = active ? active.name : '-';
   const todayTaskMs = getTasksByDate(today).reduce((sum,t)=>sum+getTaskDurationMs(t),0);
@@ -2184,46 +2176,23 @@ function renderHero(){
 }
  
 function renderOverview(){
-      const att = ensureAttendanceDate(selectedDate);
-      const leave = getLeaveRecord(selectedDate);
- 
-      const setSummary = (period, keyName) => {
-        const rec = att[period];
-        const labelEl = document.getElementById(`summary${keyName}`);
-        const inEl = document.getElementById(`summary${keyName}In`);
-        const outEl = document.getElementById(`summary${keyName}Out`);
-        if(leave){
-          labelEl.className = 'pill warn';
-          labelEl.textContent = '请假日';
-        }else if(rec.in || rec.out){
-          labelEl.className = 'pill good';
-          labelEl.textContent = '已完成';
-        }else{
-          labelEl.className = 'pill';
-          labelEl.textContent = '未完成';
-        }
-        inEl.textContent = rec.in ? `${rec.in}（${rec.inStatus}）` : '-';
-        outEl.textContent = rec.out ? `${rec.out}（${rec.outStatus}）` : '-';
-      };
- 
-      setSummary('morning','Morning');
-      setSummary('afternoon','Afternoon');
-      setSummary('evening','Evening');
- 
-      const active = getActiveTask();
-      document.getElementById('summaryTask').textContent = active ? active.name : '-';
- 
-      const _td = todayStr();
-      const _d0 = new Date(_td+'T12:00:00'); const _wd=_d0.getDay()||7;
+      const td = todayStr();
+      const starts = state.tasks.filter(t=>t.date===td && t.startTime).map(t=>new Date(t.startTime)).sort((a,b)=>a-b);
+      const startStr = starts.length ? formatTime(starts[0]) : '--:--';
+      const setT=(id,v)=>{const e=document.getElementById(id); if(e) e.textContent=v;};
+      setT('ovStudyStart', startStr);
+      setT('heroStudyStart', startStr);
+      setT('ovStudyStartNote', starts.length ? `最早从 ${startStr} 开始学习` : '今天还没开始学习');
+
+      const _d0 = new Date(td+'T12:00:00'); const _wd=_d0.getDay()||7;
       const _mon = new Date(_d0); _mon.setDate(_d0.getDate()-_wd+1);
       const _sun = new Date(_d0); _sun.setDate(_d0.getDate()+(7-_wd));
       const _monS=toDateStr(_mon), _sunS=toDateStr(_sun);
       const _sumMs = fn => state.tasks.filter(fn).reduce((a,t)=>a+getTaskDurationMs(t),0);
       const _fmtH = ms => (ms/3600000).toFixed(1)+' h';
-      const _et=document.getElementById('ovFocusToday'); if(_et) _et.textContent=_fmtH(_sumMs(t=>t.date===_td));
-      const _ew=document.getElementById('ovFocusWeek'); if(_ew) _ew.textContent=_fmtH(_sumMs(t=>t.date>=_monS&&t.date<=_sunS));
-      const _ea=document.getElementById('ovFocusTotal'); if(_ea) _ea.textContent=_fmtH(_sumMs(()=>true));
-      renderTodayTaskTable('todayTaskTableWrap');
+      setT('ovFocusToday', _fmtH(_sumMs(t=>t.date===td)));
+      setT('ovFocusWeek', _fmtH(_sumMs(t=>t.date>=_monS&&t.date<=_sunS)));
+      setT('ovFocusTotal', _fmtH(_sumMs(()=>true)));
       renderTimeline();
     }
  
@@ -2692,117 +2661,42 @@ window.setCalendarFilter = function(mode) {
  
     function renderStats(){
       const dates = getScopeDates(statsScope);
-
-      if(statsScope === 'year'){
-        renderYearStats(dates);
-        renderMockLineChart();
-        return;
-      }
-
+      if(statsScope === 'year'){ renderYearStats(dates); renderMockLineChart(); renderReport(); return; }
       const taskHoursByDate = {};
-      const attendanceStats = {
-        totalExpected:0, totalDone:0, daysDone:0,
-        perPeriod:{ morning:{done:0,expected:0}, afternoon:{done:0,expected:0}, evening:{done:0,expected:0} }
-      };
-
+      let studyDays = 0, totalH = 0;
       dates.forEach(dateStr=>{
-        const tasks = getTasksByDate(dateStr);
-        const taskMs = tasks.reduce((sum,t)=>sum+getTaskDurationMs(t),0);
-        taskHoursByDate[dateStr] = +(taskMs/3600000).toFixed(1);
-        const att = ensureAttendanceDate(dateStr);
-        let dayDone = false;
-        ['morning','afternoon','evening'].forEach(p=>{
-          attendanceStats.perPeriod[p].expected += 1;
-          attendanceStats.totalExpected += 1;
-          if(att[p].in || att[p].out){
-            attendanceStats.perPeriod[p].done += 1;
-            attendanceStats.totalDone += 1;
-            dayDone = true;
-          }
-        });
-        if(dayDone) attendanceStats.daysDone += 1;
+        const ms = getTasksByDate(dateStr).reduce((sum,t)=>sum+getTaskDurationMs(t),0);
+        const h = +(ms/3600000).toFixed(1);
+        taskHoursByDate[dateStr] = h;
+        if(h>0) studyDays++;
+        totalH += h;
       });
-
-      const overallRate = attendanceStats.totalExpected ? Math.round(attendanceStats.totalDone / attendanceStats.totalExpected * 100) : 0;
-      document.getElementById('overallRatePill').textContent = `${overallRate}%`;
-      document.getElementById('statAttendanceDays').textContent = attendanceStats.daysDone;
-      document.getElementById('statTaskHours').textContent = Object.values(taskHoursByDate).reduce((a,b)=>a+b,0).toFixed(1);
+      document.getElementById('statStudyDays').textContent = studyDays;
+      document.getElementById('statTaskHours').textContent = totalH.toFixed(1);
       document.getElementById('statMockCount').textContent = countMockEntries();
-
-      document.getElementById('periodRateBars').innerHTML = ['morning','afternoon','evening'].map(p=>{
-        const obj = attendanceStats.perPeriod[p];
-        const rate = obj.expected ? Math.round(obj.done / obj.expected * 100) : 0;
-        return barRow(PERIODS[p].label, rate, `${rate}%`);
-      }).join('') || `<div class="empty">暂无数据</div>`;
-
       const taskEntries = Object.entries(taskHoursByDate);
       const maxTask = Math.max(1, ...taskEntries.map(([_,v])=>v));
       document.getElementById('taskHourBars').innerHTML = taskEntries.map(([k,v])=>{
         const label = statsScope === 'week' ? k.slice(5) : k.slice(8);
         return barRow(label, Math.round(v/maxTask*100), `${v}`);
       }).join('') || `<div class="empty">暂无数据</div>`;
-
-      document.getElementById('periodCountBars').innerHTML = ['morning','afternoon','evening'].map(p=>{
-        const obj = attendanceStats.perPeriod[p];
-        const rate = obj.expected ? Math.round(obj.done / obj.expected * 100) : 0;
-        return barRow(PERIODS[p].label, rate, `${obj.done}/${obj.expected}`);
-      }).join('') || `<div class="empty">暂无数据</div>`;
-
       renderMockLineChart();
+      renderReport();
     }
 
     function renderYearStats(months){
-      const taskHoursByMonth = {};
-      const attendanceStats = {
-        totalExpected:0, totalDone:0, daysDone:0,
-        perPeriod:{ morning:{done:0,expected:0}, afternoon:{done:0,expected:0}, evening:{done:0,expected:0} }
-      };
-
-      Object.keys(state.attendance).forEach(dateStr=>{
-        const month = dateStr.slice(0,7);
-        if(!months.includes(month)) return;
-        const tasks = getTasksByDate(dateStr);
-        taskHoursByMonth[month] = +( (taskHoursByMonth[month] || 0) + tasks.reduce((sum,t)=>sum+getTaskDurationMs(t),0)/3600000 ).toFixed(1);
-        const att = ensureAttendanceDate(dateStr);
-        let dayDone = false;
-        ['morning','afternoon','evening'].forEach(p=>{
-          attendanceStats.perPeriod[p].expected += 1;
-          attendanceStats.totalExpected += 1;
-          if(att[p].in || att[p].out){
-            attendanceStats.perPeriod[p].done += 1;
-            attendanceStats.totalDone += 1;
-            dayDone = true;
-          }
-        });
-        if(dayDone) attendanceStats.daysDone += 1;
-      });
-
-      months.forEach(m=>{ if(taskHoursByMonth[m] == null) taskHoursByMonth[m] = 0; });
-
-      const overallRate = attendanceStats.totalExpected ? Math.round(attendanceStats.totalDone / attendanceStats.totalExpected * 100) : 0;
-      document.getElementById('overallRatePill').textContent = `${overallRate}%`;
-      document.getElementById('statAttendanceDays').textContent = attendanceStats.daysDone;
-      document.getElementById('statTaskHours').textContent = Object.values(taskHoursByMonth).reduce((a,b)=>a+b,0).toFixed(1);
+      const monthSet = new Set(months);
+      const dayMs = {};
+      state.tasks.forEach(t=>{ if(t.date && monthSet.has(t.date.slice(0,7))) dayMs[t.date]=(dayMs[t.date]||0)+getTaskDurationMs(t); });
+      const byMonth = {}; let studyDays=0, totalH=0;
+      Object.entries(dayMs).forEach(([d,ms])=>{ const h=ms/3600000; totalH+=h; if(h>0) studyDays++; const m=d.slice(0,7); byMonth[m]=(byMonth[m]||0)+h; });
+      months.forEach(m=>{ if(byMonth[m]==null) byMonth[m]=0; });
+      document.getElementById('statStudyDays').textContent = studyDays;
+      document.getElementById('statTaskHours').textContent = totalH.toFixed(1);
       document.getElementById('statMockCount').textContent = countMockEntries();
-
-      document.getElementById('periodRateBars').innerHTML = ['morning','afternoon','evening'].map(p=>{
-        const obj = attendanceStats.perPeriod[p];
-        const rate = obj.expected ? Math.round(obj.done / obj.expected * 100) : 0;
-        return barRow(PERIODS[p].label, rate, `${rate}%`);
-      }).join('') || `<div class="empty">暂无数据</div>`;
-
-      const taskEntries = Object.entries(taskHoursByMonth);
-      const maxTask = Math.max(1, ...taskEntries.map(([_,v])=>v));
-      document.getElementById('taskHourBars').innerHTML = taskEntries.map(([k,v])=>{
-        const label = k.slice(5);
-        return barRow(label, Math.round(v/maxTask*100), `${v}`);
-      }).join('') || `<div class="empty">暂无数据</div>`;
-
-      document.getElementById('periodCountBars').innerHTML = ['morning','afternoon','evening'].map(p=>{
-        const obj = attendanceStats.perPeriod[p];
-        const rate = obj.expected ? Math.round(obj.done / obj.expected * 100) : 0;
-        return barRow(PERIODS[p].label, rate, `${obj.done}/${obj.expected}`);
-      }).join('') || `<div class="empty">暂无数据</div>`;
+      const entries = Object.entries(byMonth).map(([k,v])=>[k, +v.toFixed(1)]);
+      const maxV = Math.max(1, ...entries.map(([_,v])=>v));
+      document.getElementById('taskHourBars').innerHTML = entries.map(([k,v])=>barRow(k.slice(5), Math.round(v/maxV*100), `${v}`)).join('') || `<div class="empty">暂无数据</div>`;
     }
 
     function barRow(label, percent, value){
@@ -2866,7 +2760,8 @@ function importData(file){
             muyuCount: parsed.muyuCount || 0,
             examDate: parsed.examDate || '2026-12-19',
             dailyGoalHours: (parsed.dailyGoalHours != null ? parsed.dailyGoalHours : 8),
-            darkMode: parsed.darkMode || false
+            darkMode: parsed.darkMode || false,
+            exercises: parsed.exercises || []
           };
           localStorage.setItem(STORAGE_KEY, JSON.stringify(merged));
           location.reload();
@@ -3297,19 +3192,14 @@ function importData(file){
       const scopeName = statsScope==='week'?'本周':(statsScope==='month'?'本月':'本年');
       const pill=document.getElementById('reportScopePill'); if(pill) pill.textContent=scopeName;
       const dates=getScopeDates(statsScope);
-      let hours=0, daysDone=0, expected=0, done=0;
-      const acc=(ds)=>{
-        const ts=getTasksByDate(ds); hours+=ts.reduce((a,t)=>a+getTaskDurationMs(t),0)/3600000;
-        const att=ensureAttendanceDate(ds); let dd=false;
-        ['morning','afternoon','evening'].forEach(p=>{ expected++; if(att[p].in||att[p].out){done++;dd=true;} });
-        if(dd) daysDone++;
-      };
+      let hours=0, studyDays=0;
       if(statsScope==='year'){
-        Object.keys(state.attendance).forEach(ds=>{ if(dates.includes(ds.slice(0,7))) acc(ds); });
+        const monthSet=new Set(dates); const dayMs={};
+        state.tasks.forEach(t=>{ if(t.date && monthSet.has(t.date.slice(0,7))) dayMs[t.date]=(dayMs[t.date]||0)+getTaskDurationMs(t); });
+        Object.values(dayMs).forEach(ms=>{ const h=ms/3600000; hours+=h; if(h>0) studyDays++; });
       }else{
-        dates.forEach(acc);
+        dates.forEach(ds=>{ const ms=getTasksByDate(ds).reduce((a,t)=>a+getTaskDurationMs(t),0); const h=ms/3600000; hours+=h; if(h>0) studyDays++; });
       }
-      const rate= expected? Math.round(done/expected*100):0;
       const mockN=countMockEntries();
       let trendParts=[], weakest=null, weakestRate=999;
       MOCK_SUBJECTS.forEach(sub=>{
@@ -3318,20 +3208,65 @@ function importData(file){
         const rates=logs.map(l=>Math.round(l.score/sub.full*100));
         const avg=Math.round(rates.reduce((a,b)=>a+b,0)/rates.length);
         if(avg<weakestRate){ weakestRate=avg; weakest=sub.key; }
-        if(rates.length>=2){
-          const d=rates[rates.length-1]-rates[0];
-          trendParts.push(`${sub.key}得分率${d>=0?'↑':'↓'}${Math.abs(d)}%（最新${rates[rates.length-1]}%）`);
-        }else{
-          trendParts.push(`${sub.key}得分率${rates[0]}%`);
-        }
+        if(rates.length>=2){ const d=rates[rates.length-1]-rates[0]; trendParts.push(`${sub.key}得分率${d>=0?'↑':'↓'}${Math.abs(d)}%（最新${rates[rates.length-1]}%）`); }
+        else{ trendParts.push(`${sub.key}得分率${rates[0]}%`); }
       });
       const exam=state.examDate||'2026-12-19';
       const days=Math.round((new Date(exam+'T00:00:00')-new Date(todayStr()+'T00:00:00'))/86400000);
-      let txt=`${scopeName}你累计学习 <strong>${hours.toFixed(1)}</strong> 小时，打卡 <strong>${daysDone}</strong> 天（打卡率 ${rate}%），完成 <strong>${mockN}</strong> 次模考记录。`;
+      let txt=`${scopeName}你累计学习 <strong>${hours.toFixed(1)}</strong> 小时，学习 <strong>${studyDays}</strong> 天，完成 <strong>${mockN}</strong> 次模考记录。`;
       if(trendParts.length) txt+=`<br>模考情况：${trendParts.join('；')}。`;
       if(weakest) txt+=`<br>目前相对薄弱的是 <strong>${weakest}</strong>（平均得分率 ${weakestRate}%），建议多分配复习时间。`;
+      const exMin = (state.exercises||[]).reduce((a,e)=>a+(e.minutes||0),0);
+      if(exMin>0) txt+=`<br>累计锻炼 ${exMin} 分钟，劳逸结合，很棒！`;
       txt+=`<br>距初试还有 <strong>${days>=0?days:0}</strong> 天，稳住节奏，继续加油！`;
       wrap.innerHTML=txt;
+    }
+
+    // ===== 锻炼管理 =====
+    function addExercise(){
+      const type=document.getElementById('exTypeInput').value;
+      const minutes=parseInt(document.getElementById('exMinInput').value)||0;
+      const date=document.getElementById('exDateInput').value||todayStr();
+      const note=(document.getElementById('exNoteInput').value||'').trim();
+      if(minutes<=0){ showToast('请输入锻炼时长（分钟）。'); return; }
+      if(!state.exercises) state.exercises=[];
+      state.exercises.unshift({ id:`${Date.now()}_${Math.random().toString(36).slice(2,8)}`, type, minutes, date, note, createdAt:new Date().toISOString() });
+      saveState();
+      document.getElementById('exMinInput').value='';
+      document.getElementById('exNoteInput').value='';
+      showToast(`已记录锻炼：${type} ${minutes} 分钟`);
+      renderExercise();
+    }
+    function deleteExercise(id){
+      state.exercises=(state.exercises||[]).filter(e=>e.id!==id);
+      saveState();
+      showToast('已删除该锻炼记录。');
+      renderExercise();
+    }
+    function renderExercise(){
+      const list=(state.exercises||[]).slice().sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+      const td=todayStr();
+      const d0=new Date(td+'T12:00:00'); const wd=d0.getDay()||7;
+      const mon=new Date(d0); mon.setDate(d0.getDate()-wd+1);
+      const sun=new Date(d0); sun.setDate(d0.getDate()+(7-wd));
+      const monS=toDateStr(mon), sunS=toDateStr(sun);
+      const wk=list.filter(e=>e.date>=monS&&e.date<=sunS);
+      const setT=(id,v)=>{const el=document.getElementById(id); if(el) el.textContent=v;};
+      setT('exWeekCount', wk.length);
+      setT('exWeekMin', wk.reduce((a,e)=>a+(e.minutes||0),0));
+      setT('exTotalCount', list.length);
+      const pill=document.getElementById('exCountPill'); if(pill) pill.textContent=`${list.length} 条`;
+      const wrap=document.getElementById('exerciseTableWrap');
+      if(!wrap) return;
+      wrap.innerHTML = list.length ? `<table>
+        <thead><tr><th>日期</th><th>项目</th><th>时长</th><th>备注</th><th>操作</th></tr></thead>
+        <tbody>${list.slice(0,80).map(e=>`<tr>
+          <td class="tiny">${e.date||'-'}</td>
+          <td>${escapeHtml(e.type||'-')}</td>
+          <td>${e.minutes||0} 分钟</td>
+          <td class="tiny">${escapeHtml(e.note||'')}</td>
+          <td><button class="btn-danger" onclick="deleteExercise('${e.id}')">删除</button></td>
+        </tr>`).join('')}</tbody></table>` : `<div class="empty">还没有锻炼记录，动起来吧！</div>`;
     }
 
     function bindEvents(){
@@ -3411,6 +3346,10 @@ function importData(file){
       const _dk=document.getElementById('darkModeBtn');
       if(_dk){ _dk.addEventListener('click', toggleDark); }
       applyDark();
+      const _exDate=document.getElementById('exDateInput');
+      if(_exDate && !_exDate.value) _exDate.value=todayStr();
+      const _exBtn=document.getElementById('addExerciseBtn');
+      if(_exBtn) _exBtn.addEventListener('click', addExercise);
       const muyuBtn = document.getElementById('muyuBtn');
       if (muyuBtn) {
           muyuBtn.addEventListener('click', function() {
@@ -3441,7 +3380,7 @@ function renderAll(){
       renderOverview();
       renderCountdown();
       renderGoalRing();
-      renderAttendance();
+      renderExercise();
       renderTasks();
       renderTodoCalendar();
       renderStats();
@@ -3465,6 +3404,7 @@ function renderAll(){
     window.deleteSubmission = deleteSubmission;
     window.addCalendarPlan = addCalendarPlan;
     window.addCalendarPlanFromInput = addCalendarPlanFromInput;
+    window.deleteExercise = deleteExercise;
 
 // 页面加载后执行一次
     bindEvents();
