@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>忆夏の考研工作系统 · 11408</title>
+  <title>曾庆锋の考研工作系统 · 11408</title>
   <style>
     :root {
     --bg:#edf3f2;
@@ -1110,6 +1110,48 @@ td button {
   cursor: pointer;
   color: #999;
 }
+    .cal-add{ width:22px;height:22px;border-radius:50%;background:var(--primary-soft);color:var(--primary-strong);
+      display:inline-flex;align-items:center;justify-content:center;font-weight:800;cursor:pointer;font-size:14px;line-height:1;border:1px solid #cfe0dd; }
+    .cal-add:hover{ background:var(--primary); color:#fff; }
+    /* 倒计时横幅响应式 */
+    @media (max-width:600px){ #goalRing svg{ width:80px; height:80px; } }
+    /* 深色模式 */
+    body.dark{
+      --card:#222a28; --line:#33403d; --text:#e7efed; --muted:#9fb2ae; --primary-soft:#26332f;
+      background:linear-gradient(180deg,#141a19 0%,#0f1b18 100%) !important;
+      color:#e7efed;
+    }
+    body.dark .card,
+    body.dark .mini-stat,
+    body.dark .period-card,
+    body.dark .chart-card,
+    body.dark .calendar-board,
+    body.dark .calendar-cell,
+    body.dark .timeline,
+    body.dark .modal-content{
+      background:#222a28 !important; border-color:#33403d !important; color:#e7efed;
+    }
+    body.dark .calendar-weekdays{ background:#1c2422 !important; }
+    body.dark .calendar-cell.muted{ background:#1a201f !important; color:#6c837e; }
+    body.dark input, body.dark select, body.dark textarea{
+      background:#2a332f !important; color:#e7efed !important; border-color:#3a4744 !important;
+    }
+    body.dark th, body.dark td{ border-color:#33403d !important; }
+    body.dark table, body.dark th{ color:#cfe0db; }
+    body.dark .pill{ background:#2b3531; color:#cfe0db; border-color:#3a4744; }
+    body.dark .empty{ background:#1f2725; border-color:#3a4744; color:#9fb2ae; }
+    body.dark .bar-track, body.dark .progress-container{ background:#2b3531; border-color:#3a4744; }
+    body.dark .timeline-grid{ background:repeating-linear-gradient(to bottom,#222a28 0px,#222a28 59px,#33403d 60px); }
+    body.dark .soft-tag, body.dark .calendar-count{ background:#2b3531; color:#cfe0db; border-color:#3a4744; }
+    body.dark .cal-add{ background:#2b3531; color:#a7d3c9; border-color:#3a4744; }
+    body.dark #section-overview .grid.cols-4 .card,
+    body.dark #section-overview .grid.cols-2 .card{ background:#222a28 !important; border-color:#33403d !important; }
+    body.dark #section-overview .pill{ background:#2b3531 !important; color:#cfe0db !important; border-color:#3a4744 !important; }
+    body.dark #section-overview .tiny{ color:#9fb2ae !important; }
+    body.dark .btn-soft{ background:#2b3531; color:#cfe0db; }
+    body.dark .footer-note{ color:#9fb2ae; }
+    body.dark .toast{ background:#2b3531; }
+    body.dark .calendar-task-item{ background:#26302d; border-color:#3a4744; color:#cfe0db; }
 </style>
 </head>
 <body>
@@ -1132,7 +1174,7 @@ td button {
     <section class="hero">
       <div class="hero-main">
         <div class="quote-kicker">Daily Inspiration / 每日好运签</div>
-        <h1>忆夏の考研工作系统</h1>
+        <h1>曾庆锋の考研工作系统</h1>
         <p id="nowText">正在读取当前时间...</p>
         <p class="hero-caption">您已成功登录考研上岸中心 · 11408（政治·英语一·数学一·408）！</p>
         <p id="quoteText" class="hero-quote">“ 今日自律沉淀，明日自有收获。 ”</p>
@@ -1147,6 +1189,7 @@ td button {
             <button class="btn-secondary" id="exportBtn">导出数据</button>
             <button class="btn-soft" id="importBtn">导入数据</button>
             <input type="file" id="importFile" accept=".json" style="display:none" />
+            <button class="btn-soft" id="darkModeBtn">🌙 深色</button>
             <button class="btn-danger" id="resetBtn">清空全部数据</button>
           </div>
         </div>
@@ -1155,10 +1198,6 @@ td button {
         <div class="hero-mini">
           <div class="label">今日已完成打卡时段</div>
           <div class="value" id="heroAttendanceCount">0 / 3</div>
-        </div>
-        <div class="hero-mini">
-          <div class="label">今日手机克制</div>
-          <div class="value" id="heroPhoneCount">0 次</div>
         </div>
         <div class="hero-mini">
           <div class="label">当前进行中任务</div>
@@ -1172,22 +1211,34 @@ td button {
           <div class="label">今日累计专注</div>
           <div class="value" id="heroFocusMinutes">0 min</div>
         </div>
-        <div class="hero-mini">
-          <div class="label">已解锁成就</div>
-          <div class="value" id="heroAchievementCount">0 个</div>
-        </div>
       </div>
     </section>
+ 
+    <div class="card" style="margin-top:16px; display:flex; align-items:center; justify-content:space-between; gap:20px; flex-wrap:wrap">
+      <div>
+        <div class="tiny">距 2027 考研初试还有</div>
+        <div style="font-weight:900; color:var(--primary-strong); line-height:1.05; margin:4px 0">
+          <span id="countdownDays" style="font-size:46px">--</span>
+          <span style="font-size:18px"> 天</span>
+        </div>
+        <div class="tiny">初试日期：<input id="examDateInput" type="date" style="width:auto" /></div>
+      </div>
+      <div style="display:flex; align-items:center; gap:14px">
+        <div id="goalRing"></div>
+        <div>
+          <div class="tiny">每日学习目标</div>
+          <div style="margin:4px 0"><input id="goalHoursInput" type="number" step="0.5" min="0" style="width:90px" /> 小时</div>
+          <div class="tiny" id="goalText">-</div>
+        </div>
+      </div>
+    </div>
  
     <div class="tabs">
       <button class="tab active" data-tab="overview">今日状态</button>
       <button class="tab" data-tab="attendance">打卡记录</button>
-      <button class="tab" data-tab="phone">手机克制</button>
-      <button class="tab" data-tab="thesis">复习进度</button>
      <button class="tab" data-tab="submission">模考成绩</button>
       <button class="tab" data-tab="tasks">任务管理</button>
       <button class="tab" data-tab="calendar">日程日历</button>
-      <button class="tab" data-tab="leave">请假记录</button>
       <button class="tab" data-tab="stats">统计分析</button>
     </div>
  
@@ -1210,9 +1261,19 @@ td button {
         </div>
         <div class="card">
           <div class="card-title"><h3>今日状态</h3><span class="pill good">实时</span></div>
-          <div class="tiny">手机克制：<span id="summaryPhone">0</span> 次</div>
           <div class="tiny">进行中任务：<span id="summaryTask">-</span></div>
-          <div class="tiny">请假状态：<span id="summaryLeave">无</span></div>
+        </div>
+      </div>
+ 
+      <div class="card" style="margin-top:16px">
+        <div class="card-title">
+          <h3>⏱️ 专注时间</h3>
+          <span class="pill good">已记录</span>
+        </div>
+        <div class="stats-row" style="grid-template-columns:repeat(3,minmax(0,1fr))">
+          <div class="mini-stat"><div class="tiny">今日专注</div><div class="big-number" id="ovFocusToday">0.0 h</div></div>
+          <div class="mini-stat"><div class="tiny">本周专注</div><div class="big-number" id="ovFocusWeek">0.0 h</div></div>
+          <div class="mini-stat"><div class="tiny">累计专注</div><div class="big-number" id="ovFocusTotal">0.0 h</div></div>
         </div>
       </div>
  
@@ -1314,34 +1375,6 @@ td button {
       </div>
     </section>
  
-    <section class="section" id="section-phone">
-      <div class="grid cols-2">
-        <div class="card">
-          <div class="card-title">
-            <h2>手机克制记录</h2>
-            <span class="pill good">行为追踪</span>
-          </div>
-          <div class="stats-row">
-            <div class="mini-stat"><div class="tiny">总克制次数</div><div class="big-number" id="phoneTotalCount">0</div></div>
-            <div class="mini-stat"><div class="tiny">今日克制次数</div><div class="big-number" id="phoneTodayCount">0</div></div>
-            <div class="mini-stat"><div class="tiny">本月克制次数</div><div class="big-number" id="phoneMonthCount">0</div></div>
-            <div class="mini-stat"><div class="tiny">已解锁成就</div><div class="big-number" id="achievementCount">0</div></div>
-          </div>
-          <div class="spacer"></div>
-          <button class="btn-primary btn-block" id="addPhoneRestraintBtn">又忍住了一次</button>
-          <div class="spacer"></div>
-          <div id="phoneTodayListWrap"></div>
-        </div>
- 
-        <div class="card">
-          <div class="card-title">
-            <h2>成就系统</h2>
-            <span class="pill">累计解锁</span>
-          </div>
-          <div class="achievement-list" id="achievementList"></div>
-        </div>
-      </div>
-    </section>
  
     
     <section class="section" id="section-tasks">
@@ -1478,40 +1511,6 @@ td button {
       </div>
     </section>
 
-<!-- 1. 复习进度模块 -->
-    <section class="section" id="section-thesis">
-      <div class="grid cols-2">
-        <div class="card thesis-card">
-          <div class="card-title">
-            <h2 style="color:var(--m-purple)">📝 各科复习进度</h2>
-            <span class="pill" style="background:var(--m-purple-soft); color:var(--m-purple)">基础信息</span>
-          </div>
-          <div class="grid cols-2">
-            <div><label>科目 / 专题</label><input id="thesisTitleInput" type="text" placeholder="如：数学一·高数 / 408·数据结构" /></div>
-            <div><label>总章节数</label><input id="thesisTotalInput" type="number" placeholder="计划章节数" /></div>
-            <div><label>已完成章节数</label><input id="thesisDoneInput" type="number" placeholder="已完成章节" /></div>
-            <div>
-              <label>下一步复习计划</label>
-              <select id="thesisStepInput">
-                <option value="基础阶段（过教材）">基础阶段（过教材）</option>
-                <option value="强化阶段（刷题）">强化阶段（刷题）</option>
-                <option value="冲刺阶段（真题模考）">冲刺阶段（真题模考）</option>
-              </select>
-            </div>
-          </div>
-          <div class="spacer" style="height:15px"></div>
-          <button class="btn-purple btn-block" id="saveThesisBtn">保存复习进度</button>
-        </div>
-        <div class="card">
-          <div class="card-title"><h3>复习小结</h3></div>
-          <div id="thesisSummaryArea"><div class="empty">保存后在此查看详情</div></div>
-        </div>
-      </div>
-      <div class="card" style="margin-top:20px">
-        <div class="card-title"><h2>已记录复习专题</h2><span class="pill" id="thesisCountPill">0 项</span></div>
-        <div id="thesisTableWrap"></div>
-      </div>
-    </section>
 
     <!-- 2. 模考成绩模块 (淡紫色系) -->
     <section class="section" id="section-submission">
@@ -1521,13 +1520,24 @@ td button {
           <span class="pill" style="background:#f3f0ff; color:#9f7aea">淡紫色模式</span>
         </div>
         <div class="inline-form">
-          <div><label>模考 / 套卷</label><input id="subJournalInput" type="text" placeholder="如：数学一·李林六套(一) / 408·王道模拟" /></div>
+          <div><label>科目</label><select id="subSubjectInput">
+            <option value="政治">政治</option>
+            <option value="英语一">英语一</option>
+            <option value="数学一">数学一</option>
+            <option value="408">408</option>
+          </select></div>
+          <div><label>模考 / 套卷</label><input id="subJournalInput" type="text" placeholder="如：数学一·李林六套(一)" /></div>
           <div><label>首次测试日期</label><input id="subDateInput" type="date" /></div>
+          <div><label>分数（可选）</label><input id="subScoreInput" type="number" placeholder="如 130" /></div>
           <button class="btn-primary" id="addSubmissionBtn" style="background:#b794f4;">添加模考记录</button>
         </div>
       </div>
       <div class="card" style="margin-top:20px">
         <div id="submissionTableWrap"></div>
+      </div>
+      <div class="card" style="margin-top:20px">
+        <div class="card-title"><h2 style="color:#9f7aea">📊 分科目统计</h2><span class="pill" style="background:#f3f0ff; color:#9f7aea">按科目</span></div>
+        <div id="subjectStatsWrap"></div>
       </div>
     </section>
 
@@ -1568,45 +1578,13 @@ td button {
               <option value="需加强">需加强</option>
               <option value="其他备注">其他备注</option>
             </select>
-            <input type="text" id="newLogNote" placeholder="分数 / 订正情况..." />
+            <input type="number" id="newLogScore" placeholder="分数" />
+            <input type="text" id="newLogNote" placeholder="订正情况/备注..." />
             <button class="btn-primary" style="background:#9f7aea;" onclick="addSubmissionLog()">+ 添加成绩</button>
           </div>
         </div>
       </div>
     </div>
-   <section class="section" id="section-leave">
-      <div class="grid cols-2">
-        <div class="card">
-          <div class="card-title">
-            <h2>添加请假</h2>
-            <span class="pill">豁免打卡</span>
-          </div>
-          <div class="inline-form">
-            <div>
-              <label for="leaveDateInput">请假日期</label>
-              <input id="leaveDateInput" type="date" />
-            </div>
-            <div>
-              <label for="leaveReasonInput">请假理由</label>
-              <input id="leaveReasonInput" type="text" placeholder="例如：门诊 / 会议 / 回家" />
-            </div>
-            <button class="btn-primary" id="addLeaveBtn">提交请假</button>
-          </div>
-          <div class="spacer"></div>
-          <div class="empty">
-            请假当天不计入缺勤统计，且该日期打卡按钮会提示为请假日。
-          </div>
-        </div>
- 
-        <div class="card">
-          <div class="card-title">
-            <h2>请假记录列表</h2>
-            <span class="pill" id="leaveCountPill">0 条</span>
-          </div>
-          <div id="leaveTableWrap"></div>
-        </div>
-      </div>
-    </section>
  
     <section class="section" id="section-stats">
       <div class="card">
@@ -1622,8 +1600,12 @@ td button {
         <div class="stats-row">
           <div class="mini-stat"><div class="tiny">总打卡天数</div><div class="big-number" id="statAttendanceDays">0</div></div>
           <div class="mini-stat"><div class="tiny">总任务时长（小时）</div><div class="big-number" id="statTaskHours">0</div></div>
-          <div class="mini-stat"><div class="tiny">总克制次数</div><div class="big-number" id="statPhoneCount">0</div></div>
-          <div class="mini-stat"><div class="tiny">获得成就数</div><div class="big-number" id="statAchievementCount">0</div></div>
+          <div class="mini-stat"><div class="tiny">模考次数</div><div class="big-number" id="statMockCount">0</div></div>
+        </div>
+
+        <div class="card" style="margin-top:16px; background:var(--primary-soft); border:1px solid var(--line)">
+          <div class="card-title"><h3>📝 学习报告</h3><span class="pill good" id="reportScopePill">本周</span></div>
+          <div id="reportWrap" style="font-size:14px; line-height:1.9; color:var(--text)"></div>
         </div>
  
         <div class="grid cols-2" style="margin-top:16px">
@@ -1635,9 +1617,9 @@ td button {
             <div class="card-title"><h3>每日任务时长</h3><span class="pill">小时</span></div>
             <div class="bar-group" id="taskHourBars"></div>
           </div>
-          <div class="chart-card">
-            <div class="card-title"><h3>手机克制统计</h3><span class="pill">次数</span></div>
-            <div class="bar-group" id="phoneCountBars"></div>
+          <div class="chart-card" style="grid-column:1 / -1">
+            <div class="card-title"><h3>模考成绩走势 · 分科目（得分率%）</h3><span class="pill">折线对比</span></div>
+            <div id="mockLineChart"></div>
           </div>
           <div class="chart-card">
             <div class="card-title"><h3>时段打卡统计</h3><span class="pill">完成率</span></div>
@@ -1691,15 +1673,22 @@ td button {
  
  
     const QUOTES = [
-      "今日自律沉淀，明日自有收获。",
-      "所有认真走过的今天，都会成为明天的底气。",
-      "今日的积累，正在铺向明日的开花结果。",
-      "脚踏实地走好今天，水到渠成迎接明天。",
-      "恭迎陛下上岸。",
-      "题海自有答案，努力终有回响。",
-      "知识点一页页推进，分数也会一步步靠近。",
-       "事缓则圆。",
-      "今日目标：要开心、不摸鱼、政英数408一切顺利。"
+      "上岸的路上不拥挤，因为坚持的人不多。",
+      "你今天多做的每一道题，都是考场上的底气。",
+      "别怕走得慢，怕的是停下来。",
+      "数一英一408，一个一个拿下。",
+      "现在多流的汗，是录取通知书上的光。",
+      "熬过最难的日子，剩下的就是好运。",
+      "把焦虑用来刷题，把迷茫用来背书。",
+      "考研不是天才的游戏，是普通人的坚持。",
+      "你不是在硬撑，你是在变强。",
+      "每一个早起的清晨，都在悄悄拉开差距。",
+      "答案会迟到，但努力从不缺席。",
+      "稳住，我们能赢。",
+      "今天不想学，就想想梦校录取名单里有你。",
+      "专注当下这一页，未来自会成章。",
+      "考场见高低，此刻先沉住气。",
+      "再坚持一下，上岸就在前方。"
     ];
  
     const state = loadState();
@@ -1719,7 +1708,10 @@ function defaultState(){
     achievements: {},
     thesisRecords: [],
     submissions: [],
-    muyuCount: 0    // <--- 新增这一行
+    muyuCount: 0,
+    examDate: '2026-12-19',
+    dailyGoalHours: 8,
+    darkMode: false
   };
 }
  
@@ -1736,7 +1728,10 @@ function loadState(){
           achievements: parsed.achievements || {},
           thesisRecords: parsed.thesisRecords || [],
           submissions: parsed.submissions || [],
-          muyuCount: parsed.muyuCount || 0  // <--- 必须加上这一行
+          muyuCount: parsed.muyuCount || 0,
+          examDate: parsed.examDate || '2026-12-19',
+          dailyGoalHours: (parsed.dailyGoalHours != null ? parsed.dailyGoalHours : 8),
+          darkMode: parsed.darkMode || false
         };
       }catch(e){
         return defaultState();
@@ -1764,9 +1759,7 @@ function loadState(){
  
  
     function getDailyQuote(date = new Date()){
-      const start = new Date(date.getFullYear(), 0, 1);
-      const day = Math.floor((date - start) / 86400000);
-      return QUOTES[day % QUOTES.length];
+      return QUOTES[Math.floor(Math.random()*QUOTES.length)];
     }
  
     function formatTime(date = new Date()){
@@ -2183,15 +2176,11 @@ let calendarSidebarMode = '待开始'; // 可选值：'待开始', '已完成', 
 function renderHero(){
   const today = todayStr();
   document.getElementById('heroAttendanceCount').textContent = `${calcCompletedPeriods(today)} / 3`;
-  document.getElementById('heroPhoneCount').textContent = `${getPhoneByDate(today).length} 次`;
   const active = getActiveTask();
   document.getElementById('heroTaskName').textContent = active ? active.name : '-';
   const todayTaskMs = getTasksByDate(today).reduce((sum,t)=>sum+getTaskDurationMs(t),0);
   document.getElementById('heroTaskHours').textContent = `${durationHours(todayTaskMs)} h`;
   document.getElementById('heroFocusMinutes').textContent = `${Math.round(todayTaskMs/60000)} min`;
-  document.getElementById('heroAchievementCount').textContent = `${Object.keys(state.achievements).length} 个`;
-  const quoteEl = document.getElementById('quoteText');
-  if(quoteEl) quoteEl.textContent = `“ ${getDailyQuote(new Date())} ”`;
 }
  
 function renderOverview(){
@@ -2221,11 +2210,19 @@ function renderOverview(){
       setSummary('afternoon','Afternoon');
       setSummary('evening','Evening');
  
-      document.getElementById('summaryPhone').textContent = getPhoneByDate(selectedDate).length;
       const active = getActiveTask();
       document.getElementById('summaryTask').textContent = active ? active.name : '-';
-      document.getElementById('summaryLeave').textContent = leave ? leave.reason : '无';
  
+      const _td = todayStr();
+      const _d0 = new Date(_td+'T12:00:00'); const _wd=_d0.getDay()||7;
+      const _mon = new Date(_d0); _mon.setDate(_d0.getDate()-_wd+1);
+      const _sun = new Date(_d0); _sun.setDate(_d0.getDate()+(7-_wd));
+      const _monS=toDateStr(_mon), _sunS=toDateStr(_sun);
+      const _sumMs = fn => state.tasks.filter(fn).reduce((a,t)=>a+getTaskDurationMs(t),0);
+      const _fmtH = ms => (ms/3600000).toFixed(1)+' h';
+      const _et=document.getElementById('ovFocusToday'); if(_et) _et.textContent=_fmtH(_sumMs(t=>t.date===_td));
+      const _ew=document.getElementById('ovFocusWeek'); if(_ew) _ew.textContent=_fmtH(_sumMs(t=>t.date>=_monS&&t.date<=_sunS));
+      const _ea=document.getElementById('ovFocusTotal'); if(_ea) _ea.textContent=_fmtH(_sumMs(()=>true));
       renderTodayTaskTable('todayTaskTableWrap');
       renderTimeline();
     }
@@ -2602,7 +2599,7 @@ function renderTodoCalendar() {
       <div class="${classes}" onclick="switchCalendarDate('${cellDate}')">
         <div class="calendar-date">
           <span class="num">${dayNum}</span>
-          ${allTasks.length ? `<span class="calendar-count">${allTasks.length} 项</span>` : ''}
+          <span style="display:flex;align-items:center;gap:6px">${allTasks.length ? `<span class="calendar-count">${allTasks.length} 项</span>` : ''}<span class="cal-add" onclick="event.stopPropagation();addCalendarPlan('${cellDate}')" title="添加计划">＋</span></span>
         </div>
         <div class="calendar-task-list">
           ${preview || '<div class="tiny">无安排</div>'}
@@ -2629,7 +2626,11 @@ function renderCalendarSidebar() {
   // 1. 所选日期的所有任务
   const selectedTasks = getCalendarTasksByDate(selectedDate);
   selectedPendingCount.textContent = `${selectedDate} · ${selectedTasks.length} 项`;
-  selectedPendingWrap.innerHTML = selectedTasks.length ? `
+  const _calAddForm = `<div class="inline-form" style="margin-bottom:10px">
+      <input id="calPlanInput" type="text" placeholder="给 ${selectedDate} 加一条计划" onkeydown="if(event.key==='Enter'){addCalendarPlanFromInput();}" />
+      <button class="btn-primary" onclick="addCalendarPlanFromInput()">添加计划</button>
+    </div>`;
+  selectedPendingWrap.innerHTML = _calAddForm + (selectedTasks.length ? `
     <table>
       <thead><tr><th>任务</th><th>状态</th><th>操作</th></tr></thead>
       <tbody>
@@ -2645,7 +2646,7 @@ function renderCalendarSidebar() {
         `).join('')}
       </tbody>
     </table>
-  ` : `<div class="empty">该日期暂无记录</div>`;
+  ` : `<div class="empty">该日期暂无记录</div>`);
 
   // 2. 全部任务概览（增加筛选切换）
   const filteredAll = state.tasks.filter(t => {
@@ -2691,37 +2692,23 @@ window.setCalendarFilter = function(mode) {
  
     function renderStats(){
       const dates = getScopeDates(statsScope);
-      const achievementCount = Object.keys(state.achievements).length;
- 
+
       if(statsScope === 'year'){
-        renderYearStats(dates, achievementCount);
+        renderYearStats(dates);
+        renderMockLineChart();
         return;
       }
- 
+
       const taskHoursByDate = {};
-      const phoneByDate = {};
       const attendanceStats = {
-        totalExpected:0,
-        totalDone:0,
-        daysDone:0,
-        perPeriod:{
-          morning:{done:0, expected:0},
-          afternoon:{done:0, expected:0},
-          evening:{done:0, expected:0}
-        }
+        totalExpected:0, totalDone:0, daysDone:0,
+        perPeriod:{ morning:{done:0,expected:0}, afternoon:{done:0,expected:0}, evening:{done:0,expected:0} }
       };
- 
+
       dates.forEach(dateStr=>{
-        const leave = getLeaveRecord(dateStr);
         const tasks = getTasksByDate(dateStr);
-        const phones = getPhoneByDate(dateStr).length;
         const taskMs = tasks.reduce((sum,t)=>sum+getTaskDurationMs(t),0);
         taskHoursByDate[dateStr] = +(taskMs/3600000).toFixed(1);
-        phoneByDate[dateStr] = phones;
- 
-        if(leave){
-          return;
-        }
         const att = ensureAttendanceDate(dateStr);
         let dayDone = false;
         ['morning','afternoon','evening'].forEach(p=>{
@@ -2735,67 +2722,47 @@ window.setCalendarFilter = function(mode) {
         });
         if(dayDone) attendanceStats.daysDone += 1;
       });
- 
+
       const overallRate = attendanceStats.totalExpected ? Math.round(attendanceStats.totalDone / attendanceStats.totalExpected * 100) : 0;
       document.getElementById('overallRatePill').textContent = `${overallRate}%`;
       document.getElementById('statAttendanceDays').textContent = attendanceStats.daysDone;
       document.getElementById('statTaskHours').textContent = Object.values(taskHoursByDate).reduce((a,b)=>a+b,0).toFixed(1);
-      document.getElementById('statPhoneCount').textContent = Object.values(phoneByDate).reduce((a,b)=>a+b,0);
-      document.getElementById('statAchievementCount').textContent = achievementCount;
- 
-      const periodBars = ['morning','afternoon','evening'].map(p=>{
+      document.getElementById('statMockCount').textContent = countMockEntries();
+
+      document.getElementById('periodRateBars').innerHTML = ['morning','afternoon','evening'].map(p=>{
         const obj = attendanceStats.perPeriod[p];
         const rate = obj.expected ? Math.round(obj.done / obj.expected * 100) : 0;
         return barRow(PERIODS[p].label, rate, `${rate}%`);
-      }).join('');
-      document.getElementById('periodRateBars').innerHTML = periodBars || `<div class="empty">暂无数据</div>`;
- 
+      }).join('') || `<div class="empty">暂无数据</div>`;
+
       const taskEntries = Object.entries(taskHoursByDate);
       const maxTask = Math.max(1, ...taskEntries.map(([_,v])=>v));
       document.getElementById('taskHourBars').innerHTML = taskEntries.map(([k,v])=>{
         const label = statsScope === 'week' ? k.slice(5) : k.slice(8);
         return barRow(label, Math.round(v/maxTask*100), `${v}`);
       }).join('') || `<div class="empty">暂无数据</div>`;
- 
-      const phoneEntries = Object.entries(phoneByDate);
-      const maxPhone = Math.max(1, ...phoneEntries.map(([_,v])=>v));
-      document.getElementById('phoneCountBars').innerHTML = phoneEntries.map(([k,v])=>{
-        const label = statsScope === 'week' ? k.slice(5) : k.slice(8);
-        return barRow(label, Math.round(v/maxPhone*100), `${v}`);
-      }).join('') || `<div class="empty">暂无数据</div>`;
- 
+
       document.getElementById('periodCountBars').innerHTML = ['morning','afternoon','evening'].map(p=>{
         const obj = attendanceStats.perPeriod[p];
         const rate = obj.expected ? Math.round(obj.done / obj.expected * 100) : 0;
         return barRow(PERIODS[p].label, rate, `${obj.done}/${obj.expected}`);
       }).join('') || `<div class="empty">暂无数据</div>`;
+
+      renderMockLineChart();
     }
- 
-    function renderYearStats(months, achievementCount){
+
+    function renderYearStats(months){
       const taskHoursByMonth = {};
-      const phoneByMonth = {};
       const attendanceStats = {
-        totalExpected:0,
-        totalDone:0,
-        daysDone:0,
-        perPeriod:{
-          morning:{done:0, expected:0},
-          afternoon:{done:0, expected:0},
-          evening:{done:0, expected:0}
-        }
+        totalExpected:0, totalDone:0, daysDone:0,
+        perPeriod:{ morning:{done:0,expected:0}, afternoon:{done:0,expected:0}, evening:{done:0,expected:0} }
       };
- 
+
       Object.keys(state.attendance).forEach(dateStr=>{
         const month = dateStr.slice(0,7);
         if(!months.includes(month)) return;
-        const leave = getLeaveRecord(dateStr);
         const tasks = getTasksByDate(dateStr);
-        const phones = getPhoneByDate(dateStr).length;
- 
         taskHoursByMonth[month] = +( (taskHoursByMonth[month] || 0) + tasks.reduce((sum,t)=>sum+getTaskDurationMs(t),0)/3600000 ).toFixed(1);
-        phoneByMonth[month] = (phoneByMonth[month] || 0) + phones;
- 
-        if(leave) return;
         const att = ensureAttendanceDate(dateStr);
         let dayDone = false;
         ['morning','afternoon','evening'].forEach(p=>{
@@ -2809,46 +2776,35 @@ window.setCalendarFilter = function(mode) {
         });
         if(dayDone) attendanceStats.daysDone += 1;
       });
- 
-      months.forEach(m=>{
-        if(taskHoursByMonth[m] == null) taskHoursByMonth[m] = 0;
-        if(phoneByMonth[m] == null) phoneByMonth[m] = 0;
-      });
- 
+
+      months.forEach(m=>{ if(taskHoursByMonth[m] == null) taskHoursByMonth[m] = 0; });
+
       const overallRate = attendanceStats.totalExpected ? Math.round(attendanceStats.totalDone / attendanceStats.totalExpected * 100) : 0;
       document.getElementById('overallRatePill').textContent = `${overallRate}%`;
       document.getElementById('statAttendanceDays').textContent = attendanceStats.daysDone;
       document.getElementById('statTaskHours').textContent = Object.values(taskHoursByMonth).reduce((a,b)=>a+b,0).toFixed(1);
-      document.getElementById('statPhoneCount').textContent = Object.values(phoneByMonth).reduce((a,b)=>a+b,0);
-      document.getElementById('statAchievementCount').textContent = achievementCount;
- 
+      document.getElementById('statMockCount').textContent = countMockEntries();
+
       document.getElementById('periodRateBars').innerHTML = ['morning','afternoon','evening'].map(p=>{
         const obj = attendanceStats.perPeriod[p];
         const rate = obj.expected ? Math.round(obj.done / obj.expected * 100) : 0;
         return barRow(PERIODS[p].label, rate, `${rate}%`);
       }).join('') || `<div class="empty">暂无数据</div>`;
- 
+
       const taskEntries = Object.entries(taskHoursByMonth);
       const maxTask = Math.max(1, ...taskEntries.map(([_,v])=>v));
       document.getElementById('taskHourBars').innerHTML = taskEntries.map(([k,v])=>{
         const label = k.slice(5);
         return barRow(label, Math.round(v/maxTask*100), `${v}`);
       }).join('') || `<div class="empty">暂无数据</div>`;
- 
-      const phoneEntries = Object.entries(phoneByMonth);
-      const maxPhone = Math.max(1, ...phoneEntries.map(([_,v])=>v));
-      document.getElementById('phoneCountBars').innerHTML = phoneEntries.map(([k,v])=>{
-        const label = k.slice(5);
-        return barRow(label, Math.round(v/maxPhone*100), `${v}`);
-      }).join('') || `<div class="empty">暂无数据</div>`;
- 
+
       document.getElementById('periodCountBars').innerHTML = ['morning','afternoon','evening'].map(p=>{
         const obj = attendanceStats.perPeriod[p];
         const rate = obj.expected ? Math.round(obj.done / obj.expected * 100) : 0;
         return barRow(PERIODS[p].label, rate, `${obj.done}/${obj.expected}`);
       }).join('') || `<div class="empty">暂无数据</div>`;
     }
- 
+
     function barRow(label, percent, value){
       return `
         <div class="bar-row">
@@ -2889,7 +2845,7 @@ window.setCalendarFilter = function(mode) {
       const a = document.createElement('a');
       const dateLabel = selectedDate || todayStr();
       a.href = URL.createObjectURL(blob);
-      a.download = `忆夏の考研工作系统数据备份_${dateLabel}.json`;
+      a.download = `曾庆锋の考研工作系统数据备份_${dateLabel}.json`;
       a.click();
       URL.revokeObjectURL(a.href);
     }
@@ -2907,7 +2863,10 @@ function importData(file){
             achievements: parsed.achievements || {},
             thesisRecords: parsed.thesisRecords || [],
             submissions: parsed.submissions || [], // 确保逗号
-            muyuCount: parsed.muyuCount || 0       // <--- 必须加上这一行
+            muyuCount: parsed.muyuCount || 0,
+            examDate: parsed.examDate || '2026-12-19',
+            dailyGoalHours: (parsed.dailyGoalHours != null ? parsed.dailyGoalHours : 8),
+            darkMode: parsed.darkMode || false
           };
           localStorage.setItem(STORAGE_KEY, JSON.stringify(merged));
           location.reload();
@@ -2970,7 +2929,6 @@ function importData(file){
       state.thesisRecords.unshift(record);
       saveState();
       showToast(`《${title}》复习进度已保存！`);
-      renderThesis();
     }
 
     // 删除论文记录
@@ -3054,21 +3012,25 @@ function importData(file){
     let currentSubId = null; 
 
     function saveSubmission() {
+      const subject = document.getElementById('subSubjectInput').value;
       const journal = document.getElementById('subJournalInput').value.trim();
       const date = document.getElementById('subDateInput').value;
+      const score = document.getElementById('subScoreInput').value;
       if(!journal || !date) { showToast('请填写模考名称和日期'); return; }
 
       const newSub = {
         id: Date.now(),
+        subject,
         journal,
         startDate: date,
-        logs: [{ date: date, status: '已测试', note: '首次模考' }]
+        logs: [{ date: date, score: score!=='' ? Number(score) : null, status: '已测试', note: '首次模考' }]
       };
       if(!state.submissions) state.submissions = [];
       state.submissions.unshift(newSub);
       saveState();
       renderSubmissions();
       document.getElementById('subJournalInput').value = '';
+      document.getElementById('subScoreInput').value = '';
       showToast('模考记录已添加');
     }
 
@@ -3078,29 +3040,33 @@ function importData(file){
       const subs = state.submissions || [];
       if(subs.length === 0) {
         wrap.innerHTML = '<div class="empty">暂无模考记录</div>';
+        renderSubjectStats();
         return;
       }
       wrap.innerHTML = `
         <table>
           <thead>
-            <tr><th>模考名称</th><th>首测日期</th><th>最新状态</th><th>操作</th></tr>
+            <tr><th>科目</th><th>模考名称</th><th>首测日期</th><th>最新分数</th><th>最新状态</th><th>操作</th></tr>
           </thead>
           <tbody>
             ${subs.map(s => {
-              const lastLog = s.logs[0]; 
+              const lastLog = s.logs[0];
+              const lastScored = s.logs.find(l=>l.score!=null);
               return `
               <tr>
+                <td>${categoryBadge(s.subject || '-')}</td>
                 <td><strong>${escapeHtml(s.journal)}</strong></td>
                 <td>${s.startDate}</td>
+                <td>${lastScored ? '<strong>'+lastScored.score+'</strong>' : '-'}</td>
                 <td>${statusPill(lastLog.status)}</td>
                 <td>
-                  <!-- 这里的 background 改为紫色变量 -->
                   <button class="btn-success" style="background:#b794f4; border:none; color:#fff" onclick="openSubModal(${s.id})">成绩管理</button>
                   <button class="btn-danger" onclick="deleteSubmission(${s.id})">🗑️</button>
                 </td>
               </tr>`;            }).join('')}
           </tbody>
         </table>`;
+      renderSubjectStats();
     }
 
     function openSubModal(id) {
@@ -3116,6 +3082,7 @@ function importData(file){
       renderTimelineList(sub);
       document.getElementById('submissionModal').style.display = 'flex';
       document.getElementById('newLogDate').value = todayStr();
+      const _ns=document.getElementById('newLogScore'); if(_ns) _ns.value='';
     }
 
     function renderTimelineList(sub) {
@@ -3127,7 +3094,7 @@ function importData(file){
         <div class="timeline-item" style="padding-left: 20px; border-left: 2px solid var(--m-green-line); position: relative; margin-bottom: 15px;">
           <div style="position: absolute; left: -7px; top: 5px; width: 12px; height: 12px; border-radius: 50%; background: var(--m-green-strong);"></div>
           <div style="display:flex; justify-content:space-between">
-            <strong>${log.status}</strong>
+            <strong>${log.status}${log.score!=null ? ' · '+log.score+'分' : ''}</strong>
             <span class="tiny">${log.date}</span>
           </div>
           <div class="tiny" style="margin-top:4px; color:var(--muted)">${escapeHtml(log.note || '无备注')}</div>
@@ -3138,13 +3105,15 @@ function importData(file){
     function addSubmissionLog() {
       const date = document.getElementById('newLogDate').value;
       const status = document.getElementById('newLogStatus').value;
+      const scoreRaw = document.getElementById('newLogScore').value;
       const note = document.getElementById('newLogNote').value;
       const sub = state.submissions.find(s => s.id === currentSubId);
-      sub.logs.unshift({ date, status, note }); 
+      sub.logs.unshift({ date, score: scoreRaw!=='' ? Number(scoreRaw) : null, status, note });
       saveState();
       renderTimelineList(sub);
       renderSubmissions();
       document.getElementById('newLogNote').value = '';
+      document.getElementById('newLogScore').value = '';
       showToast('成绩已更新');
     }
 
@@ -3158,6 +3127,213 @@ function importData(file){
       saveState();
       renderSubmissions();
     }
+    // ===== 新增：名句轮播 / 模考分科目统计 / 折线图 / 日历加计划 =====
+    let _quoteIdx = Math.floor(Math.random()*QUOTES.length);
+    function showQuote(){
+      const el = document.getElementById('quoteText');
+      if(el) el.textContent = `“ ${QUOTES[_quoteIdx % QUOTES.length]} ”`;
+    }
+    function rotateQuote(){
+      _quoteIdx = (_quoteIdx + 1) % QUOTES.length;
+      showQuote();
+    }
+
+    const MOCK_SUBJECTS = [
+      {key:'政治', full:100},
+      {key:'英语一', full:100},
+      {key:'数学一', full:150},
+      {key:'408', full:150}
+    ];
+    function getSubjectScoreLogs(subjectKey){
+      const out=[];
+      (state.submissions||[]).forEach(sb=>{
+        if((sb.subject||'')!==subjectKey) return;
+        (sb.logs||[]).forEach(l=>{ if(l.score!=null) out.push({date:l.date, score:l.score, name:sb.journal}); });
+      });
+      return out.sort((a,b)=>(a.date||'').localeCompare(b.date||''));
+    }
+    function countMockEntries(){
+      return (state.submissions||[]).reduce((n,sb)=>n+((sb.logs||[]).filter(l=>l.score!=null).length),0);
+    }
+    function renderSubjectStats(){
+      const wrap=document.getElementById('subjectStatsWrap');
+      if(!wrap) return;
+      const rows = MOCK_SUBJECTS.map(sub=>{
+        const logs=getSubjectScoreLogs(sub.key);
+        if(!logs.length) return `<tr><td>${categoryBadge(sub.key)}</td><td colspan="4" class="tiny">暂无成绩</td></tr>`;
+        const scores=logs.map(l=>l.score);
+        const cnt=scores.length;
+        const avg=(scores.reduce((a,b)=>a+b,0)/cnt).toFixed(1);
+        const best=Math.max(...scores);
+        const latest=logs[logs.length-1].score;
+        return `<tr>
+          <td>${categoryBadge(sub.key)}</td>
+          <td>${cnt} 次</td>
+          <td>${latest} <span class="tiny">/${sub.full}</span></td>
+          <td><strong>${best}</strong></td>
+          <td>${avg}</td>
+        </tr>`;
+      }).join('');
+      wrap.innerHTML = `<table>
+        <thead><tr><th>科目</th><th>次数</th><th>最近</th><th>最高</th><th>平均</th></tr></thead>
+        <tbody>${rows}</tbody></table>`;
+    }
+    function renderMockLineChart(){
+      const host=document.getElementById('mockLineChart');
+      if(!host) return;
+      const colors={'政治':'#c58e8e','英语一':'#8ea7b2','数学一':'#7ea899','408':'#c7a977'};
+      const series=MOCK_SUBJECTS.map(sub=>{
+        const logs=getSubjectScoreLogs(sub.key);
+        return { name:sub.key, color:colors[sub.key]||'#888',
+          points:logs.map(l=>({label:(l.date||'').slice(5), y: Math.round(l.score/sub.full*100), raw:l.score})) };
+      }).filter(x=>x.points.length);
+      if(!series.length){ host.innerHTML='<div class="empty">还没有模考成绩，去「模考成绩」录入分数后这里会显示分科目走势对比。</div>'; return; }
+      host.innerHTML = lineChartSVG(series);
+    }
+    function lineChartSVG(series){
+      const W=720,H=260,padL=36,padR=12,padT=16,padB=46;
+      const plotW=W-padL-padR, plotH=H-padT-padB;
+      const maxPts=Math.max(...series.map(x=>x.points.length));
+      const xN=Math.max(1,maxPts-1);
+      const xx=i=>padL + (maxPts>1 ? (i/xN):0.5)*plotW;
+      const yy=v=>padT + (1-v/100)*plotH;
+      let g='';
+      for(let v=0; v<=100; v+=25){
+        const y=yy(v);
+        g+=`<line x1="${padL}" y1="${y}" x2="${W-padR}" y2="${y}" stroke="#e4eeeb" stroke-width="1"/>`;
+        g+=`<text x="${padL-6}" y="${y+4}" text-anchor="end" font-size="10" fill="#90a6a2">${v}</text>`;
+      }
+      const longest=series.reduce((a,b)=>b.points.length>a.points.length?b:a,series[0]);
+      longest.points.forEach((p,i)=>{
+        g+=`<text x="${xx(i)}" y="${H-padB+16}" text-anchor="middle" font-size="10" fill="#90a6a2">${p.label}</text>`;
+      });
+      series.forEach(sb=>{
+        if(sb.points.length===1){
+          g+=`<circle cx="${xx(0)}" cy="${yy(sb.points[0].y)}" r="4" fill="${sb.color}"><title>${sb.name} ${sb.points[0].label}：${sb.points[0].raw}分（${sb.points[0].y}%）</title></circle>`;
+          return;
+        }
+        const pts=sb.points.map((p,i)=>`${xx(i)},${yy(p.y)}`).join(' ');
+        g+=`<polyline fill="none" stroke="${sb.color}" stroke-width="2.5" points="${pts}" stroke-linejoin="round" stroke-linecap="round"/>`;
+        sb.points.forEach((p,i)=>{ g+=`<circle cx="${xx(i)}" cy="${yy(p.y)}" r="3.2" fill="${sb.color}"><title>${sb.name} ${p.label}：${p.raw}分（${p.y}%）</title></circle>`; });
+      });
+      let lg='';
+      series.forEach(sb=>{ lg+=`<span style="display:inline-flex;align-items:center;gap:5px;margin-right:14px;font-size:12px;color:#5c706c"><span style="width:12px;height:12px;border-radius:3px;background:${sb.color};display:inline-block"></span>${sb.name}</span>`; });
+      return `<div style="margin-bottom:8px">${lg}</div><svg viewBox="0 0 ${W} ${H}" width="100%" preserveAspectRatio="xMidYMid meet" style="max-width:100%">${g}</svg>`;
+    }
+
+    function addCalendarPlan(dateStr){
+      const name = prompt(`给 ${dateStr} 添加一条计划：`);
+      if(name===null) return;
+      _createPlan(dateStr, name);
+    }
+    function addCalendarPlanFromInput(){
+      const el=document.getElementById('calPlanInput');
+      if(!el) return;
+      _createPlan(selectedDate, el.value);
+      el.value='';
+    }
+    function _createPlan(dateStr, name){
+      name=(name||'').trim();
+      if(!name){ showToast('请输入计划内容。'); return; }
+      const now=new Date();
+      state.tasks.unshift({
+        id:`${Date.now()}_${Math.random().toString(36).slice(2,8)}`,
+        name, category:'📌 计划', focusMode:'up', targetMinutes:null,
+        startTime:null, endTime:null, durationMs:0,
+        status:'待开始', date:dateStr, createdAt:now.toISOString()
+      });
+      saveState();
+      showToast(`已为 ${dateStr} 添加计划：${name}`);
+      renderAll();
+    }
+
+    // ===== 倒计时 / 学习目标环 / 学习报告 / 深色模式 =====
+    function todayFocusMs(){
+      const td=todayStr();
+      return state.tasks.filter(t=>t.date===td).reduce((a,t)=>a+getTaskDurationMs(t),0);
+    }
+    function renderCountdown(){
+      const el=document.getElementById('countdownDays');
+      if(!el) return;
+      const exam=state.examDate||'2026-12-19';
+      const days=Math.round((new Date(exam+'T00:00:00')-new Date(todayStr()+'T00:00:00'))/86400000);
+      el.textContent = days>=0 ? days : '已结束';
+      const ein=document.getElementById('examDateInput');
+      if(ein && document.activeElement!==ein) ein.value=exam;
+    }
+    function ringSVG(percent, centerText, sub){
+      const r=34, c=2*Math.PI*r, p=Math.max(0,Math.min(100,percent));
+      const off=c*(1-p/100);
+      return `<svg width="92" height="92" viewBox="0 0 92 92">
+        <circle cx="46" cy="46" r="${r}" fill="none" stroke="var(--line)" stroke-width="9"/>
+        <circle cx="46" cy="46" r="${r}" fill="none" stroke="var(--primary)" stroke-width="9"
+          stroke-linecap="round" stroke-dasharray="${c.toFixed(1)}" stroke-dashoffset="${off.toFixed(1)}"
+          transform="rotate(-90 46 46)"/>
+        <text x="46" y="44" text-anchor="middle" font-size="17" font-weight="800" fill="var(--text)">${centerText}</text>
+        <text x="46" y="60" text-anchor="middle" font-size="10" fill="var(--muted)">${sub}</text>
+      </svg>`;
+    }
+    function renderGoalRing(){
+      const host=document.getElementById('goalRing');
+      if(!host) return;
+      const goal=state.dailyGoalHours!=null?state.dailyGoalHours:8;
+      const h=todayFocusMs()/3600000;
+      const pct= goal>0 ? Math.round(h/goal*100) : 0;
+      host.innerHTML=ringSVG(pct, pct+'%', '今日');
+      const gt=document.getElementById('goalText');
+      if(gt) gt.textContent=`${h.toFixed(1)} / ${goal} h`;
+      const gin=document.getElementById('goalHoursInput');
+      if(gin && document.activeElement!==gin) gin.value=goal;
+    }
+    function toggleDark(){ state.darkMode=!state.darkMode; saveState(); applyDark(); }
+    function applyDark(){
+      document.body.classList.toggle('dark', !!state.darkMode);
+      const b=document.getElementById('darkModeBtn');
+      if(b) b.textContent = state.darkMode ? '☀️ 浅色' : '🌙 深色';
+    }
+    function renderReport(){
+      const wrap=document.getElementById('reportWrap');
+      if(!wrap) return;
+      const scopeName = statsScope==='week'?'本周':(statsScope==='month'?'本月':'本年');
+      const pill=document.getElementById('reportScopePill'); if(pill) pill.textContent=scopeName;
+      const dates=getScopeDates(statsScope);
+      let hours=0, daysDone=0, expected=0, done=0;
+      const acc=(ds)=>{
+        const ts=getTasksByDate(ds); hours+=ts.reduce((a,t)=>a+getTaskDurationMs(t),0)/3600000;
+        const att=ensureAttendanceDate(ds); let dd=false;
+        ['morning','afternoon','evening'].forEach(p=>{ expected++; if(att[p].in||att[p].out){done++;dd=true;} });
+        if(dd) daysDone++;
+      };
+      if(statsScope==='year'){
+        Object.keys(state.attendance).forEach(ds=>{ if(dates.includes(ds.slice(0,7))) acc(ds); });
+      }else{
+        dates.forEach(acc);
+      }
+      const rate= expected? Math.round(done/expected*100):0;
+      const mockN=countMockEntries();
+      let trendParts=[], weakest=null, weakestRate=999;
+      MOCK_SUBJECTS.forEach(sub=>{
+        const logs=getSubjectScoreLogs(sub.key);
+        if(!logs.length) return;
+        const rates=logs.map(l=>Math.round(l.score/sub.full*100));
+        const avg=Math.round(rates.reduce((a,b)=>a+b,0)/rates.length);
+        if(avg<weakestRate){ weakestRate=avg; weakest=sub.key; }
+        if(rates.length>=2){
+          const d=rates[rates.length-1]-rates[0];
+          trendParts.push(`${sub.key}得分率${d>=0?'↑':'↓'}${Math.abs(d)}%（最新${rates[rates.length-1]}%）`);
+        }else{
+          trendParts.push(`${sub.key}得分率${rates[0]}%`);
+        }
+      });
+      const exam=state.examDate||'2026-12-19';
+      const days=Math.round((new Date(exam+'T00:00:00')-new Date(todayStr()+'T00:00:00'))/86400000);
+      let txt=`${scopeName}你累计学习 <strong>${hours.toFixed(1)}</strong> 小时，打卡 <strong>${daysDone}</strong> 天（打卡率 ${rate}%），完成 <strong>${mockN}</strong> 次模考记录。`;
+      if(trendParts.length) txt+=`<br>模考情况：${trendParts.join('；')}。`;
+      if(weakest) txt+=`<br>目前相对薄弱的是 <strong>${weakest}</strong>（平均得分率 ${weakestRate}%），建议多分配复习时间。`;
+      txt+=`<br>距初试还有 <strong>${days>=0?days:0}</strong> 天，稳住节奏，继续加油！`;
+      wrap.innerHTML=txt;
+    }
+
     function bindEvents(){
 
       document.getElementById('selectedDate').value = selectedDate;
@@ -3177,7 +3353,6 @@ function importData(file){
         btn.addEventListener('click', ()=>handlePunch(btn.dataset.period, btn.dataset.type));
       });
  
-      document.getElementById('addPhoneRestraintBtn').addEventListener('click', addPhoneRestraint);
       document.getElementById('startFocusTaskBtn').addEventListener('click', startFocusTask);
       document.getElementById('addBackfillTaskBtn').addEventListener('click', addBackfillTask);
       document.getElementById('focusModeUpBtn').addEventListener('click', ()=>switchFocusMode('up'));
@@ -3192,11 +3367,6 @@ function importData(file){
       ));
       document.getElementById('finishTaskBtn').addEventListener('click', ()=>finishTask('完成'));
       document.getElementById('cancelTaskBtn').addEventListener('click', ()=>finishTask('中断'));
-      document.getElementById('addLeaveBtn').addEventListener('click', ()=>{
-        addLeave(document.getElementById('leaveDateInput').value, document.getElementById('leaveReasonInput').value);
-      });
- // 绑定保存论文按钮
-      document.getElementById('saveThesisBtn').addEventListener('click', saveThesisInfo);
       document.querySelectorAll('.stat-scope-btn').forEach(btn=>{
         btn.addEventListener('click', ()=>{
           statsScope = btn.dataset.scope;
@@ -3204,6 +3374,7 @@ function importData(file){
             b.className = b.dataset.scope === statsScope ? 'btn-primary stat-scope-btn' : 'btn-soft stat-scope-btn';
           });
           renderStats();
+          renderReport();
         });
       });
  
@@ -3230,6 +3401,16 @@ function importData(file){
         if(e.target.files && e.target.files[0]) importData(e.target.files[0]);
       });
       document.getElementById('resetBtn').addEventListener('click', resetAll);
+      showQuote();
+      const _qEl = document.getElementById('quoteText');
+      if(_qEl){ _qEl.style.cursor='pointer'; _qEl.title='点击换一句'; _qEl.addEventListener('click', rotateQuote); }
+      const _exam=document.getElementById('examDateInput');
+      if(_exam){ _exam.value=state.examDate||'2026-12-19'; _exam.addEventListener('change', e=>{ state.examDate=e.target.value||'2026-12-19'; saveState(); renderCountdown(); renderReport(); }); }
+      const _goal=document.getElementById('goalHoursInput');
+      if(_goal){ _goal.value=state.dailyGoalHours!=null?state.dailyGoalHours:8; _goal.addEventListener('change', e=>{ state.dailyGoalHours=parseFloat(e.target.value)||0; saveState(); renderGoalRing(); }); }
+      const _dk=document.getElementById('darkModeBtn');
+      if(_dk){ _dk.addEventListener('click', toggleDark); }
+      applyDark();
       const muyuBtn = document.getElementById('muyuBtn');
       if (muyuBtn) {
           muyuBtn.addEventListener('click', function() {
@@ -3258,13 +3439,13 @@ function renderAll(){
       renderClock();
       renderHero();
       renderOverview();
+      renderCountdown();
+      renderGoalRing();
       renderAttendance();
-      renderPhone();
       renderTasks();
       renderTodoCalendar();
-      renderLeave();
       renderStats();
-      renderThesis();
+      renderReport();
       renderSubmissions();
       if(document.getElementById('muyuDisplayCount')) {
         document.getElementById('muyuDisplayCount').textContent = state.muyuCount || 0;
@@ -3282,6 +3463,8 @@ function renderAll(){
     window.closeSubModal = closeSubModal;
     window.addSubmissionLog = addSubmissionLog;
     window.deleteSubmission = deleteSubmission;
+    window.addCalendarPlan = addCalendarPlan;
+    window.addCalendarPlanFromInput = addCalendarPlanFromInput;
 
 // 页面加载后执行一次
     bindEvents();
@@ -3297,6 +3480,8 @@ function renderAll(){
           renderHero();  
       }
     }, 1000);
+
+    setInterval(rotateQuote, 12000);
   </script>
 
 </body>
