@@ -1203,6 +1203,11 @@ td button {
     .hm-col{ display:grid; grid-template-rows:repeat(7, 14px); gap:3px; }
     .hm-cell{ width:14px; height:14px; border-radius:2px; display:inline-block; background:#ebedf0; cursor:pointer; }
     .hm-cell:hover{ outline:1.5px solid rgba(0,0,0,.3); outline-offset:-1px; }
+    .hm-stats{ display:flex; flex-wrap:wrap; gap:10px; margin:4px 0 16px; }
+    .hm-stat{ flex:1 1 auto; min-width:96px; background:var(--primary-soft); border:1px solid var(--line); border-radius:14px; padding:9px 14px; }
+    .hm-stat .k{ font-size:12px; color:var(--muted); display:flex; align-items:center; gap:4px; }
+    .hm-stat .v{ font-size:21px; font-weight:800; color:var(--text); margin-top:3px; line-height:1.1; }
+    .hm-stat .v small{ font-size:12px; font-weight:600; color:var(--muted); }
     .refl-chip{ display:inline-block; margin:4px 6px 0 0; padding:6px 12px; border-radius:980px; background:#f0f4ff; color:#0071e3; border:1px solid #cfe0ff; cursor:pointer; font-size:12px; font-weight:600; }
     .refl-chip:hover{ background:#0071e3; color:#fff; }
     .refl-date{ font-weight:800; margin:18px 0 10px; color:var(--text); }
@@ -1325,18 +1330,20 @@ td button {
           <div class="tiny" id="goalText">-</div>
         </div>
       </div>
-      <div style="margin-top:18px; padding-top:16px; border-top:1px solid var(--line)">
-        <div class="card-title">
-          <h3>🔥 专注热力图</h3>
-          <div class="button-row">
-            <button class="btn-primary hm-scope-btn" data-hm="year">年</button>
-            <button class="btn-soft hm-scope-btn" data-hm="month">月</button>
-            <button class="btn-soft hm-scope-btn" data-hm="week">周</button>
-          </div>
+    </div>
+
+    <div class="card" style="margin-top:16px">
+      <div class="card-title">
+        <h3>🔥 专注热力图</h3>
+        <div class="button-row">
+          <button class="btn-primary hm-scope-btn" data-hm="year">年</button>
+          <button class="btn-soft hm-scope-btn" data-hm="month">月</button>
+          <button class="btn-soft hm-scope-btn" data-hm="week">周</button>
         </div>
-        <div id="heatmapWrap" style="overflow-x:auto; padding-bottom:6px"></div>
-        <div id="heatmapDetail" class="tiny" style="margin-top:10px">点击某个小块查看当天学了什么。</div>
       </div>
+      <div id="heatmapStats" class="hm-stats"></div>
+      <div id="heatmapWrap" style="overflow-x:auto; padding-bottom:6px"></div>
+      <div id="heatmapDetail" class="tiny" style="margin-top:10px">点击某个小块查看当天学了什么。</div>
     </div>
 
     <div class="tabs">
@@ -3545,7 +3552,10 @@ function importData(file){
       const host = document.getElementById('heatmapWrap');
       if(!host) return;
       const mins = _dailyFocusMin();
-      const colors = ['#ebedf0', '#9be9a8', '#40c463', '#30a14e', '#216e39'];
+      const isDark = document.body.classList.contains('dark');
+      const emptyColor = isDark ? '#2c2c30' : '#ebedf0';
+      const ringColor = isDark ? '#f5f5f7' : '#1d1d1f';
+      const colors = [emptyColor, '#9be9a8', '#40c463', '#30a14e', '#216e39'];
       const today = new Date(todayStr() + 'T12:00:00');
 
       let startDate, endDate;
@@ -3602,7 +3612,7 @@ function importData(file){
           const min = mins[ds] || 0;
           const bg = colors[_hmLevel(min)];
           const isToday = ds === tds;
-          const ring = isToday ? 'box-shadow:inset 0 0 0 1.5px #1d1d1f;' : '';
+          const ring = isToday ? `box-shadow:inset 0 0 0 1.5px ${ringColor};` : '';
           const future = d > today;
           const opacity = future ? 'opacity:0.25' : '';
           colsHtml += `<span class="hm-cell" onclick="showHeatmapDay('${ds}')" title="${ds}：${Math.round(min)}分钟" style="background:${bg};${ring}${opacity}"></span>`;
@@ -3621,6 +3631,57 @@ function importData(file){
             '<div style="display:flex;gap:3px">' + colsHtml + '</div>' +
           '</div>' +
         '</div>' + legend;
+
+      renderHeatmapStats(mins);
+    }
+    // 当前/最长连续学习天数（基于全部记录）
+    function _focusStreaks(mins){
+      const tds = todayStr();
+      let cur = 0;
+      let d = new Date(tds + 'T12:00:00');
+      if(!(mins[toDateStr(d)] > 0)) d.setDate(d.getDate() - 1); // 今天还没开始也不算中断
+      while(mins[toDateStr(d)] > 0){ cur++; d.setDate(d.getDate() - 1); }
+      const dates = Object.keys(mins).filter(k => mins[k] > 0).sort();
+      let longest = 0, run = 0, prev = null;
+      dates.forEach(ds => {
+        run = (prev && Math.round((new Date(ds) - new Date(prev)) / 86400000) === 1) ? run + 1 : 1;
+        if(run > longest) longest = run;
+        prev = ds;
+      });
+      return { cur, longest };
+    }
+    // 当前作用域（年/月/周）的起止与名称
+    function _hmScopeRange(){
+      const today = new Date(todayStr() + 'T12:00:00');
+      if(heatmapScope === 'week'){
+        const wd = today.getDay() || 7;
+        const s = new Date(today); s.setDate(today.getDate() - wd + 1);
+        return { start: s, end: today, label: '本周' };
+      }
+      if(heatmapScope === 'month'){
+        return { start: new Date(today.getFullYear(), today.getMonth(), 1), end: today, label: '本月' };
+      }
+      return { start: new Date(today.getFullYear(), 0, 1), end: today, label: '本年' };
+    }
+    function renderHeatmapStats(mins){
+      const host = document.getElementById('heatmapStats');
+      if(!host) return;
+      const { start, end, label } = _hmScopeRange();
+      let totalMin = 0, studyDays = 0;
+      for(let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)){
+        const m = mins[toDateStr(d)] || 0;
+        if(m > 0){ totalMin += m; studyDays++; }
+      }
+      const { cur, longest } = _focusStreaks(mins);
+      const avgMin = studyDays ? totalMin / studyDays : 0;
+      const hv = v => `${(v/60).toFixed(1)}<small> h</small>`;
+      const stat = (k, v) => `<div class="hm-stat"><div class="k">${k}</div><div class="v">${v}</div></div>`;
+      host.innerHTML =
+        stat(`${label}专注`, hv(totalMin)) +
+        stat('学习天数', `${studyDays}<small> 天</small>`) +
+        stat('🔥 当前连续', `${cur}<small> 天</small>`) +
+        stat('最长连续', `${longest}<small> 天</small>`) +
+        stat('日均(学习日)', hv(avgMin));
     }
     function showHeatmapDay(ds){
       const detail=document.getElementById('heatmapDetail');
