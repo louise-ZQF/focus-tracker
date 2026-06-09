@@ -1654,7 +1654,7 @@ td button {
     </section>
 
     <div class="footer-note">
-      数据默认保存在本浏览器。点右上角「☁️ 云同步」设置同步码后，可在任意设备 / 浏览器自动同步。
+      已开启全自动云同步：任意设备 / 浏览器打开都是最新数据，无需任何操作。（右上角「☁️ 云同步」可设自定义同步码以增强私密性）
     </div>
   </div>
  
@@ -1664,8 +1664,8 @@ td button {
         <strong>☁️ 云同步</strong>
         <button class="cloud-x" onclick="closeCloudModal()">✕</button>
       </div>
-      <p class="tiny">设置一个只有你知道的「同步码」（相当于密码）。在任何设备 / 浏览器输入同一个同步码，就能拿到同一份数据。改动会自动上传，换设备打开自动拉回最新。</p>
-      <label class="tiny">同步码（请别用太简单的，别人猜到就能看到你的数据）</label>
+      <p class="tiny">✅ 已默认开启全自动同步，<b>你什么都不用设置</b>——打开任意设备 / 浏览器，数据都一直在，改动自动上传、自动拉取最新。<br><br>下面是<b>进阶选项</b>：如果你想让数据更私密（不让任何看到本页源码的人访问），可以自定义一个只有你知道的同步码，并在你所有设备上填同一个。</p>
+      <label class="tiny">自定义同步码（可留空，留空就用默认自动同步）</label>
       <input id="syncCodeInput" type="text" placeholder="例如 zqf-kaoyan-2026" />
       <div class="cloud-actions">
         <button class="btn-primary" onclick="saveSyncCode()">保存并开启自动同步</button>
@@ -1801,26 +1801,32 @@ function loadState(){
     const SUPABASE_KEY = 'sb_publishable_XsLuLs5-NEUmW75CnUqcTg_3gRGPgc3';
     const SYNC_CODE_KEY = 'niuma-sync-code';
     const LOCAL_TS_KEY  = 'niuma-local-ts';
+    // 内置默认同步码：用户什么都不用设置，打开即自动同步、数据一直都在
+    const DEFAULT_SYNC_CODE = 'kn408-zqf-9x4Zq2k7Lm3Rt8Wp';
     let cloudSyncTimer = null;
+    let _lastSyncCheck = 0;
 
-    function getSyncCode(){ return (localStorage.getItem(SYNC_CODE_KEY)||'').trim(); }
+    // 没自定义就用默认码 → 始终开启同步
+    function getSyncCode(){ return (localStorage.getItem(SYNC_CODE_KEY)||'').trim() || DEFAULT_SYNC_CODE; }
     function cloudHeaders(extra){ return Object.assign({ 'apikey':SUPABASE_KEY, 'Authorization':'Bearer '+SUPABASE_KEY }, extra||{}); }
     function setCloudStatus(txt){
       const el=document.getElementById('cloudStatusLine'); if(el) el.textContent=txt;
       const b=document.getElementById('cloudSyncBtn'); if(b) b.textContent = getSyncCode() ? '☁️ 已同步' : '☁️ 云同步';
     }
+    function isCustomCode(){ return !!(localStorage.getItem(SYNC_CODE_KEY)||'').trim(); }
+    function syncStatusText(){ return isCustomCode() ? ('已开启 · 自定义同步码：'+getSyncCode()) : '已开启 · 默认自动同步（无需设置，数据一直都在）'; }
     function openCloudModal(){
-      const i=document.getElementById('syncCodeInput'); if(i) i.value=getSyncCode();
+      const i=document.getElementById('syncCodeInput'); if(i) i.value=(localStorage.getItem(SYNC_CODE_KEY)||'').trim();
       const m=document.getElementById('cloudModal'); if(m) m.style.display='flex';
-      setCloudStatus(getSyncCode()?('已开启 · 同步码：'+getSyncCode()):'未开启');
+      setCloudStatus(syncStatusText());
     }
     function closeCloudModal(){ const m=document.getElementById('cloudModal'); if(m) m.style.display='none'; }
     function saveSyncCode(){
       const v=(document.getElementById('syncCodeInput').value||'').trim();
-      if(!v){ showToast('请输入同步码'); return; }
-      localStorage.setItem(SYNC_CODE_KEY, v);
+      if(v) localStorage.setItem(SYNC_CODE_KEY, v);
+      else localStorage.removeItem(SYNC_CODE_KEY);
       setCloudStatus('已保存，正在同步…');
-      showToast('已开启云同步');
+      showToast(v?'已设置自定义同步码':'已恢复默认自动同步');
       cloudSyncOnStart();
     }
     async function cloudPush(manual){
@@ -3779,8 +3785,23 @@ function renderAll(){
 // 页面加载后执行一次
     bindEvents();
     renderAll();
-    setCloudStatus(getSyncCode()?('已开启 · 同步码：'+getSyncCode()):'未开启');
+    setCloudStatus(syncStatusText());
     cloudSyncOnStart();
+
+    // ===== 全自动同步：用户无需任何操作 =====
+    function autoSyncCheck(){
+      const n=Date.now();
+      if(n-_lastSyncCheck < 30000) return; // 30 秒内不重复检查
+      _lastSyncCheck=n;
+      cloudSyncOnStart();
+    }
+    // 切回这个标签页 / 窗口重新聚焦时，自动拉取最新
+    document.addEventListener('visibilitychange', ()=>{ if(!document.hidden) autoSyncCheck(); });
+    window.addEventListener('focus', autoSyncCheck);
+    // 每 3 分钟兜底上传一次本机数据
+    setInterval(()=>{ cloudPush(false); }, 3*60*1000);
+    // 每 1 小时检查云端是否有更新（别的设备改过就自动拉回）
+    setInterval(autoSyncCheck, 60*60*1000);
 
     // 定时器：只刷新需要动态变动的部分
     setInterval(()=>{
