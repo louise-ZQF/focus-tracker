@@ -1399,7 +1399,6 @@ td button {
         <div class="spacer"></div>
         <div class="button-row">
           <button class="btn-success" id="finishTaskBtn">结束并记录</button>
-          <button class="btn-danger" id="cancelTaskBtn">中断任务</button>
         </div>
       </div>
 
@@ -1774,16 +1773,55 @@ function defaultState(){
     reflections: [],
     muyuPos: null,
     links: [],
-    targets: {}
+    targets: {},
+    focusSessions: [],
+    activeFocus: null,
+    focusMigratedV1: true
   };
 }
  
+function migrateFocusData(s){
+  if(!s) return s;
+  s.focusSessions = s.focusSessions || [];
+  if(s.focusMigratedV1) return s;
+  // 一次性迁移：把旧「任务」里的专注时长搬进 focusSessions，任务退化为纯待办。
+  const kept = [];
+  (s.tasks || []).forEach(t=>{
+    const dur = (t.durationMs && t.durationMs > 0) ? t.durationMs
+      : ((t.startTime && t.endTime) ? Math.max(0, new Date(t.endTime) - new Date(t.startTime)) : 0);
+    if(dur > 0 && t.date){
+      s.focusSessions.push({
+        id: (t.id ? String(t.id) : String(Date.now())) + '_m',
+        date: t.date,
+        category: t.category || '其它',
+        durationMs: dur,
+        startedAt: (!t.hidden && t.startTime) ? t.startTime : null,
+        createdAt: t.createdAt || t.startTime || new Date().toISOString()
+      });
+    }
+    if(!t.hidden){
+      kept.push({
+        id: t.id || (`${Date.now()}_${Math.random().toString(36).slice(2,8)}`),
+        name: t.name || t.category || '任务',
+        category: t.category || '📕 政治',
+        status: (t.status === '已完成') ? '已完成' : '待开始',
+        date: t.date || todayStr(),
+        createdAt: t.createdAt || new Date().toISOString()
+      });
+    }
+  });
+  s.tasks = kept;
+  s.activeFocus = null;
+  s.focusMigratedV1 = true;
+  return s;
+}
+
 function loadState(){
       try{
         const raw = localStorage.getItem(STORAGE_KEY);
         if(!raw) return defaultState();
         const parsed = JSON.parse(raw);
-        return {
+        const loaded = {
           attendance: parsed.attendance || {},
           phoneRestraints: parsed.phoneRestraints || [],
           tasks: parsed.tasks || [],
@@ -1799,8 +1837,12 @@ function loadState(){
           reflections: parsed.reflections || [],
           muyuPos: parsed.muyuPos || null,
           links: parsed.links || [],
-          targets: parsed.targets || {}
+          targets: parsed.targets || {},
+          focusSessions: parsed.focusSessions || [],
+          activeFocus: parsed.activeFocus || null,
+          focusMigratedV1: parsed.focusMigratedV1 || false
         };
+        return migrateFocusData(loaded);
       }catch(e){
         return defaultState();
       }
@@ -2029,7 +2071,7 @@ function loadState(){
     }
  
     function getActiveTask(){
-      return state.tasks.find(t => t.status === '进行中') || null;
+      return state.activeFocus || null;
     }
  
  
@@ -2042,41 +2084,21 @@ function syncTaskDateInput(dateStr){
   if(el) el.value = dateStr || selectedDate || todayStr();
 }
  
-function startTask(name, onlyTodo = false, category = '📕 政治', mode = 'up', plannedDate = null, hidden = false){
+// 任务 = 纯待办，跟时间无关
+function startTask(name, onlyTodo = true, category = '📕 政治', mode = 'up', plannedDate = null){
   name = (name || '').trim() || category;
-  const active = getActiveTask();
-  if(active && !onlyTodo){
-    showToast(`已有进行中任务：${active.name}
-请先结束或中断后再开始新的任务。`);
-    return;
-  }
- 
   const now = new Date();
-  let taskDate = plannedDate || getTaskFormDate() || selectedDate || todayStr();
- 
-  if(!onlyTodo && taskDate !== todayStr()){
-    showToast('“开始专注”会按今天计入任务；如需提前安排未来日期，请使用“添加待办”。');
-    taskDate = todayStr();
-  }
- 
-  const task = {
+  const taskDate = plannedDate || getTaskFormDate() || selectedDate || todayStr();
+  state.tasks.unshift({
     id: `${Date.now()}_${Math.random().toString(36).slice(2,8)}`,
     name,
     category,
-    focusMode: mode,
-    hidden: hidden,
-    targetMinutes: mode === 'down' ? 25 : null,
-    startTime: onlyTodo ? null : now.toISOString(),
-    endTime: null,
-    durationMs: 0,
-    status: onlyTodo ? '待开始' : '进行中',
+    status: '待开始',
     date: taskDate,
     createdAt: now.toISOString()
-  };
- 
-  state.tasks.unshift(task);
+  });
   saveState();
-  showToast(onlyTodo ? `已添加待办：${name}（${taskDate}）` : `任务已开始：${name}`);
+  showToast(`已添加待办：${name}（${taskDate}）`);
   renderAll();
 }
  
@@ -2090,43 +2112,52 @@ function switchFocusMode(mode){
   renderTasks();
 }
  
+// 开始专注 = 只启动一个计时器，不创建任务
 function startFocusTask(){
+  if(state.activeFocus){ showToast('已有正在进行的专注，请先「结束并记录」。'); return; }
   const category = document.getElementById('taskCategoryInput').value || '📕 政治';
-  startTask(category, false, category, 'up', null, true);
+  state.activeFocus = {
+    category,
+    startTime: new Date().toISOString(),
+    date: todayStr(),
+    focusMode: focusMode,
+    targetMinutes: focusMode === 'down' ? 25 : null
+  };
+  saveState();
+  showToast(`开始专注：${category}`);
+  renderAll();
 }
 
 // 1. 这是倒计时自动结束的函数
 function maybeAutoFinishPomodoro(){
-  const active = getActiveTask();
-  if(!active || active.focusMode !== 'down' || !active.targetMinutes) return;
-  const remain = active.targetMinutes * 60000 - getTaskDurationMs(active);
-  if(remain <= 0){
-    finishTask('完成');
-    showToast('番茄时间到！当前专注任务已自动结束。');
+  const a = state.activeFocus;
+  if(!a || a.focusMode !== 'down' || !a.targetMinutes) return;
+  if(a.targetMinutes * 60000 - getActiveFocusMs() <= 0){
+    recordFocusSession(a.date, a.category, a.targetMinutes * 60000, a.startTime);
+    state.activeFocus = null;
+    saveState();
+    showToast('番茄时间到！已自动记录本次专注。');
     try{ alert('番茄时间到！休息一下。'); }catch(e){}
+    renderAll();
   }
-} // <--- 注意：maybeAutoFinishPomodoro 应该在这里就结束了！
+}
 
-// 结束任务函数
-function finishTask(mode = '完成'){
-  const active = getActiveTask();
-  if(!active){
-    showToast('当前没有进行中的任务。');
+// 结束专注并记录（只存时长，不动任务）
+function finishTask(){
+  const a = state.activeFocus;
+  if(!a){
+    showToast('当前没有正在进行的专注。');
     return;
   }
-  const now = new Date();
-  active.endTime = now.toISOString();
-  let ms = (active.durationMs || 0) + (new Date(active.endTime).getTime() - new Date(active.startTime).getTime());
-  if(mode !== '中断'){
-    const input = prompt('本次专注分钟数（忘记/有误可直接修改后回车）：', Math.round(ms/60000));
-    if(input === null) return;
-    const v = parseInt(input);
-    if(!isNaN(v) && v >= 0){ ms = v*60000; active.endTime = new Date(new Date(active.startTime).getTime()+ms).toISOString(); }
-  }
-  active.durationMs = ms;
-  active.status = mode === '中断' ? '中断' : '已完成';
+  let ms = getActiveFocusMs();
+  const input = prompt('本次专注分钟数（忘记/有误可直接修改后回车）：', Math.round(ms/60000));
+  if(input === null) return;
+  const v = parseInt(input);
+  if(!isNaN(v) && v >= 0) ms = v*60000;
+  recordFocusSession(a.date, a.category, ms, a.startTime);
+  state.activeFocus = null;
   saveState();
-  showToast(mode === '中断' ? '任务已中断' : `已记录 ${active.category||''} ${Math.round(ms/60000)} 分钟`);
+  showToast(`已记录 ${a.category||''} ${Math.round(ms/60000)} 分钟`);
   renderAll();
 }
  
@@ -2246,7 +2277,38 @@ function finishTask(mode = '完成'){
       }
       return task.durationMs || 0;
     }
- 
+
+    // ===== 专注时间记录（与「任务」完全解耦）=====
+    function getActiveFocusMs(){
+      const a = state.activeFocus;
+      if(!a || !a.startTime) return 0;
+      return Math.max(0, Date.now() - new Date(a.startTime).getTime());
+    }
+    function getFocusByDate(ds){
+      return (state.focusSessions || []).filter(f => f.date === ds);
+    }
+    function sumFocusMs(pred){
+      let ms = (state.focusSessions || []).filter(pred).reduce((a,f)=>a+(f.durationMs||0),0);
+      const a = state.activeFocus;
+      if(a && a.startTime && pred({date:a.date})) ms += getActiveFocusMs();
+      return ms;
+    }
+    function getFocusMsByDate(ds){
+      return sumFocusMs(f => f.date === ds);
+    }
+    function recordFocusSession(date, category, durationMs, startedAt){
+      if(!(durationMs > 0)) return;
+      state.focusSessions = state.focusSessions || [];
+      state.focusSessions.unshift({
+        id: `${Date.now()}_${Math.random().toString(36).slice(2,8)}`,
+        date: date || todayStr(),
+        category: category || '📕 政治',
+        durationMs: durationMs,
+        startedAt: startedAt || null,
+        createdAt: new Date().toISOString()
+      });
+    }
+
     function getTasksByDate(dateStr){
       const order = {'进行中':0,'待开始':1,'已完成':2,'中断':3};
       return state.tasks
@@ -2307,30 +2369,31 @@ let calendarSidebarMode = '全部';
 function renderHero(){
   const today = todayStr();
   const active = getActiveTask();
-  document.getElementById('heroTaskName').textContent = active ? active.name : '-';
-  const todayTaskMs = getTasksByDate(today).reduce((sum,t)=>sum+getTaskDurationMs(t),0);
+  document.getElementById('heroTaskName').textContent = active ? (active.category || '专注中') : '-';
+  const todayTaskMs = getFocusMsByDate(today);
   document.getElementById('heroTaskHours').textContent = `${durationHours(todayTaskMs)} h`;
   document.getElementById('heroFocusMinutes').textContent = `${Math.round(todayTaskMs/60000)} min`;
 }
  
 function renderOverview(){
       const td = todayStr();
-      const starts = state.tasks.filter(t=>t.date===td && t.startTime).map(t=>new Date(t.startTime)).sort((a,b)=>a-b);
+      const starts = getFocusByDate(td).filter(f=>f.startedAt).map(f=>new Date(f.startedAt));
+      if(state.activeFocus && state.activeFocus.startTime && state.activeFocus.date===td) starts.push(new Date(state.activeFocus.startTime));
+      starts.sort((a,b)=>a-b);
       const startStr = starts.length ? formatTime(starts[0]) : '--:--';
       const setT=(id,v)=>{const e=document.getElementById(id); if(e) e.textContent=v;};
       setT('ovStudyStart', startStr);
       setT('heroStudyStart', startStr);
-      setT('ovStudyStartNote', starts.length ? `最早从 ${startStr} 开始学习` : '今天还没开始学习');
+      setT('ovStudyStartNote', starts.length ? `最早从 ${startStr} 开始专注` : '今天还没有专注记录');
 
       const _d0 = new Date(td+'T12:00:00'); const _wd=_d0.getDay()||7;
       const _mon = new Date(_d0); _mon.setDate(_d0.getDate()-_wd+1);
       const _sun = new Date(_d0); _sun.setDate(_d0.getDate()+(7-_wd));
       const _monS=toDateStr(_mon), _sunS=toDateStr(_sun);
-      const _sumMs = fn => state.tasks.filter(fn).reduce((a,t)=>a+getTaskDurationMs(t),0);
       const _fmtH = ms => (ms/3600000).toFixed(1)+' h';
-      setT('ovFocusToday', _fmtH(_sumMs(t=>t.date===td)));
-      setT('ovFocusWeek', _fmtH(_sumMs(t=>t.date>=_monS&&t.date<=_sunS)));
-      setT('ovFocusTotal', _fmtH(_sumMs(()=>true)));
+      setT('ovFocusToday', _fmtH(getFocusMsByDate(td)));
+      setT('ovFocusWeek', _fmtH(sumFocusMs(f=>f.date>=_monS&&f.date<=_sunS)));
+      setT('ovFocusTotal', _fmtH(sumFocusMs(()=>true)));
     }
  
     function renderAttendance(){
@@ -2407,17 +2470,17 @@ function renderOverview(){
 function renderTasks(){
   const active = getActiveTask();
   const badge = document.getElementById('focusModeBadge');
-  if(badge) badge.textContent = '正计时';
+  if(badge) badge.textContent = ((active ? active.focusMode : focusMode) === 'down') ? '番茄钟' : '正计时';
   const disp = document.getElementById('focusDisplay');
-  if(disp) disp.textContent = active ? formatDuration(getTaskDurationMs(active)) : '00:00:00';
+  if(disp) disp.textContent = active ? formatDuration(getActiveFocusMs()) : '00:00:00';
   const stWrap = document.getElementById('activeTaskStatusWrap');
-  if(stWrap) stWrap.innerHTML = active ? '<span class="pill warn">进行中</span>' : '<span class="pill">空闲</span>';
+  if(stWrap) stWrap.innerHTML = active ? '<span class="pill warn">专注中</span>' : '<span class="pill">空闲</span>';
   const catEl = document.getElementById('activeTaskCategory');
   if(catEl){ catEl.className = `soft-tag ${active ? getCategoryClass(active.category||'') : ''}`; catEl.textContent = active ? (active.category||'未分类') : '-'; }
   const elap = document.getElementById('activeTaskElapsed');
-  if(elap) elap.textContent = active ? `已专注 ${formatDuration(getTaskDurationMs(active))}` : '00:00:00';
+  if(elap) elap.textContent = active ? `已专注 ${formatDuration(getActiveFocusMs())}` : '00:00:00';
   const note = document.getElementById('activeTaskNote');
-  if(note) note.textContent = active ? `${active.startTime ? formatDateTime(new Date(active.startTime)) : '-'} 开始` : '当前暂无进行中的任务。';
+  if(note) note.textContent = active ? `${active.startTime ? formatDateTime(new Date(active.startTime)) : '-'} 开始` : '当前暂无进行中的专注。';
 
   const tasks = getTasksByDate(selectedDate).filter(t=>!t.hidden);
   const cnt = document.getElementById('taskDayCount');
@@ -2437,22 +2500,17 @@ function renderTasks(){
     const collapsed = !!taskCollapsed[c];
     const rows = items.length ? items.map(t=>{
       const done = t.status==='已完成';
-      const interrupted = t.status==='中断';
-      const running = t.status==='进行中';
       const label = (t.name && t.name!==t.category) ? escapeHtml(t.name) : '<span class="tiny">（无名称）</span>';
       return `<tr>
-        <td>${running ? '<span class="tiny">—</span>' : `<input type="checkbox" ${done?'checked':''} onclick="toggleTaskDone('${t.id}')">`}</td>
-        <td><span style="${done?'text-decoration:line-through;color:var(--muted)':(interrupted?'color:var(--danger,#e03)':'')}">
-          ${label}</span></td>
-        <td>${formatDuration(getTaskDurationMs(t))}</td>
+        <td><input type="checkbox" ${done?'checked':''} onclick="toggleTaskDone('${t.id}')"></td>
+        <td><span style="${done?'text-decoration:line-through;color:var(--muted)':''}">${label}</span></td>
         <td>${statusPill(t.status)}</td>
         <td>
-          ${(t.status === '待开始' || t.status === '中断') ? `<button class="btn-success" onclick="startTodoTask('${t.id}')">${t.status === '中断' ? '继续' : '开始'}</button> ` : ''}
           <button class="btn-soft" onclick="editTask('${t.id}')">改</button>
           <button class="btn-danger" onclick="deleteTask('${t.id}')">删</button>
         </td>
       </tr>`;
-    }).join('') : `<tr><td colspan="5" style="text-align:center;padding:12px;color:var(--muted)">暂无任务</td></tr>`;
+    }).join('') : `<tr><td colspan="4" style="text-align:center;padding:12px;color:var(--muted)">暂无任务</td></tr>`;
     return `<div class="task-group">
       <div class="task-group-head" onclick="toggleTaskGroup('${c}')">
         <span class="task-group-arrow">${collapsed?'▸':'▾'}</span>
@@ -2461,7 +2519,7 @@ function renderTasks(){
       </div>
       <div class="task-group-body" style="${collapsed?'display:none':''}">
         <table>
-          <thead><tr><th>✓</th><th>任务</th><th>时长</th><th>状态</th><th>操作</th></tr></thead>
+          <thead><tr><th>✓</th><th>任务</th><th>状态</th><th>操作</th></tr></thead>
           <tbody>${rows}</tbody>
         </table>
       </div>
@@ -2681,17 +2739,12 @@ function renderCalendarSidebar() {
       <tbody>
         ${selectedTasks.map(t => {
           const done = t.status === '已完成';
-          const running = t.status === '进行中';
-          const interrupted = t.status === '中断';
           return `
           <tr>
-            <td>${running ? '<span class="tiny">—</span>' : `<input type="checkbox" ${done?'checked':''} onclick="toggleTaskDone('${t.id}')">`}</td>
+            <td><input type="checkbox" ${done?'checked':''} onclick="toggleTaskDone('${t.id}')"></td>
             <td>${done ? '<s>' + escapeHtml(t.name) + '</s>' : escapeHtml(t.name)}</td>
             <td>${statusPill(t.status)}</td>
-            <td>
-              ${(t.status === '待开始' || interrupted) ? `<button class="btn-success" onclick="startTodoTask('${t.id}')">${interrupted ? '继续' : '开始'}</button> ` : ''}
-              ${running ? '' : `<button class="btn-danger" onclick="deleteTask('${t.id}')">删</button>`}
-            </td>
+            <td><button class="btn-danger" onclick="deleteTask('${t.id}')">删</button></td>
           </tr>
         `}).join('')}
       </tbody>
@@ -2750,7 +2803,7 @@ window.setCalendarFilter = function(mode) {
       const taskHoursByDate = {};
       let studyDays = 0, totalH = 0;
       dates.forEach(dateStr=>{
-        const ms = getTasksByDate(dateStr).reduce((sum,t)=>sum+getTaskDurationMs(t),0);
+        const ms = getFocusMsByDate(dateStr);
         const h = +(ms/3600000).toFixed(1);
         taskHoursByDate[dateStr] = h;
         if(h>0) studyDays++;
@@ -2772,7 +2825,7 @@ window.setCalendarFilter = function(mode) {
     function renderYearStats(months){
       const monthSet = new Set(months);
       const dayMs = {};
-      state.tasks.forEach(t=>{ if(t.date && monthSet.has(t.date.slice(0,7))) dayMs[t.date]=(dayMs[t.date]||0)+getTaskDurationMs(t); });
+      (state.focusSessions||[]).forEach(f=>{ if(f.date && monthSet.has(f.date.slice(0,7))) dayMs[f.date]=(dayMs[f.date]||0)+(f.durationMs||0); });
       const byMonth = {}; let studyDays=0, totalH=0;
       Object.entries(dayMs).forEach(([d,ms])=>{ const h=ms/3600000; totalH+=h; if(h>0) studyDays++; const m=d.slice(0,7); byMonth[m]=(byMonth[m]||0)+h; });
       months.forEach(m=>{ if(byMonth[m]==null) byMonth[m]=0; });
@@ -2850,8 +2903,12 @@ function importData(file){
             reflections: parsed.reflections || [],
             muyuPos: parsed.muyuPos || null,
             links: parsed.links || [],
-            targets: parsed.targets || {}
+            targets: parsed.targets || {},
+            focusSessions: parsed.focusSessions || [],
+            activeFocus: parsed.activeFocus || null,
+            focusMigratedV1: parsed.focusMigratedV1 || false
           };
+          migrateFocusData(merged);
           localStorage.setItem(STORAGE_KEY, JSON.stringify(merged));
           location.reload();
         }catch(e){
@@ -2871,27 +2928,13 @@ function importData(file){
     function addBackfillTask() {
       const category = document.getElementById('taskCategoryInput').value || '📕 政治';
       const date = getTaskFormDate();
-      const timeStr = (prompt('补录的开始时间（24小时制，如 14:30）：', '09:00') || '').trim();
-      if(timeStr === '') return;
-      const mt = timeStr.match(/^(\d{1,2}):(\d{2})$/);
-      if(!mt){ showToast('时间格式应为 HH:MM，例如 14:30'); return; }
-      const minsStr = prompt('专注时长（分钟）：', '60');
+      const minsStr = prompt('补录专注时长（分钟）：', '60');
       if(minsStr === null) return;
       const mins = parseInt(minsStr) || 0;
       if(mins <= 0){ showToast('请输入有效的分钟数。'); return; }
-      const startD = new Date(date + 'T00:00:00');
-      startD.setHours(parseInt(mt[1]), parseInt(mt[2]), 0, 0);
-      const startMs = startD.getTime();
-      state.tasks.unshift({
-        id: `${Date.now()}_${Math.random().toString(36).slice(2,8)}`,
-        name: category, category, focusMode: 'up', hidden: true,
-        startTime: new Date(startMs).toISOString(),
-        endTime: new Date(startMs + mins*60000).toISOString(),
-        durationMs: mins*60000, status: '已完成',
-        date: date, createdAt: new Date().toISOString()
-      });
+      recordFocusSession(date, category, mins*60000);
       saveState();
-      showToast(`已补录 ${category}：${timeStr} 起 ${mins} 分钟（已计入专注，不进任务列表）`);
+      showToast(`已补录 ${category}：${mins} 分钟`);
       renderAll();
     }
     // 保存/更新论文信息
@@ -3302,8 +3345,7 @@ function importData(file){
       const now=new Date();
       state.tasks.unshift({
         id:`${Date.now()}_${Math.random().toString(36).slice(2,8)}`,
-        name, category, focusMode:'up', targetMinutes:null,
-        startTime:null, endTime:null, durationMs:0,
+        name, category,
         status:'待开始', date:dateStr, createdAt:now.toISOString()
       });
       saveState();
@@ -3313,8 +3355,7 @@ function importData(file){
 
     // ===== 倒计时 / 学习目标环 / 学习报告 / 深色模式 =====
     function todayFocusMs(){
-      const td=todayStr();
-      return state.tasks.filter(t=>t.date===td).reduce((a,t)=>a+getTaskDurationMs(t),0);
+      return getFocusMsByDate(todayStr());
     }
     function renderCountdown(){
       const el=document.getElementById('countdownDays');
@@ -3364,10 +3405,10 @@ function importData(file){
       let hours=0, studyDays=0;
       if(statsScope==='year'){
         const monthSet=new Set(dates); const dayMs={};
-        state.tasks.forEach(t=>{ if(t.date && monthSet.has(t.date.slice(0,7))) dayMs[t.date]=(dayMs[t.date]||0)+getTaskDurationMs(t); });
+        (state.focusSessions||[]).forEach(f=>{ if(f.date && monthSet.has(f.date.slice(0,7))) dayMs[f.date]=(dayMs[f.date]||0)+(f.durationMs||0); });
         Object.values(dayMs).forEach(ms=>{ const h=ms/3600000; hours+=h; if(h>0) studyDays++; });
       }else{
-        dates.forEach(ds=>{ const ms=getTasksByDate(ds).reduce((a,t)=>a+getTaskDurationMs(t),0); const h=ms/3600000; hours+=h; if(h>0) studyDays++; });
+        dates.forEach(ds=>{ const ms=getFocusMsByDate(ds); const h=ms/3600000; hours+=h; if(h>0) studyDays++; });
       }
       const mockN=countMockEntries();
       let trendParts=[], weakest=null, weakestRate=999;
@@ -3445,7 +3486,9 @@ function importData(file){
     let heatmapScope = 'year';
     function _dailyFocusMin(){
       const m={};
-      state.tasks.forEach(t=>{ if(!t.date) return; const ms=getTaskDurationMs(t); if(ms>0) m[t.date]=(m[t.date]||0)+ms/60000; });
+      (state.focusSessions||[]).forEach(f=>{ if(!f.date) return; m[f.date]=(m[f.date]||0)+(f.durationMs||0)/60000; });
+      const a=state.activeFocus;
+      if(a && a.startTime && a.date){ m[a.date]=(m[a.date]||0)+getActiveFocusMs()/60000; }
       return m;
     }
     function _hmLevel(min){ if(!min) return 0; if(min<120) return 1; if(min<240) return 2; if(min<480) return 3; return 4; }
@@ -3533,10 +3576,12 @@ function importData(file){
     function showHeatmapDay(ds){
       const detail=document.getElementById('heatmapDetail');
       if(!detail) return;
-      const tasks=state.tasks.filter(t=>t.date===ds && getTaskDurationMs(t)>0);
-      if(!tasks.length){ detail.innerHTML=`<strong>${ds}</strong>：当天没有专注记录。`; return; }
-      const total=tasks.reduce((a,t)=>a+getTaskDurationMs(t),0)/60000;
-      detail.innerHTML=`<strong>${ds}</strong>　共 ${Math.round(total)} 分钟：　`+tasks.map(t=>`${escapeHtml(t.category||t.name||'-')} ${formatDuration(getTaskDurationMs(t))}`).join('　·　');
+      const list=getFocusByDate(ds).filter(f=>(f.durationMs||0)>0).slice();
+      const a=state.activeFocus;
+      if(a && a.startTime && a.date===ds && getActiveFocusMs()>0) list.push({category:a.category, durationMs:getActiveFocusMs()});
+      if(!list.length){ detail.innerHTML=`<strong>${ds}</strong>：当天没有专注记录。`; return; }
+      const total=list.reduce((acc,f)=>acc+(f.durationMs||0),0)/60000;
+      detail.innerHTML=`<strong>${ds}</strong>　共 ${Math.round(total)} 分钟：　`+list.map(f=>`${escapeHtml(f.category||'-')} ${formatDuration(f.durationMs||0)}`).join('　·　');
     }
 
     // ===== 每日反思 =====
@@ -3751,8 +3796,7 @@ function importData(file){
         const _cat=document.getElementById('taskCategoryInput').value || '📕 政治';
         startTask(_cat, true, _cat, 'up', getTaskFormDate());
       });
-      document.getElementById('finishTaskBtn').addEventListener('click', ()=>finishTask('完成'));
-      document.getElementById('cancelTaskBtn').addEventListener('click', ()=>finishTask('中断'));
+      document.getElementById('finishTaskBtn').addEventListener('click', ()=>finishTask());
       document.querySelectorAll('.stat-scope-btn').forEach(btn=>{
         btn.addEventListener('click', ()=>{
           statsScope = btn.dataset.scope;
