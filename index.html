@@ -1214,6 +1214,17 @@ td button {
     .task-group-body table th:first-child, .task-group-body table td:first-child{ width:34px; }
     body.dark .task-group-head{ background:#161617; }
     body.dark .task-group-head:hover{ background:#1f1f21; }
+    /* 云同步弹窗 */
+    .cloud-modal{ position:fixed; inset:0; background:rgba(0,0,0,.4); display:flex; align-items:center; justify-content:center; z-index:9999; }
+    .cloud-box{ background:#fff; border-radius:16px; padding:20px; width:min(92vw,400px); box-shadow:0 20px 60px rgba(0,0,0,.25); }
+    body.dark .cloud-box{ background:#1c1c1e; color:#f5f5f7; }
+    .cloud-head{ display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; }
+    .cloud-head strong{ font-size:17px; }
+    .cloud-x{ border:none; background:transparent; font-size:18px; cursor:pointer; color:inherit; line-height:1; }
+    .cloud-box input{ width:100%; padding:10px; border:1px solid #d2d2d7; border-radius:10px; margin:6px 0; font-size:14px; box-sizing:border-box; }
+    body.dark .cloud-box input{ background:#2a2a2c; border-color:#3a3a3c; color:#f5f5f7; }
+    .cloud-actions{ display:flex; gap:8px; margin-top:8px; }
+    .cloud-actions .btn-primary, .cloud-actions .btn-soft{ flex:1; }
 </style>
 </head>
 <body>
@@ -1250,6 +1261,7 @@ td button {
             <button class="btn-secondary" id="exportBtn">导出数据</button>
             <button class="btn-soft" id="importBtn">导入数据</button>
             <input type="file" id="importFile" accept=".json" style="display:none" />
+            <button class="btn-soft" id="cloudSyncBtn">☁️ 云同步</button>
             <button class="btn-soft" id="darkModeBtn">🌙 深色</button>
           </div>
         </div>
@@ -1642,12 +1654,32 @@ td button {
     </section>
 
     <div class="footer-note">
-      单文件本地版。数据保存在当前浏览器的本地存储中；换浏览器或清理浏览器缓存后，数据不会自动同步。
+      数据默认保存在本浏览器。点右上角「☁️ 云同步」设置同步码后，可在任意设备 / 浏览器自动同步。
     </div>
   </div>
  
+  <div class="cloud-modal" id="cloudModal" style="display:none">
+    <div class="cloud-box">
+      <div class="cloud-head">
+        <strong>☁️ 云同步</strong>
+        <button class="cloud-x" onclick="closeCloudModal()">✕</button>
+      </div>
+      <p class="tiny">设置一个只有你知道的「同步码」（相当于密码）。在任何设备 / 浏览器输入同一个同步码，就能拿到同一份数据。改动会自动上传，换设备打开自动拉回最新。</p>
+      <label class="tiny">同步码（请别用太简单的，别人猜到就能看到你的数据）</label>
+      <input id="syncCodeInput" type="text" placeholder="例如 zqf-kaoyan-2026" />
+      <div class="cloud-actions">
+        <button class="btn-primary" onclick="saveSyncCode()">保存并开启自动同步</button>
+      </div>
+      <div class="cloud-actions">
+        <button class="btn-soft" onclick="cloudPull(true)">⬇️ 从云端恢复到本机</button>
+        <button class="btn-soft" onclick="cloudPush(true)">⬆️ 把本机上传到云端</button>
+      </div>
+      <div class="tiny" id="cloudStatusLine" style="margin-top:10px">未开启</div>
+    </div>
+  </div>
+
   <div class="toast" id="toast"></div>
- 
+
   <script>
     const STORAGE_KEY = 'niuma-monitor-system-v1';
  
@@ -1760,6 +1792,96 @@ function loadState(){
  
     function saveState(){
       localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      localStorage.setItem(LOCAL_TS_KEY, new Date().toISOString());
+      scheduleCloudPush();
+    }
+
+    // ===== 云同步（Supabase）=====
+    const SUPABASE_URL = 'https://aokizrfjymzexvcfkstn.supabase.co';
+    const SUPABASE_KEY = 'sb_publishable_XsLuLs5-NEUmW75CnUqcTg_3gRGPgc3';
+    const SYNC_CODE_KEY = 'niuma-sync-code';
+    const LOCAL_TS_KEY  = 'niuma-local-ts';
+    let cloudSyncTimer = null;
+
+    function getSyncCode(){ return (localStorage.getItem(SYNC_CODE_KEY)||'').trim(); }
+    function cloudHeaders(extra){ return Object.assign({ 'apikey':SUPABASE_KEY, 'Authorization':'Bearer '+SUPABASE_KEY }, extra||{}); }
+    function setCloudStatus(txt){
+      const el=document.getElementById('cloudStatusLine'); if(el) el.textContent=txt;
+      const b=document.getElementById('cloudSyncBtn'); if(b) b.textContent = getSyncCode() ? '☁️ 已同步' : '☁️ 云同步';
+    }
+    function openCloudModal(){
+      const i=document.getElementById('syncCodeInput'); if(i) i.value=getSyncCode();
+      const m=document.getElementById('cloudModal'); if(m) m.style.display='flex';
+      setCloudStatus(getSyncCode()?('已开启 · 同步码：'+getSyncCode()):'未开启');
+    }
+    function closeCloudModal(){ const m=document.getElementById('cloudModal'); if(m) m.style.display='none'; }
+    function saveSyncCode(){
+      const v=(document.getElementById('syncCodeInput').value||'').trim();
+      if(!v){ showToast('请输入同步码'); return; }
+      localStorage.setItem(SYNC_CODE_KEY, v);
+      setCloudStatus('已保存，正在同步…');
+      showToast('已开启云同步');
+      cloudSyncOnStart();
+    }
+    async function cloudPush(manual){
+      const code=getSyncCode();
+      if(!code){ if(manual) showToast('请先设置同步码'); return; }
+      const ts=localStorage.getItem(LOCAL_TS_KEY)||new Date().toISOString();
+      setCloudStatus('上传中…');
+      try{
+        const res=await fetch(SUPABASE_URL+'/rest/v1/app_state', {
+          method:'POST',
+          headers:cloudHeaders({'Content-Type':'application/json','Prefer':'resolution=merge-duplicates,return=minimal'}),
+          body:JSON.stringify([{ id:code, data:state, updated_at:ts }])
+        });
+        if(!res.ok) throw new Error('HTTP '+res.status+' '+(await res.text()));
+        setCloudStatus('✅ 已同步到云端 · '+new Date().toLocaleTimeString());
+        if(manual) showToast('已上传到云端');
+      }catch(e){ setCloudStatus('❌ 上传失败：'+e.message); if(manual) showToast('上传失败：'+e.message); }
+    }
+    async function cloudPull(manual){
+      const code=getSyncCode();
+      if(!code){ if(manual) showToast('请先设置同步码'); return; }
+      setCloudStatus('读取中…');
+      try{
+        const res=await fetch(SUPABASE_URL+'/rest/v1/app_state?id=eq.'+encodeURIComponent(code)+'&select=data,updated_at', { headers:cloudHeaders() });
+        if(!res.ok) throw new Error('HTTP '+res.status+' '+(await res.text()));
+        const rows=await res.json();
+        if(!rows.length){ setCloudStatus('云端暂无数据'); if(manual) showToast('云端暂无数据，可点⬆️先上传'); return; }
+        if(manual && !confirm('确定用云端数据覆盖本机当前数据吗？')){ setCloudStatus('已取消'); return; }
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(rows[0].data));
+        localStorage.setItem(LOCAL_TS_KEY, rows[0].updated_at||new Date().toISOString());
+        showToast('已从云端恢复，正在刷新…');
+        setTimeout(()=>location.reload(), 600);
+      }catch(e){ setCloudStatus('❌ 读取失败：'+e.message); if(manual) showToast('读取失败：'+e.message); }
+    }
+    function scheduleCloudPush(){
+      if(!getSyncCode()) return;
+      clearTimeout(cloudSyncTimer);
+      cloudSyncTimer=setTimeout(()=>cloudPush(false), 1500);
+    }
+    // 启动/开启时：云端更新就拉回来，本地更新就推上去（最后写入者胜）
+    async function cloudSyncOnStart(){
+      const code=getSyncCode();
+      if(!code) return;
+      setCloudStatus('检查云端…');
+      try{
+        const res=await fetch(SUPABASE_URL+'/rest/v1/app_state?id=eq.'+encodeURIComponent(code)+'&select=data,updated_at', { headers:cloudHeaders() });
+        if(!res.ok) throw new Error('HTTP '+res.status);
+        const rows=await res.json();
+        const localTs=localStorage.getItem(LOCAL_TS_KEY)||'1970-01-01T00:00:00Z';
+        if(!rows.length){ await cloudPush(false); return; }
+        const cloudTs=rows[0].updated_at||'1970-01-01T00:00:00Z';
+        if(new Date(cloudTs).getTime() > new Date(localTs).getTime()+1000){
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(rows[0].data));
+          localStorage.setItem(LOCAL_TS_KEY, cloudTs);
+          showToast('检测到云端有更新的数据，正在载入…');
+          setTimeout(()=>location.reload(), 600);
+        } else {
+          await cloudPush(false);
+          setCloudStatus('✅ 已同步 · 同步码：'+code);
+        }
+      }catch(e){ setCloudStatus('❌ 同步检查失败：'+e.message); }
     }
  
     function todayStr(date = new Date()){
@@ -3552,6 +3674,8 @@ function importData(file){
  
       document.getElementById('exportBtn').addEventListener('click', exportData);
       document.getElementById('importBtn').addEventListener('click', ()=>document.getElementById('importFile').click());
+      const _cb=document.getElementById('cloudSyncBtn');
+      if(_cb) _cb.addEventListener('click', openCloudModal);
       document.getElementById('muyuDisplayCount').textContent = state.muyuCount || 0;
       document.getElementById('importFile').addEventListener('change', e=>{
         if(e.target.files && e.target.files[0]) importData(e.target.files[0]);
@@ -3646,10 +3770,17 @@ function renderAll(){
     window.deleteLink = deleteLink;
     window.editTask = editTask;
     window.toggleTaskGroup = toggleTaskGroup;
+    window.openCloudModal = openCloudModal;
+    window.closeCloudModal = closeCloudModal;
+    window.saveSyncCode = saveSyncCode;
+    window.cloudPush = cloudPush;
+    window.cloudPull = cloudPull;
 
 // 页面加载后执行一次
     bindEvents();
     renderAll();
+    setCloudStatus(getSyncCode()?('已开启 · 同步码：'+getSyncCode()):'未开启');
+    cloudSyncOnStart();
 
     // 定时器：只刷新需要动态变动的部分
     setInterval(()=>{
