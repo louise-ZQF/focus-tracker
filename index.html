@@ -4,10 +4,6 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>曾庆锋の学习系统 · 11408</title>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
-  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
-  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/marked@12.0.0/marked.min.js"></script>
   <style>
     :root {
     --bg:#edf3f2;
@@ -1229,30 +1225,6 @@ td button {
     body.dark .cloud-box input{ background:#2a2a2c; border-color:#3a3a3c; color:#f5f5f7; }
     .cloud-actions{ display:flex; gap:8px; margin-top:8px; }
     .cloud-actions .btn-primary, .cloud-actions .btn-soft{ flex:1; }
-    /* AI 笔记归档 */
-    .note-tools{ display:flex; flex-direction:column; gap:8px; }
-    .note-tools textarea{ width:100%; box-sizing:border-box; min-height:120px; resize:vertical; padding:10px; border:1px solid #d2d2d7; border-radius:10px; font-size:13px; font-family:inherit; line-height:1.6; }
-    body.dark .note-tools textarea{ background:#2a2a2c; border-color:#3a3a3c; color:#f5f5f7; }
-    .note-tools .row{ display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
-    .note-tools input[type=text], .note-tools input[type=password]{ padding:9px 10px; border:1px solid #d2d2d7; border-radius:9px; font-size:13px; }
-    body.dark .note-tools input{ background:#2a2a2c; border-color:#3a3a3c; color:#f5f5f7; }
-    .note-subject-group{ margin-top:14px; }
-    .note-subject-head{ font-size:16px; font-weight:800; margin:10px 0 6px; display:flex; align-items:center; gap:8px; }
-    .note-chapter{ border:1px solid var(--line,#e3e3e8); border-radius:12px; margin-bottom:10px; overflow:hidden; }
-    .note-chapter-head{ background:#f5f7f7; padding:10px 12px; font-weight:700; cursor:pointer; display:flex; align-items:center; gap:8px; }
-    body.dark .note-chapter-head{ background:#1c1c1e; }
-    .note-chapter-body{ padding:6px 12px 12px; }
-    .note-item{ border-top:1px dashed #e3e3e8; padding:12px 0; }
-    .note-item:first-child{ border-top:none; }
-    .note-item h4{ margin:0 0 4px; font-size:14px; }
-    .note-md{ font-size:13px; line-height:1.7; overflow-x:auto; }
-    .note-md h2{ font-size:14px; margin:10px 0 4px; color:var(--primary-strong,#0071e3); }
-    .note-md h3{ font-size:13px; margin:8px 0 4px; }
-    .note-md code{ background:#f0f0f2; padding:1px 5px; border-radius:5px; }
-    body.dark .note-md code{ background:#2a2a2c; }
-    .note-md pre{ background:#f6f8fa; padding:10px; border-radius:8px; overflow-x:auto; }
-    body.dark .note-md pre{ background:#161617; }
-    .note-item-actions{ margin-top:6px; display:flex; gap:8px; }
 </style>
 </head>
 <body>
@@ -1352,7 +1324,6 @@ td button {
       <button class="tab" data-tab="exercise">锻炼管理</button>
       <button class="tab" data-tab="reflection">反思总结</button>
       <button class="tab" data-tab="links">再看一遍</button>
-      <button class="tab" data-tab="notes">📒 AI 笔记</button>
       <button class="tab" data-tab="stats">统计分析</button>
     </div>
  
@@ -1662,49 +1633,6 @@ td button {
       <div id="linksWrap" style="margin-top:16px"></div>
     </section>
 
-    <section class="section" id="section-notes">
-      <div class="card">
-        <div class="card-title"><h2>📒 AI 笔记归档</h2><span class="pill" id="noteCountPill">0 条</span></div>
-        <div class="note-tools">
-          <p class="tiny">把你和 GPT / Claude 的对话内容粘贴进来，DeepSeek 会自动提炼【做题方法 / 易错点 / 疑难点处理】，按 <b>数学一 / 408</b>（及英语、政治）的对应章节归档，公式正常渲染，可下载成 Markdown。</p>
-          <div class="row">
-            <input id="dsKeyInput" type="password" placeholder="DeepSeek API Key（仅存本机，不上传）" style="flex:1;min-width:220px" />
-            <button class="btn-soft" onclick="saveDsKey()">保存 Key</button>
-            <span class="tiny" id="dsKeyStatus"></span>
-          </div>
-          <textarea id="noteSourceInput" placeholder="① 在 GPT/Claude 里复制你问的题目和它的讲解，整段粘贴到这里。可以一次粘多段。&#10;② 也可在末尾写一行：来源链接：https://...（仅作备注，系统不会去抓取）"></textarea>
-          <div class="row">
-            <label class="tiny">科目提示（可选）</label>
-            <select id="noteSubjectHint">
-              <option value="auto">自动识别</option>
-              <option value="数学一">数学一</option>
-              <option value="408">408</option>
-              <option value="英语">英语</option>
-              <option value="政治">政治</option>
-            </select>
-            <button class="btn-primary" id="noteOrganizeBtn" onclick="organizeNotes()">🤖 AI 整理归档</button>
-            <span class="tiny" id="noteStatus"></span>
-          </div>
-        </div>
-      </div>
-      <div class="card" style="margin-top:14px">
-        <div class="card-title">
-          <h2>📚 我的知识库</h2>
-          <span style="display:flex;gap:8px;align-items:center">
-            <select id="noteFilterSubject" onchange="renderNotes()">
-              <option value="all">全部科目</option>
-              <option value="数学一">数学一</option>
-              <option value="408">408</option>
-              <option value="英语">英语</option>
-              <option value="政治">政治</option>
-            </select>
-            <button class="btn-soft" onclick="downloadNotes('all')">⬇️ 下载全部 md</button>
-          </span>
-        </div>
-        <div id="notesWrap"></div>
-      </div>
-    </section>
-
     <section class="section" id="section-reflection">
       <div class="grid cols-2">
         <div class="card">
@@ -1831,8 +1759,7 @@ function defaultState(){
     exercises: [],
     reflections: [],
     muyuPos: null,
-    links: [],
-    notes: []
+    links: []
   };
 }
  
@@ -1856,8 +1783,7 @@ function loadState(){
           exercises: parsed.exercises || [],
           reflections: parsed.reflections || [],
           muyuPos: parsed.muyuPos || null,
-          links: parsed.links || [],
-          notes: parsed.notes || []
+          links: parsed.links || []
         };
       }catch(e){
         return defaultState();
@@ -1963,167 +1889,7 @@ function loadState(){
         }
       }catch(e){ setCloudStatus('❌ 同步检查失败：'+e.message); }
     }
-
-    // ===== AI 笔记归档（DeepSeek）=====
-    const DS_KEY_LS = 'deepseek-api-key';   // 仅存本机，不进云同步
-    function getDsKey(){ return (localStorage.getItem(DS_KEY_LS)||'').trim(); }
-    function updateDsKeyStatus(){ const s=document.getElementById('dsKeyStatus'); if(s) s.textContent=getDsKey()?'✅ 已配置':'未配置'; }
-    function saveDsKey(){
-      const el=document.getElementById('dsKeyInput'); const v=(el.value||'').trim();
-      if(v) localStorage.setItem(DS_KEY_LS,v); else localStorage.removeItem(DS_KEY_LS);
-      el.value=''; updateDsKeyStatus(); showToast(v?'已保存 API Key（仅存本机）':'已清除 Key');
-    }
-    async function callDeepSeek(messages, jsonMode){
-      const key=getDsKey(); if(!key) throw new Error('请先填写 DeepSeek API Key');
-      const body={ model:'deepseek-chat', messages, temperature:0.3, stream:false };
-      if(jsonMode) body.response_format={type:'json_object'};
-      const res=await fetch('https://api.deepseek.com/chat/completions', {
-        method:'POST',
-        headers:{ 'Content-Type':'application/json', 'Authorization':'Bearer '+key },
-        body:JSON.stringify(body)
-      });
-      if(!res.ok) throw new Error('DeepSeek HTTP '+res.status+'：'+(await res.text()));
-      const j=await res.json();
-      return (j.choices && j.choices[0] && j.choices[0].message && j.choices[0].message.content) || '';
-    }
-    // 通过公共 CORS 中转抓取分享链接内容
-    async function fetchShareConversation(url){
-      const proxies=[
-        u=>'https://api.allorigins.win/raw?url='+encodeURIComponent(u),
-        u=>'https://corsproxy.io/?url='+encodeURIComponent(u)
-      ];
-      let html='';
-      for(const p of proxies){
-        try{ const r=await fetch(p(url)); if(r.ok){ html=await r.text(); if(html && html.length>200) break; } }catch(e){}
-      }
-      if(!html) throw new Error('抓取失败（链接可能需登录或代理不可用）');
-      let text=extractFromNextData(html);
-      if(!text || text.length<50) text=stripHtmlText(html);
-      if(!text || text.length<20) throw new Error('页面里没找到对话内容');
-      return text;
-    }
-    function extractFromNextData(html){
-      const m=html.match(/<script id="__NEXT_DATA__"[^>]*>([\s\S]*?)<\/script>/);
-      if(!m) return '';
-      let data; try{ data=JSON.parse(m[1]); }catch(e){ return ''; }
-      const out=[];
-      (function walk(o){
-        if(!o || typeof o!=='object') return;
-        if(o.author && o.content && Array.isArray(o.content.parts)){
-          const role=(o.author.role||'');
-          const txt=o.content.parts.filter(x=>typeof x==='string').join('\n').trim();
-          if(txt) out.push((role==='user'?'【我问】':'【AI 答】')+'\n'+txt);
-        }
-        if(Array.isArray(o)) o.forEach(walk); else Object.keys(o).forEach(k=>walk(o[k]));
-      })(data);
-      return out.join('\n\n');
-    }
-    function stripHtmlText(html){
-      try{ const d=document.createElement('div'); d.innerHTML=html.replace(/<script[\s\S]*?<\/script>/gi,'').replace(/<style[\s\S]*?<\/style>/gi,''); return (d.innerText||d.textContent||'').replace(/\n{3,}/g,'\n\n').trim(); }catch(e){ return ''; }
-    }
-    async function organizeNotes(){
-      const ta=document.getElementById('noteSourceInput'); const raw=(ta.value||'').trim();
-      if(!raw){ showToast('请先粘贴对话内容或分享链接'); return; }
-      if(!getDsKey()){ showToast('请先填写 DeepSeek API Key'); const k=document.getElementById('dsKeyInput'); if(k) k.focus(); return; }
-      const hint=(document.getElementById('noteSubjectHint')||{}).value||'auto';
-      const st=document.getElementById('noteStatus'); const btn=document.getElementById('noteOrganizeBtn');
-      btn.disabled=true;
-      try{
-        let material=raw, sourceUrl='';
-        const um=raw.match(/https?:\/\/(chatgpt\.com|chat\.openai\.com|claude\.ai)\/\S+/);
-        if(um){
-          sourceUrl=um[0]; st.textContent='正在抓取分享链接…';
-          try{ const conv=await fetchShareConversation(sourceUrl); if(conv) material=conv+'\n\n'+raw.replace(sourceUrl,'').trim(); }
-          catch(e){ st.textContent=''; if(!confirm('抓取链接失败：'+e.message+'\n\n是否只用你粘贴的文字继续？')){ btn.disabled=false; return; } }
-        }
-        material=material.slice(0,24000);
-        st.textContent='DeepSeek 整理中…（约 10–30 秒）';
-        const sys='你是考研(11408)私人助教。用户给你一段他与 AI 的对话或题目记录。请提炼其中的知识点并归档。要求：'
-          +'1) 按科目分类，subject 只能是：数学一 / 408 / 英语 / 政治 / 其它；'
-          +'2) 给出标准章节名 chapter（如数学一「多元函数微分学」「中值定理」，408「操作系统-内存管理」「数据结构-树与二叉树」）；'
-          +'3) 每个知识点的 content 为 Markdown，必须包含三个二级标题：## 做题方法 / ## 易错点 / ## 疑难点处理；'
-          +'4) 所有数学公式一律用 LaTeX：行内用 $...$，独立公式用 $$...$$；'
-          +'5) 严格只输出 JSON，schema：{"notes":[{"subject":"数学一","chapter":"章节名","title":"简短标题","content":"markdown"}]}。'
-          +(hint!=='auto'?('本次内容用户提示主要属于：'+hint+'。'):'');
-        const out=await callDeepSeek([{role:'system',content:sys},{role:'user',content:material}], true);
-        let parsed=null; try{ parsed=JSON.parse(out); }catch(e){ const mm=out.match(/\{[\s\S]*\}/); if(mm){ try{ parsed=JSON.parse(mm[0]); }catch(e2){} } }
-        const arr=(parsed && Array.isArray(parsed.notes))?parsed.notes:[];
-        if(!arr.length){ st.textContent='没提取到知识点，换更完整的内容再试。'; btn.disabled=false; return; }
-        const now=new Date().toISOString();
-        arr.forEach(n=>{
-          state.notes.unshift({
-            id:Date.now()+'_'+Math.random().toString(36).slice(2,7),
-            subject:((n.subject||'其它')+'').trim(),
-            chapter:((n.chapter||'未分类')+'').trim(),
-            title:((n.title||'知识点')+'').trim(),
-            content:(n.content||'')+'',
-            source:sourceUrl, createdAt:now
-          });
-        });
-        saveState(); ta.value='';
-        st.textContent='✅ 已归档 '+arr.length+' 条';
-        showToast('已归档 '+arr.length+' 条知识点');
-        renderNotes();
-      }catch(e){ st.textContent='❌ '+e.message; }
-      btn.disabled=false;
-    }
-    let noteCollapsed={};
-    function toggleNoteChapter(k){ noteCollapsed[k]=!noteCollapsed[k]; renderNotes(); }
-    function renderMd(el, md){
-      md=md||''; const math=[];
-      md=md.replace(/\$\$([\s\S]+?)\$\$/g,m=>{ math.push(m); return '@@MATH'+(math.length-1)+'@@'; })
-           .replace(/\$(?!\s)([^\n$]+?)\$/g,m=>{ math.push(m); return '@@MATH'+(math.length-1)+'@@'; })
-           .replace(/\\\[([\s\S]+?)\\\]/g,m=>{ math.push(m); return '@@MATH'+(math.length-1)+'@@'; })
-           .replace(/\\\(([\s\S]+?)\\\)/g,m=>{ math.push(m); return '@@MATH'+(math.length-1)+'@@'; });
-      let out; try{ out=window.marked?marked.parse(md,{breaks:true}):escapeHtml(md).replace(/\n/g,'<br>'); }catch(e){ out=escapeHtml(md); }
-      out=out.replace(/@@MATH(\d+)@@/g,(m,i)=>math[+i]||'');
-      el.innerHTML=out;
-      const doMath=()=>{ try{ if(window.renderMathInElement) renderMathInElement(el,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false},{left:'\\[',right:'\\]',display:true},{left:'\\(',right:'\\)',display:false}],throwOnError:false}); }catch(e){} };
-      if(window.renderMathInElement) doMath(); else setTimeout(doMath,800);
-    }
-    function renderNotes(){
-      const wrap=document.getElementById('notesWrap'); if(!wrap) return;
-      const pill=document.getElementById('noteCountPill'); if(pill) pill.textContent=((state.notes||[]).length)+' 条';
-      const filt=((document.getElementById('noteFilterSubject')||{}).value)||'all';
-      const SUB=['数学一','408','英语','政治','其它'];
-      const EMO={'数学一':'📘','408':'📙','英语':'📗','政治':'📕','其它':'🗂️'};
-      const notes=(state.notes||[]).filter(n=>filt==='all'||n.subject===filt);
-      if(!notes.length){ wrap.innerHTML='<div class="empty">还没有归档。粘贴对话内容或分享链接，点「🤖 AI 整理归档」开始。</div>'; return; }
-      let html='';
-      SUB.forEach(sub=>{
-        const sn=notes.filter(n=>n.subject===sub); if(!sn.length) return;
-        html+='<div class="note-subject-group"><div class="note-subject-head">'+(EMO[sub]||'🗂️')+' '+sub+'<span class="pill" style="margin-left:auto">'+sn.length+'</span></div>';
-        const chapters={}; sn.forEach(n=>{ (chapters[n.chapter]=chapters[n.chapter]||[]).push(n); });
-        Object.keys(chapters).forEach(ch=>{
-          const key=(sub+'||'+ch).replace(/'/g,"\\'"); const collapsed=!!noteCollapsed[sub+'||'+ch]; const items=chapters[ch];
-          html+='<div class="note-chapter"><div class="note-chapter-head" onclick="toggleNoteChapter(\''+key+'\')"><span>'+(collapsed?'▸':'▾')+'</span> '+escapeHtml(ch)+'<span class="pill" style="margin-left:auto">'+items.length+'</span><button class="btn-soft" style="margin-left:6px" onclick="event.stopPropagation();downloadNotes(\''+key+'\')">⬇️ md</button></div>';
-          html+='<div class="note-chapter-body" style="'+(collapsed?'display:none':'')+'">';
-          items.forEach(n=>{
-            html+='<div class="note-item"><h4>'+escapeHtml(n.title)+'</h4><div class="note-md" id="md_'+n.id+'"></div>'
-              +'<div class="note-item-actions"><span class="tiny">'+((n.createdAt||'').slice(0,10))+(n.source?' · 来源链接':'')+'</span>'
-              +'<button class="btn-soft" onclick="downloadOneNote(\''+n.id+'\')">⬇️ md</button>'
-              +'<button class="btn-danger" onclick="deleteNote(\''+n.id+'\')">删</button></div></div>';
-          });
-          html+='</div></div>';
-        });
-        html+='</div>';
-      });
-      wrap.innerHTML=html;
-      notes.forEach(n=>{ const el=document.getElementById('md_'+n.id); if(el) renderMd(el, n.content); });
-    }
-    function noteToMd(n){ return '# '+n.title+'\n\n> 科目：'+n.subject+' ｜ 章节：'+n.chapter+(n.source?(' ｜ 来源：'+n.source):'')+'\n\n'+n.content+'\n'; }
-    function downloadText(name, text){ const blob=new Blob([text],{type:'text/markdown;charset=utf-8'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=name; a.click(); URL.revokeObjectURL(a.href); }
-    function downloadNotes(scope){
-      let list=state.notes||[]; let fname='AI笔记';
-      if(scope==='all'){ fname='AI笔记_全部'; }
-      else if(scope.indexOf('||')>=0){ const parts=scope.split('||'); list=list.filter(n=>n.subject===parts[0]&&n.chapter===parts[1]); fname='AI笔记_'+parts[0]+'_'+parts[1]; }
-      else { list=list.filter(n=>n.subject===scope); fname='AI笔记_'+scope; }
-      if(!list.length){ showToast('没有可下载的内容'); return; }
-      downloadText(fname+'.md', list.map(noteToMd).join('\n\n---\n\n'));
-    }
-    function downloadOneNote(id){ const n=(state.notes||[]).find(x=>x.id===id); if(n) downloadText('AI笔记_'+n.title+'.md', noteToMd(n)); }
-    function deleteNote(id){ if(!confirm('删除这条笔记？')) return; state.notes=(state.notes||[]).filter(n=>n.id!==id); saveState(); renderNotes(); }
-
+ 
     function todayStr(date = new Date()){
       return toDateStr(date);
     }
@@ -3035,7 +2801,6 @@ window.setCalendarFilter = function(mode) {
       });
       document.querySelectorAll('.section').forEach(sec=>sec.classList.remove('active'));
       document.getElementById(`section-${tab}`).classList.add('active');
-      if(tab==='notes') renderNotes();
     }
  
     function exportData(){
@@ -3068,8 +2833,7 @@ function importData(file){
             exercises: parsed.exercises || [],
             reflections: parsed.reflections || [],
             muyuPos: parsed.muyuPos || null,
-            links: parsed.links || [],
-            notes: parsed.notes || []
+            links: parsed.links || []
           };
           localStorage.setItem(STORAGE_KEY, JSON.stringify(merged));
           location.reload();
@@ -4012,13 +3776,6 @@ function renderAll(){
     window.deleteLink = deleteLink;
     window.editTask = editTask;
     window.toggleTaskGroup = toggleTaskGroup;
-    window.saveDsKey = saveDsKey;
-    window.organizeNotes = organizeNotes;
-    window.renderNotes = renderNotes;
-    window.toggleNoteChapter = toggleNoteChapter;
-    window.downloadNotes = downloadNotes;
-    window.downloadOneNote = downloadOneNote;
-    window.deleteNote = deleteNote;
     window.openCloudModal = openCloudModal;
     window.closeCloudModal = closeCloudModal;
     window.saveSyncCode = saveSyncCode;
@@ -4028,9 +3785,6 @@ function renderAll(){
 // 页面加载后执行一次
     bindEvents();
     renderAll();
-    updateDsKeyStatus();
-    renderNotes();
-    window.addEventListener('load', ()=>{ renderNotes(); });
     setCloudStatus(syncStatusText());
     cloudSyncOnStart();
 
