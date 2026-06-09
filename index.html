@@ -196,6 +196,12 @@
     .muted{color:var(--muted)}
     .tiny{font-size:12px;color:var(--muted)}
     .big-number{font-size:32px;font-weight:800;line-height:1}
+    input.big-number-time{
+      font-size:32px; font-weight:800; line-height:1; font-family:inherit; color:inherit;
+      background:rgba(127,127,127,.12); border:1px solid rgba(127,127,127,.28);
+      border-radius:10px; padding:2px 8px; max-width:210px; cursor:pointer;
+    }
+    body.dark input.big-number-time::-webkit-calendar-picker-indicator{ filter:invert(1); }
     .pill{
       display:inline-flex; align-items:center; gap:6px;
       border-radius:999px; padding:6px 10px;
@@ -1347,8 +1353,8 @@ td button {
       <div class="grid cols-4">
         <div class="card">
           <div class="card-title"><h3>开始学习</h3><span class="pill good">今天</span></div>
-          <div class="big-number" id="ovStudyStart">--:--</div>
-          <div class="tiny" id="ovStudyStartNote">今天还没开始学习</div>
+          <input type="time" class="big-number-time" id="ovStudyStartInput" />
+          <div class="tiny" id="ovStudyStartNote" style="margin-top:6px">今天还没开始学习</div>
         </div>
         <div class="card">
           <div class="card-title"><h3>今日专注</h3><span class="pill good">实时</span></div>
@@ -2398,6 +2404,17 @@ function renderHero(){
   document.getElementById('heroFocusMinutes').textContent = `${Math.round(todayTaskMs/60000)} min`;
 }
  
+// 今日开始学习时间：手动调控（顶部 hero 与「今日学习」卡片共用）
+function setStudyStartOverride(v){
+  const td = todayStr();
+  state.studyStartOverrides = state.studyStartOverrides || {};
+  v = (v || '').trim();
+  if(v) state.studyStartOverrides[td] = v; else delete state.studyStartOverrides[td];
+  saveState();
+  renderOverview();
+  showToast(v ? `今日开始学习已设为 ${v}` : '已恢复为自动计算');
+}
+
 function renderOverview(){
       const td = todayStr();
       const starts = getFocusByDate(td).filter(f=>f.startedAt).map(f=>new Date(f.startedAt));
@@ -2407,21 +2424,18 @@ function renderOverview(){
       const override = (state.studyStartOverrides || {})[td] || '';
       const effective = override || autoStr;
       const setT=(id,v)=>{const e=document.getElementById(id); if(e) e.textContent=v;};
-      setT('ovStudyStart', effective || '--:--');
-      // 顶部「今日开始学习」可手动调控的时间输入框
-      const startIn = document.getElementById('heroStudyStartInput');
-      if(startIn && document.activeElement!==startIn) startIn.value = effective;
-      const startNote = document.getElementById('heroStudyStartNote');
-      if(startNote){
-        if(override){
-          startNote.innerHTML = `手动设置${autoStr ? `（最早专注 ${autoStr}）` : ''} · <span class="start-reset" id="heroStudyStartReset">恢复自动</span>`;
-        }else if(autoStr){
-          startNote.textContent = '最早专注开始时间';
-        }else{
-          startNote.textContent = '可点击上方设置开始时间';
-        }
-      }
-      setT('ovStudyStartNote', override ? `手动设置为 ${override}` : (autoStr ? `最早从 ${autoStr} 开始专注` : '今天还没有专注记录'));
+      // 两处可调控的开始学习时间输入框，正在编辑时不覆盖
+      ['heroStudyStartInput','ovStudyStartInput'].forEach(id=>{
+        const el=document.getElementById(id);
+        if(el && document.activeElement!==el) el.value = effective;
+      });
+      // 备注：手动覆盖时给出「恢复自动」链接
+      const noteHtml = override
+        ? `手动设置${autoStr ? `（最早专注 ${autoStr}）` : ''} · <span class="start-reset" data-study-reset="1">恢复自动</span>`
+        : (autoStr ? `最早从 ${autoStr} 开始专注` : '今天还没有专注记录');
+      ['heroStudyStartNote','ovStudyStartNote'].forEach(id=>{
+        const el=document.getElementById(id); if(el) el.innerHTML = noteHtml;
+      });
 
       const _d0 = new Date(td+'T12:00:00'); const _wd=_d0.getDay()||7;
       const _mon = new Date(_d0); _mon.setDate(_d0.getDate()-_wd+1);
@@ -3877,28 +3891,15 @@ function importData(file){
       if(_exam){ _exam.value=state.examDate||'2026-12-19'; _exam.addEventListener('change', e=>{ state.examDate=e.target.value||'2026-12-19'; saveState(); renderCountdown(); renderReport(); }); }
       const _goal=document.getElementById('goalHoursInput');
       if(_goal){ _goal.value=state.dailyGoalHours!=null?state.dailyGoalHours:8; _goal.addEventListener('change', e=>{ state.dailyGoalHours=parseFloat(e.target.value)||0; saveState(); renderGoalRing(); }); }
-      // 今日开始学习：手动调控
-      const _startIn=document.getElementById('heroStudyStartInput');
-      if(_startIn){ _startIn.addEventListener('change', e=>{
-        const td=todayStr();
-        state.studyStartOverrides=state.studyStartOverrides||{};
-        const v=(e.target.value||'').trim();
-        if(v) state.studyStartOverrides[td]=v; else delete state.studyStartOverrides[td];
-        saveState();
-        renderOverview();
-        showToast(v ? `今日开始学习已设为 ${v}` : '已恢复为自动计算');
-      }); }
-      // 「恢复自动」链接：备注区是动态重绘的，用事件委托
-      const _startNote=document.getElementById('heroStudyStartNote');
-      if(_startNote){ _startNote.addEventListener('click', e=>{
-        if(e.target && e.target.id==='heroStudyStartReset'){
-          const td=todayStr();
-          if(state.studyStartOverrides) delete state.studyStartOverrides[td];
-          saveState();
-          renderOverview();
-          showToast('已恢复为自动计算');
-        }
-      }); }
+      // 今日开始学习：两处输入框均可手动调控
+      ['heroStudyStartInput','ovStudyStartInput'].forEach(id=>{
+        const el=document.getElementById(id);
+        if(el) el.addEventListener('change', e=>setStudyStartOverride(e.target.value));
+      });
+      // 「恢复自动」链接：备注区动态重绘，用事件委托
+      document.addEventListener('click', e=>{
+        if(e.target && e.target.getAttribute && e.target.getAttribute('data-study-reset')) setStudyStartOverride('');
+      });
       const _dk=document.getElementById('darkModeBtn');
       if(_dk){ _dk.addEventListener('click', toggleDark); }
       applyDark();
