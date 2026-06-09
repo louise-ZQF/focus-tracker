@@ -1748,6 +1748,7 @@ td button {
       "再坚持一下，上岸就在前方。"
     ];
  
+    let _focusJustMigrated = false, _loadFailed = false;
     const state = loadState();
  
     let selectedDate = todayStr();
@@ -1789,10 +1790,10 @@ function migrateFocusData(s){
   (s.tasks || []).forEach(t=>{
     const dur = (t.durationMs && t.durationMs > 0) ? t.durationMs
       : ((t.startTime && t.endTime) ? Math.max(0, new Date(t.endTime) - new Date(t.startTime)) : 0);
-    if(dur > 0 && t.date){
+    if(dur > 0){
       s.focusSessions.push({
         id: (t.id ? String(t.id) : String(Date.now())) + '_m',
-        date: t.date,
+        date: t.date || todayStr(),
         category: t.category || '其它',
         durationMs: dur,
         startedAt: (!t.hidden && t.startTime) ? t.startTime : null,
@@ -1813,6 +1814,7 @@ function migrateFocusData(s){
   s.tasks = kept;
   s.activeFocus = null;
   s.focusMigratedV1 = true;
+  _focusJustMigrated = true;
   return s;
 }
 
@@ -1844,6 +1846,7 @@ function loadState(){
         };
         return migrateFocusData(loaded);
       }catch(e){
+        _loadFailed = true;
         return defaultState();
       }
     }
@@ -1890,6 +1893,7 @@ function loadState(){
     async function cloudPush(manual){
       const code=getSyncCode();
       if(!code){ if(manual) showToast('请先设置同步码'); return; }
+      if(_loadFailed && !manual){ setCloudStatus('⚠️ 本地数据读取异常，已暂停自动上传以保护云端备份'); return; }
       const ts=localStorage.getItem(LOCAL_TS_KEY)||new Date().toISOString();
       setCloudStatus('上传中…');
       try{
@@ -3935,6 +3939,7 @@ function renderAll(){
 // 页面加载后执行一次
     bindEvents();
     renderAll();
+    if(_focusJustMigrated){ try{ saveState(); }catch(e){} }
     setCloudStatus(syncStatusText());
     cloudSyncOnStart();
 
