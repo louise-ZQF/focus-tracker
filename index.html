@@ -1249,7 +1249,7 @@ td button {
         <div class="quote-kicker">Daily Inspiration / 每日好运签</div>
         <h1>曾庆锋の学习系统</h1>
         <p id="nowText">正在读取当前时间...</p>
-        <p class="hero-caption">您已成功登录学习中心 · 11408（政治·英语·数学·408）！</p>
+        <p class="hero-caption">您已成功登录学习中心</p>
         <div class="toolbar">
           <div class="toolbar-left">
             <div>
@@ -1804,7 +1804,7 @@ function migrateFocusData(s){
         id: t.id || (`${Date.now()}_${Math.random().toString(36).slice(2,8)}`),
         name: t.name || t.category || '任务',
         category: t.category || '📕 政治',
-        status: (t.status === '已完成') ? '已完成' : '待开始',
+        status: (t.status === '已完成') ? '已完成' : '未完成',
         date: t.date || todayStr(),
         createdAt: t.createdAt || new Date().toISOString()
       });
@@ -2000,6 +2000,7 @@ function loadState(){
     }
  
     function statusPill(text){
+      if(text==='待开始') text='未完成';
       if(['正常','已完成','正常打卡日','已订正','已批改','高分'].includes(text)) return `<span class="pill good">${text}</span>`;
       if(['迟到','超时','进行中','请假日','已测试','批改中','待订正','订正中','重做','需加强'].includes(text)) return `<span class="pill warn">${text}</span>`;
       if(['无效','中断','缺失'].includes(text)) return `<span class="pill bad">${text}</span>`;
@@ -2093,7 +2094,7 @@ function startTask(name, onlyTodo = true, category = '📕 政治', mode = 'up',
     id: `${Date.now()}_${Math.random().toString(36).slice(2,8)}`,
     name,
     category,
-    status: '待开始',
+    status: '未完成',
     date: taskDate,
     createdAt: now.toISOString()
   });
@@ -2167,8 +2168,8 @@ function finishTask(){
         showToast('未找到该待办任务。');
         return;
       }
-      if(task.status !== '待开始' && task.status !== '中断'){
-  showToast('只有待开始或已中断的任务才能启动。');
+      if(task.status !== '未完成' && task.status !== '中断'){
+  showToast('只有未完成或已中断的任务才能启动。');
   return;
 }
       const active = getActiveTask();
@@ -2310,7 +2311,7 @@ function finishTask(){
     }
 
     function getTasksByDate(dateStr){
-      const order = {'进行中':0,'待开始':1,'已完成':2,'中断':3};
+      const order = {'进行中':0,'未完成':1,'已完成':2,'中断':3};
       return state.tasks
         .filter(t => t.date === dateStr)
         .sort((a,b)=>{
@@ -2329,7 +2330,7 @@ function finishTask(){
  
     function getPendingTasksByDate(dateStr){
       return state.tasks
-        .filter(t => t.date === dateStr && t.status === '待开始')
+        .filter(t => t.date === dateStr && t.status === '未完成')
         .sort((a,b)=>{
           const ta = a.createdAt || '';
           const tb = b.createdAt || '';
@@ -2342,7 +2343,7 @@ function getCalendarTasksByDate(dateStr) {
   return state.tasks
     .filter(t => t.date === dateStr)
     .sort((a, b) => {
-      const order = { '进行中': 0, '待开始': 1, '已完成': 2, '中断': 3 };
+      const order = { '进行中': 0, '未完成': 1, '已完成': 2, '中断': 3 };
       return (order[a.status]||9) - (order[b.status]||9);
     });
 }
@@ -2685,7 +2686,7 @@ function renderTodoCalendar() {
     const classes = [
       'calendar-cell',
       muted ? 'muted' : '',
-      allTasks.some(t => t.status === '待开始') ? 'has-pending' : '',
+      allTasks.some(t => t.status === '未完成') ? 'has-pending' : '',
       cellDate === today ? 'today' : '',
       cellDate === selectedDate ? 'selected' : ''
     ].filter(Boolean).join(' ');
@@ -2719,7 +2720,7 @@ function renderTodoCalendar() {
   renderCalendarSidebar();
 }
 
-// 新增侧边栏渲染函数，支持切换“待开始/已完成”
+// 新增侧边栏渲染函数，支持切换“未完成/已完成”
 function renderCalendarSidebar() {
   const selectedPendingWrap = document.getElementById('selectedPendingWrap');
   const selectedPendingCount = document.getElementById('selectedPendingCount');
@@ -2753,7 +2754,7 @@ function renderCalendarSidebar() {
 
   // 2. 全部任务概览（增加筛选切换）
   const filteredAll = state.tasks.filter(t => {
-    if (calendarSidebarMode === '待开始') return t.status === '待开始';
+    if (calendarSidebarMode === '未完成') return t.status === '未完成';
     if (calendarSidebarMode === '已完成') return t.status === '已完成';
     return true; // 全部
   }).sort((a,b) => (b.date || '').localeCompare(a.date || ''));
@@ -2763,7 +2764,7 @@ function renderCalendarSidebar() {
   // 增加切换按钮 HTML
   const filterHtml = `
     <div class="button-row" style="margin-bottom:10px">
-      <button class="${calendarSidebarMode === '待开始' ? 'btn-primary' : 'btn-soft'}" onclick="setCalendarFilter('待开始')">待开始</button>
+      <button class="${calendarSidebarMode === '未完成' ? 'btn-primary' : 'btn-soft'}" onclick="setCalendarFilter('未完成')">未完成</button>
       <button class="${calendarSidebarMode === '已完成' ? 'btn-primary' : 'btn-soft'}" onclick="setCalendarFilter('已完成')">已完成</button>
       <button class="${calendarSidebarMode === '全部' ? 'btn-primary' : 'btn-soft'}" onclick="setCalendarFilter('全部')">全部</button>
     </div>
@@ -3346,7 +3347,7 @@ function importData(file){
       state.tasks.unshift({
         id:`${Date.now()}_${Math.random().toString(36).slice(2,8)}`,
         name, category,
-        status:'待开始', date:dateStr, createdAt:now.toISOString()
+        status:'未完成', date:dateStr, createdAt:now.toISOString()
       });
       saveState();
       showToast(`已添加：${name}（${dateStr}）`);
@@ -3576,12 +3577,15 @@ function importData(file){
     function showHeatmapDay(ds){
       const detail=document.getElementById('heatmapDetail');
       if(!detail) return;
-      const list=getFocusByDate(ds).filter(f=>(f.durationMs||0)>0).slice();
+      // 按科目合并：上午数学 + 下午数学 = 一条「数学」
+      const byCat={};
+      getFocusByDate(ds).forEach(f=>{ if((f.durationMs||0)>0){ const c=f.category||'-'; byCat[c]=(byCat[c]||0)+f.durationMs; } });
       const a=state.activeFocus;
-      if(a && a.startTime && a.date===ds && getActiveFocusMs()>0) list.push({category:a.category, durationMs:getActiveFocusMs()});
-      if(!list.length){ detail.innerHTML=`<strong>${ds}</strong>：当天没有专注记录。`; return; }
-      const total=list.reduce((acc,f)=>acc+(f.durationMs||0),0)/60000;
-      detail.innerHTML=`<strong>${ds}</strong>　共 ${Math.round(total)} 分钟：　`+list.map(f=>`${escapeHtml(f.category||'-')} ${formatDuration(f.durationMs||0)}`).join('　·　');
+      if(a && a.startTime && a.date===ds && getActiveFocusMs()>0){ const c=a.category||'-'; byCat[c]=(byCat[c]||0)+getActiveFocusMs(); }
+      const cats=Object.keys(byCat);
+      if(!cats.length){ detail.innerHTML=`<strong>${ds}</strong>：当天没有专注记录。`; return; }
+      const total=cats.reduce((s,c)=>s+byCat[c],0)/60000;
+      detail.innerHTML=`<strong>${ds}</strong>　共 ${Math.round(total)} 分钟：　`+cats.map(c=>`${escapeHtml(c)} ${formatDuration(byCat[c])}`).join('　·　');
     }
 
     // ===== 每日反思 =====
@@ -3643,7 +3647,7 @@ function importData(file){
       const t=state.tasks.find(x=>x.id===id);
       if(!t) return;
       if(t.status==='进行中'){ showToast('进行中的任务请用「结束并记录」。'); renderAll(); return; }
-      if(t.status==='已完成'){ t.status='待开始'; }
+      if(t.status==='已完成'){ t.status='未完成'; }
       else { t.status='已完成'; if(!t.endTime){ t.endTime=new Date().toISOString(); } }
       saveState();
       renderAll();
