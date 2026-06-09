@@ -1527,6 +1527,20 @@ td button {
           <button class="btn-primary" id="addSubmissionBtn" style="background:#b794f4;">添加模考记录</button>
         </div>
       </div>
+      <div class="card" style="margin-top:20px; border-left:4px solid #b794f4 !important;">
+        <div class="card-title">
+          <h2 style="color:#9f7aea">🎯 目标分数 &amp; 达成情况</h2>
+          <span class="pill" style="background:#f3f0ff; color:#9f7aea" id="targetTotalPill">目标总分 0 / 500</span>
+        </div>
+        <div class="tiny" style="margin-bottom:10px">设定各科目标分，下表与「统计分析」走势图会显示与目标的差距（图中虚线为目标线）。</div>
+        <div class="inline-form" id="targetInputForm">
+          <div><label>政治 <span class="tiny">/100</span></label><input id="targetInput_zz" type="number" min="0" max="100" placeholder="目标分" /></div>
+          <div><label>英语一 <span class="tiny">/100</span></label><input id="targetInput_yy" type="number" min="0" max="100" placeholder="目标分" /></div>
+          <div><label>数学一 <span class="tiny">/150</span></label><input id="targetInput_sx" type="number" min="0" max="150" placeholder="目标分" /></div>
+          <div><label>408 <span class="tiny">/150</span></label><input id="targetInput_408" type="number" min="0" max="150" placeholder="目标分" /></div>
+        </div>
+        <div id="targetSummaryWrap" style="margin-top:14px"></div>
+      </div>
       <div class="card" style="margin-top:20px">
         <div id="submissionTableWrap"></div>
       </div>
@@ -1609,7 +1623,7 @@ td button {
             <div class="bar-group" id="taskHourBars"></div>
           </div>
           <div class="chart-card" style="grid-column:1 / -1">
-            <div class="card-title"><h3>模考成绩走势 · 分科目（得分率%）</h3><span class="pill">折线对比</span></div>
+            <div class="card-title"><h3>模考成绩走势 · 分科目（得分率%，虚线=目标）</h3><span class="pill">折线对比</span></div>
             <div id="mockLineChart"></div>
           </div>
         </div>
@@ -1759,7 +1773,8 @@ function defaultState(){
     exercises: [],
     reflections: [],
     muyuPos: null,
-    links: []
+    links: [],
+    targets: {}
   };
 }
  
@@ -1783,7 +1798,8 @@ function loadState(){
           exercises: parsed.exercises || [],
           reflections: parsed.reflections || [],
           muyuPos: parsed.muyuPos || null,
-          links: parsed.links || []
+          links: parsed.links || [],
+          targets: parsed.targets || {}
         };
       }catch(e){
         return defaultState();
@@ -2833,7 +2849,8 @@ function importData(file){
             exercises: parsed.exercises || [],
             reflections: parsed.reflections || [],
             muyuPos: parsed.muyuPos || null,
-            links: parsed.links || []
+            links: parsed.links || [],
+            targets: parsed.targets || {}
           };
           localStorage.setItem(STORAGE_KEY, JSON.stringify(merged));
           location.reload();
@@ -3014,6 +3031,7 @@ function importData(file){
       if(subs.length === 0) {
         wrap.innerHTML = '<div class="empty">暂无模考记录</div>';
         renderSubjectStats();
+        renderTargets();
         return;
       }
       wrap.innerHTML = `
@@ -3040,6 +3058,7 @@ function importData(file){
           </tbody>
         </table>`;
       renderSubjectStats();
+      renderTargets();
     }
 
     function openSubModal(id) {
@@ -3117,6 +3136,12 @@ function importData(file){
       {key:'数学一', full:150},
       {key:'408', full:150}
     ];
+    const TARGET_INPUTS = [
+      {id:'targetInput_zz', key:'政治'},
+      {id:'targetInput_yy', key:'英语一'},
+      {id:'targetInput_sx', key:'数学一'},
+      {id:'targetInput_408', key:'408'}
+    ];
     function getSubjectScoreLogs(subjectKey){
       const out=[];
       (state.submissions||[]).forEach(sb=>{
@@ -3155,9 +3180,12 @@ function importData(file){
       const host=document.getElementById('mockLineChart');
       if(!host) return;
       const colors={'政治':'#c58e8e','英语一':'#8ea7b2','数学一':'#7ea899','408':'#c7a977'};
+      const tg=state.targets||{};
       const series=MOCK_SUBJECTS.map(sub=>{
         const logs=getSubjectScoreLogs(sub.key);
+        const tv=Number(tg[sub.key]);
         return { name:sub.key, color:colors[sub.key]||'#888',
+          targetPct: tv>0 ? Math.round(tv/sub.full*100) : null,
           points:logs.map(l=>({label:(l.date||'').slice(5), y: Math.round(l.score/sub.full*100), raw:l.score})) };
       }).filter(x=>x.points.length);
       if(!series.length){ host.innerHTML='<div class="empty">还没有模考成绩，去「模考成绩」录入分数后这里会显示分科目走势对比。</div>'; return; }
@@ -3176,6 +3204,12 @@ function importData(file){
         g+=`<line x1="${padL}" y1="${y}" x2="${W-padR}" y2="${y}" stroke="#e4eeeb" stroke-width="1"/>`;
         g+=`<text x="${padL-6}" y="${y+4}" text-anchor="end" font-size="10" fill="#90a6a2">${v}</text>`;
       }
+      // 目标线（每科一条虚线，按得分率%）
+      series.forEach(sb=>{
+        if(sb.targetPct==null) return;
+        const ty=yy(Math.max(0,Math.min(100,sb.targetPct)));
+        g+=`<line x1="${padL}" y1="${ty}" x2="${W-padR}" y2="${ty}" stroke="${sb.color}" stroke-width="1.5" stroke-dasharray="6 4" opacity="0.6"><title>${sb.name} 目标 ${sb.targetPct}%</title></line>`;
+      });
       const longest=series.reduce((a,b)=>b.points.length>a.points.length?b:a,series[0]);
       longest.points.forEach((p,i)=>{
         g+=`<text x="${xx(i)}" y="${H-padB+16}" text-anchor="middle" font-size="10" fill="#90a6a2">${p.label}</text>`;
@@ -3191,7 +3225,63 @@ function importData(file){
       });
       let lg='';
       series.forEach(sb=>{ lg+=`<span style="display:inline-flex;align-items:center;gap:5px;margin-right:14px;font-size:12px;color:#5c706c"><span style="width:12px;height:12px;border-radius:3px;background:${sb.color};display:inline-block"></span>${sb.name}</span>`; });
+      if(series.some(sb=>sb.targetPct!=null)) lg+=`<span style="font-size:12px;color:#9aa6a3">┄┄ 虚线 = 各科目标</span>`;
       return `<div style="margin-bottom:8px">${lg}</div><svg viewBox="0 0 ${W} ${H}" width="100%" preserveAspectRatio="xMidYMid meet" style="max-width:100%">${g}</svg>`;
+    }
+
+    function getTargets(){ if(!state.targets) state.targets={}; return state.targets; }
+    function targetTotalScore(){ const t=getTargets(); return MOCK_SUBJECTS.reduce((s,m)=>s+(Number(t[m.key])||0),0); }
+    function renderTargets(){
+      const t=getTargets();
+      TARGET_INPUTS.forEach(ti=>{
+        const el=document.getElementById(ti.id);
+        if(el && document.activeElement!==el){ const v=t[ti.key]; el.value=(v!=null && v!=='') ? v : ''; }
+      });
+      const pill=document.getElementById('targetTotalPill');
+      if(pill) pill.textContent='目标总分 '+targetTotalScore()+' / 500';
+      const wrap=document.getElementById('targetSummaryWrap');
+      if(!wrap) return;
+      let anyTarget=false, sumLatest=0, hasLatest=false, sumBest=0, hasBest=false, matchTarget=0, matchLatest=0, hasMatch=false;
+      const rows=MOCK_SUBJECTS.map(m=>{
+        const tg=Number(t[m.key])||0;
+        const scores=getSubjectScoreLogs(m.key).map(l=>l.score);
+        const latest=scores.length? scores[scores.length-1] : null;
+        const best=scores.length? Math.max.apply(null,scores) : null;
+        if(tg>0) anyTarget=true;
+        if(latest!=null){ sumLatest+=latest; hasLatest=true; }
+        if(best!=null){ sumBest+=best; hasBest=true; }
+        if(tg>0 && latest!=null){ matchTarget+=tg; matchLatest+=latest; hasMatch=true; }
+        let gapCell;
+        if(tg<=0) gapCell='<span class="tiny">未设目标</span>';
+        else if(latest==null) gapCell='<span class="tiny">暂无成绩</span>';
+        else { const gap=tg-latest; gapCell = gap<=0
+          ? '<span style="color:#2e9e6b;font-weight:700">达标 ✅ (+'+(-gap)+')</span>'
+          : '<span style="color:#d9893f;font-weight:700">还差 '+gap+' 分</span>'; }
+        return `<tr>
+          <td>${categoryBadge(m.key)}</td>
+          <td>${tg>0? tg+' <span class="tiny">/'+m.full+'</span>' : '<span class="tiny">—</span>'}</td>
+          <td>${latest!=null? latest : '<span class="tiny">—</span>'}</td>
+          <td>${best!=null? '<strong>'+best+'</strong>' : '<span class="tiny">—</span>'}</td>
+          <td>${gapCell}</td>
+        </tr>`;
+      }).join('');
+      let totGapCell;
+      if(!hasMatch) totGapCell='<span class="tiny">设目标并录入成绩后显示</span>';
+      else { const gg=matchTarget-matchLatest; totGapCell = gg<=0
+        ? '<span style="color:#2e9e6b;font-weight:700">达标 ✅ (+'+(-gg)+')</span>'
+        : '<span style="color:#d9893f;font-weight:700">还差 '+gg+' 分</span>'; }
+      wrap.innerHTML=`<table>
+        <thead><tr><th>科目</th><th>目标</th><th>最近</th><th>最高</th><th>距目标(按最近)</th></tr></thead>
+        <tbody>${rows}
+          <tr style="border-top:2px solid #e3d9f5">
+            <td><strong>合计</strong></td>
+            <td><strong>${anyTarget? targetTotalScore() : '—'}</strong> <span class="tiny">/500</span></td>
+            <td>${hasLatest? sumLatest : '—'}</td>
+            <td>${hasBest? '<strong>'+sumBest+'</strong>' : '—'}</td>
+            <td>${totGapCell}</td>
+          </tr>
+        </tbody></table>
+        <div class="tiny" style="margin-top:6px;color:var(--muted)">合计「距目标」只统计同时设了目标且有成绩的科目；「最近 / 最高」为各科最近一次 / 历史最高成绩之和。</div>`;
     }
 
     function addCalendarPlan(dateStr){
@@ -3645,6 +3735,18 @@ function importData(file){
       document.getElementById('startFocusTaskBtn').addEventListener('click', startFocusTask);
       document.getElementById('addBackfillTaskBtn').addEventListener('click', addBackfillTask);
       document.getElementById('addSubmissionBtn').addEventListener('click', saveSubmission);
+      TARGET_INPUTS.forEach(ti=>{
+        const el=document.getElementById(ti.id);
+        if(el) el.addEventListener('change', ()=>{
+          if(!state.targets) state.targets={};
+          const v=(el.value||'').trim();
+          if(v==='') delete state.targets[ti.key];
+          else state.targets[ti.key]=Math.max(0, Number(v)||0);
+          saveState();
+          renderTargets();
+          renderMockLineChart();
+        });
+      });
       document.getElementById('quickAddTaskBtn').addEventListener('click', ()=>{
         const _cat=document.getElementById('taskCategoryInput').value || '📕 政治';
         startTask(_cat, true, _cat, 'up', getTaskFormDate());
