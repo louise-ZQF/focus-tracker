@@ -100,6 +100,14 @@
     }
     .hero-mini .label{font-size:13px;color:rgba(255,255,255,.7)}
     .hero-mini .value{margin-top:8px;font-size:22px;font-weight:700;letter-spacing:.3px}
+    .hero-mini input.hero-time{
+      margin-top:8px; font-size:22px; font-weight:700; letter-spacing:.3px;
+      font-family:inherit; color:inherit;
+      background:rgba(127,127,127,.14); border:1px solid rgba(127,127,127,.30);
+      border-radius:8px; padding:1px 8px; max-width:150px; cursor:pointer;
+    }
+    .hero-mini .start-reset{ display:inline-block; margin-top:4px; cursor:pointer; text-decoration:underline; opacity:.85; }
+    body.dark .hero-mini input.hero-time::-webkit-calendar-picker-indicator{ filter:invert(1); }
     .hero-right .hero-mini:nth-child(1){background:rgba(233,208,190,.18)}
     .hero-right .hero-mini:nth-child(2){background:rgba(215,180,160,.18)}
     .hero-right .hero-mini:nth-child(3){background:rgba(205,169,145,.17)}
@@ -1276,7 +1284,8 @@ td button {
       <div class="hero-right">
         <div class="hero-mini">
           <div class="label">今日开始学习</div>
-          <div class="value" id="heroStudyStart">--:--</div>
+          <input type="time" class="hero-time" id="heroStudyStartInput" />
+          <div class="tiny" id="heroStudyStartNote" style="margin-top:4px"></div>
         </div>
         <div class="hero-mini">
           <div class="label">当前进行中任务</div>
@@ -1784,6 +1793,7 @@ function defaultState(){
     targets: {},
     focusSessions: [],
     activeFocus: null,
+    studyStartOverrides: {},
     focusMigratedV1: true
   };
 }
@@ -1849,6 +1859,7 @@ function loadState(){
           targets: parsed.targets || {},
           focusSessions: parsed.focusSessions || [],
           activeFocus: parsed.activeFocus || null,
+          studyStartOverrides: parsed.studyStartOverrides || {},
           focusMigratedV1: parsed.focusMigratedV1 || false
         };
         return migrateFocusData(loaded);
@@ -2392,11 +2403,25 @@ function renderOverview(){
       const starts = getFocusByDate(td).filter(f=>f.startedAt).map(f=>new Date(f.startedAt));
       if(state.activeFocus && state.activeFocus.startTime && state.activeFocus.date===td) starts.push(new Date(state.activeFocus.startTime));
       starts.sort((a,b)=>a-b);
-      const startStr = starts.length ? formatTime(starts[0]) : '--:--';
+      const autoStr = starts.length ? formatTime(starts[0]) : '';
+      const override = (state.studyStartOverrides || {})[td] || '';
+      const effective = override || autoStr;
       const setT=(id,v)=>{const e=document.getElementById(id); if(e) e.textContent=v;};
-      setT('ovStudyStart', startStr);
-      setT('heroStudyStart', startStr);
-      setT('ovStudyStartNote', starts.length ? `最早从 ${startStr} 开始专注` : '今天还没有专注记录');
+      setT('ovStudyStart', effective || '--:--');
+      // 顶部「今日开始学习」可手动调控的时间输入框
+      const startIn = document.getElementById('heroStudyStartInput');
+      if(startIn && document.activeElement!==startIn) startIn.value = effective;
+      const startNote = document.getElementById('heroStudyStartNote');
+      if(startNote){
+        if(override){
+          startNote.innerHTML = `手动设置${autoStr ? `（最早专注 ${autoStr}）` : ''} · <span class="start-reset" id="heroStudyStartReset">恢复自动</span>`;
+        }else if(autoStr){
+          startNote.textContent = '最早专注开始时间';
+        }else{
+          startNote.textContent = '可点击上方设置开始时间';
+        }
+      }
+      setT('ovStudyStartNote', override ? `手动设置为 ${override}` : (autoStr ? `最早从 ${autoStr} 开始专注` : '今天还没有专注记录'));
 
       const _d0 = new Date(td+'T12:00:00'); const _wd=_d0.getDay()||7;
       const _mon = new Date(_d0); _mon.setDate(_d0.getDate()-_wd+1);
@@ -2915,6 +2940,7 @@ function importData(file){
             targets: parsed.targets || {},
             focusSessions: parsed.focusSessions || [],
             activeFocus: parsed.activeFocus || null,
+            studyStartOverrides: parsed.studyStartOverrides || {},
             focusMigratedV1: parsed.focusMigratedV1 || false
           };
           migrateFocusData(merged);
@@ -3851,6 +3877,28 @@ function importData(file){
       if(_exam){ _exam.value=state.examDate||'2026-12-19'; _exam.addEventListener('change', e=>{ state.examDate=e.target.value||'2026-12-19'; saveState(); renderCountdown(); renderReport(); }); }
       const _goal=document.getElementById('goalHoursInput');
       if(_goal){ _goal.value=state.dailyGoalHours!=null?state.dailyGoalHours:8; _goal.addEventListener('change', e=>{ state.dailyGoalHours=parseFloat(e.target.value)||0; saveState(); renderGoalRing(); }); }
+      // 今日开始学习：手动调控
+      const _startIn=document.getElementById('heroStudyStartInput');
+      if(_startIn){ _startIn.addEventListener('change', e=>{
+        const td=todayStr();
+        state.studyStartOverrides=state.studyStartOverrides||{};
+        const v=(e.target.value||'').trim();
+        if(v) state.studyStartOverrides[td]=v; else delete state.studyStartOverrides[td];
+        saveState();
+        renderOverview();
+        showToast(v ? `今日开始学习已设为 ${v}` : '已恢复为自动计算');
+      }); }
+      // 「恢复自动」链接：备注区是动态重绘的，用事件委托
+      const _startNote=document.getElementById('heroStudyStartNote');
+      if(_startNote){ _startNote.addEventListener('click', e=>{
+        if(e.target && e.target.id==='heroStudyStartReset'){
+          const td=todayStr();
+          if(state.studyStartOverrides) delete state.studyStartOverrides[td];
+          saveState();
+          renderOverview();
+          showToast('已恢复为自动计算');
+        }
+      }); }
       const _dk=document.getElementById('darkModeBtn');
       if(_dk){ _dk.addEventListener('click', toggleDark); }
       applyDark();
@@ -3964,12 +4012,14 @@ function renderAll(){
 
     // 定时器：只刷新需要动态变动的部分
     setInterval(()=>{
-      renderClock(); 
+      renderClock();
       const active = getActiveTask();
       if(active) {
-          maybeAutoFinishPomodoro(); 
-          renderTasks(); 
-          renderHero();  
+          maybeAutoFinishPomodoro();
+          renderTasks();
+          renderHero();      // 今日学习时长 / 今日累计专注
+          renderOverview();  // 今日/本周/累计专注、开始学习时间
+          renderGoalRing();  // 每日学习目标进度环（与上面同源，保持同步）
       }
     }, 1000);
 
