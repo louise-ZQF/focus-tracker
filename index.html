@@ -1339,6 +1339,7 @@ td button {
           <div class="tiny">每日学习目标</div>
           <div style="margin:4px 0"><input id="goalHoursInput" type="number" step="0.5" min="0" style="width:90px" /> 小时</div>
           <div class="tiny" id="goalText">-</div>
+          <div id="goalEtaText" style="color:#e0322d; font-weight:700; font-size:13px; margin-top:6px"></div>
         </div>
       </div>
     </div>
@@ -3468,6 +3469,23 @@ function importData(file){
       }
       const gin=document.getElementById('goalHoursInput');
       if(gin && document.activeElement!==gin) gin.value=goal;
+      // 预估完成时间：假设从现在起持续专注，几点能达成今日目标
+      const eta=document.getElementById('goalEtaText');
+      if(eta){
+        if(goal<=0){
+          eta.textContent='';
+        }else if(h>=goal){
+          eta.style.color='#2fb15f';
+          eta.textContent='今日目标已完成 🎉';
+        }else{
+          const finish=new Date(Date.now()+(goal-h)*3600000);
+          const hh=String(finish.getHours()).padStart(2,'0');
+          const mm=String(finish.getMinutes()).padStart(2,'0');
+          const nextDay = finish.toDateString()!==new Date().toDateString();
+          eta.style.color='#e0322d';
+          eta.textContent=`预计 ${nextDay?'次日 ':''}${hh}:${mm} 完成目标`;
+        }
+      }
       renderWeekGoal();
     }
     // 本周达标：周一~周日 7 个圆点，达到每日目标的天变绿
@@ -4136,6 +4154,8 @@ function renderAll(){
     }, 1000);
 
     setInterval(rotateQuote, 12000);
+    // 空闲时也定期刷新目标环，让「预计完成时间」保持最新
+    setInterval(renderGoalRing, 30000);
   </script>
 
 </body>
