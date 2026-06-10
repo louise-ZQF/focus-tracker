@@ -1207,8 +1207,28 @@ td button {
     body.dark .empty{ background:#161617; border-color:#2a2a2c; color:#a1a1a6; }
     body.dark .footer-note,body.dark .muyu-label{ color:#a1a1a6; }
     .hm-col{ display:grid; grid-template-rows:repeat(7, 14px); gap:3px; }
-    .hm-cell{ width:14px; height:14px; border-radius:2px; display:inline-block; background:#ebedf0; cursor:pointer; }
+    .hm-cell{ width:14px; height:14px; border-radius:3px; display:inline-block; background:#ebedf0; cursor:pointer; box-shadow:inset 0 0 0 1px rgba(27,31,35,.07); }
     .hm-cell:hover{ outline:1.5px solid rgba(0,0,0,.3); outline-offset:-1px; }
+    body.dark .hm-cell{ box-shadow:inset 0 0 0 1px rgba(255,255,255,.06); }
+    /* 学习时长堆叠条形图 */
+    .fb-bars{ display:flex; align-items:flex-end; gap:6px; height:168px; padding:2px 2px 0; }
+    .fb-col{ flex:1 1 0; min-width:0; display:flex; flex-direction:column; justify-content:flex-end; align-items:center; height:100%; }
+    .fb-total{ font-size:10px; color:var(--muted); font-weight:700; margin-bottom:3px; white-space:nowrap; }
+    .fb-stack{ width:72%; max-width:30px; min-width:9px; display:flex; flex-direction:column-reverse; border-radius:4px; overflow:hidden; box-shadow:inset 0 0 0 1px rgba(27,31,35,.05); }
+    .fb-stack.fb-empty{ background:#eef2f1; box-shadow:none; }
+    .fb-seg{ width:100%; min-height:2px; transition:filter .12s; }
+    .fb-seg:hover{ filter:brightness(1.1) saturate(1.1); }
+    .fb-xrow{ display:flex; gap:6px; margin-top:6px; }
+    .fb-x{ flex:1 1 0; min-width:0; text-align:center; font-size:10px; color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .fb-x.fb-future{ opacity:.4; }
+    .fb-legend{ display:flex; flex-wrap:wrap; gap:8px 18px; margin-top:14px; padding-top:12px; border-top:1px solid var(--line); }
+    .fb-leg{ display:flex; align-items:center; gap:7px; font-size:13px; }
+    .fb-leg .sw{ width:12px; height:12px; border-radius:3px; flex:none; box-shadow:inset 0 0 0 1px rgba(27,31,35,.08); }
+    .fb-leg .nm{ color:var(--text); font-weight:600; }
+    .fb-leg .vl{ color:var(--muted); }
+    .fb-leg .pc{ color:var(--text); font-weight:700; min-width:38px; text-align:right; }
+    body.dark .fb-stack{ box-shadow:inset 0 0 0 1px rgba(255,255,255,.06); }
+    body.dark .fb-stack.fb-empty{ background:#252e2c; }
     .hm-stats{ display:flex; flex-wrap:wrap; gap:10px; margin:4px 0 16px; }
     .hm-stat{ flex:1 1 auto; min-width:96px; background:var(--primary-soft); border:1px solid var(--line); border-radius:14px; padding:9px 14px; }
     .hm-stat .k{ font-size:12px; color:var(--muted); display:flex; align-items:center; gap:4px; }
@@ -1356,6 +1376,18 @@ td button {
       <div id="heatmapStats" class="hm-stats"></div>
       <div id="heatmapWrap" style="overflow-x:auto; padding-bottom:6px"></div>
       <div id="heatmapDetail" class="tiny" style="margin-top:10px">点击某个小块查看当天学了什么。</div>
+    </div>
+
+    <div class="card" style="margin-top:16px">
+      <div class="card-title">
+        <h3>📊 学习时长分布 · 分科目</h3>
+        <div class="button-row">
+          <button class="btn-primary fb-scope-btn" data-fb="day">日</button>
+          <button class="btn-soft fb-scope-btn" data-fb="month">月</button>
+          <button class="btn-soft fb-scope-btn" data-fb="year">年</button>
+        </div>
+      </div>
+      <div id="focusBarWrap"></div>
     </div>
 
     <div class="tabs">
@@ -3621,7 +3653,7 @@ function importData(file){
       if(!host) return;
       const mins = _dailyFocusMin();
       const isDark = document.body.classList.contains('dark');
-      const emptyColor = isDark ? '#2c2c30' : '#ebedf0';
+      const emptyColor = isDark ? '#30353a' : '#dfe7e5';
       const ringColor = isDark ? '#f5f5f7' : '#1d1d1f';
       const colors = [emptyColor, '#9be9a8', '#40c463', '#30a14e', '#216e39'];
       const today = new Date(todayStr() + 'T12:00:00');
@@ -3636,7 +3668,7 @@ function importData(file){
         endDate = new Date(today.getFullYear(), today.getMonth() + 1, 0);
       } else {
         startDate = new Date(today.getFullYear(), 0, 1);
-        endDate = today;
+        endDate = new Date(today.getFullYear(), 11, 31);
       }
 
       const startDay = startDate.getDay();
@@ -3656,13 +3688,16 @@ function importData(file){
       const months = ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
       const days = ['日','一','二','三','四','五','六'];
 
-      // Month labels
+      // Month labels：仅在「月份切换」的列打标签，避免重叠；年视图跳过开头属于上一年的残列
       let monthTags = '';
+      let prevMonth = null;
       weeks.forEach((week, wi) => {
-        const mid = week[3];
-        if(mid.getDate() <= 7 || wi === 0){
-          monthTags += `<span style="position:absolute;left:${wi*17}px">${months[mid.getMonth()]}</span>`;
+        const m = week[0].getMonth();
+        const show = wi === 0 ? (heatmapScope !== 'year') : (m !== prevMonth);
+        if(show){
+          monthTags += `<span style="position:absolute;left:${wi*17}px">${months[m]}</span>`;
         }
+        prevMonth = m;
       });
 
       // Day labels
@@ -3763,6 +3798,97 @@ function importData(file){
       if(!cats.length){ detail.innerHTML=`<strong>${ds}</strong>：当天没有专注记录。`; return; }
       const total=cats.reduce((s,c)=>s+byCat[c],0)/60000;
       detail.innerHTML=`<strong>${ds}</strong>　共 ${Math.round(total)} 分钟：　`+cats.map(c=>`${escapeHtml(c)} ${formatDuration(byCat[c])}`).join('　·　');
+    }
+
+    // ===== 学习时长堆叠条形图（按 日/月/年 · 分科目）=====
+    let focusBarScope = 'day';
+    const FOCUS_SUBJECTS = [
+      { key:'政治', label:'📕 政治', color:'#6f9f9c' },
+      { key:'英语', label:'📗 英语', color:'#8ea7b2' },
+      { key:'数学', label:'📘 数学', color:'#a79db4' },
+      { key:'408',  label:'📙 408',  color:'#d8b39a' },
+    ];
+    function focusSubjectKey(cat){
+      cat = cat || '';
+      if(cat.includes('政治')) return '政治';
+      if(cat.includes('英语')) return '英语';
+      if(cat.includes('数学')) return '数学';
+      if(cat.includes('408'))  return '408';
+      return null;
+    }
+    function _fbHours(min){ return min >= 60 ? `${(min/60).toFixed(1)} h` : `${Math.round(min)} 分`; }
+    function _focusBarData(scope){
+      const all = (state.focusSessions || []).map(f => ({ date:f.date || '', cat:f.category, ms:f.durationMs || 0 }));
+      const a = state.activeFocus;
+      if(a && a.startTime && a.date){ all.push({ date:a.date, cat:a.category, ms:getActiveFocusMs() }); }
+      const today = new Date(todayStr() + 'T12:00:00');
+      const buckets = [];
+      let keyOf;
+      if(scope === 'day'){
+        for(let i = 13; i >= 0; i--){ const d = new Date(today); d.setDate(today.getDate() - i); const k = toDateStr(d); buckets.push({ k, label:k.slice(5), date:d }); }
+        keyOf = ds => ds;
+      } else if(scope === 'month'){
+        const y = today.getFullYear();
+        for(let m = 0; m < 12; m++){ buckets.push({ k:`${y}-${pad(m+1)}`, label:`${m+1}月`, date:new Date(y, m, 1) }); }
+        keyOf = ds => ds.slice(0,7);
+      } else {
+        const yrs = new Set(all.map(x => (x.date || '').slice(0,4)).filter(Boolean));
+        yrs.add(String(today.getFullYear()));
+        [...yrs].sort().forEach(y => buckets.push({ k:y, label:y, date:new Date(+y, 0, 1) }));
+        keyOf = ds => ds.slice(0,4);
+      }
+      const map = {}; buckets.forEach(b => map[b.k] = {});
+      all.forEach(x => {
+        if(!(x.ms > 0)) return;
+        const sk = focusSubjectKey(x.cat); if(!sk) return;
+        const bk = keyOf(x.date); if(!(bk in map)) return;
+        map[bk][sk] = (map[bk][sk] || 0) + x.ms / 60000;
+      });
+      return { buckets, map };
+    }
+    function renderFocusBar(){
+      const host = document.getElementById('focusBarWrap');
+      if(!host) return;
+      const { buckets, map } = _focusBarData(focusBarScope);
+      const subTotals = {}; FOCUS_SUBJECTS.forEach(s => subTotals[s.key] = 0);
+      let grand = 0;
+      const barTotals = buckets.map(b => {
+        let t = 0; FOCUS_SUBJECTS.forEach(s => { const v = map[b.k][s.key] || 0; t += v; subTotals[s.key] += v; }); grand += t; return t;
+      });
+      if(grand <= 0){
+        host.innerHTML = '<div class="empty">这段时间还没有专注记录。点上面「开始专注」计时，这里就会按科目堆叠出每天 / 每月 / 每年的学习时长。</div>';
+        return;
+      }
+      const todayEnd = new Date(todayStr() + 'T23:59:59');
+      const maxBar = Math.max.apply(null, barTotals);
+      const usableH = 150;
+      let bars = '';
+      buckets.forEach((b, i) => {
+        const total = barTotals[i];
+        const barPx = maxBar > 0 ? (total / maxBar) * usableH : 0;
+        let segs = '';
+        FOCUS_SUBJECTS.forEach(s => {
+          const v = map[b.k][s.key] || 0;
+          if(v <= 0) return;
+          const h = Math.max(2, (v / total) * barPx);
+          segs += `<div class="fb-seg" style="height:${h.toFixed(1)}px;background:${s.color}" title="${s.label} · ${b.label}：${_fbHours(v)}"></div>`;
+        });
+        const stackCls = total > 0 ? 'fb-stack' : 'fb-stack fb-empty';
+        const stackH = total > 0 ? barPx : 3;
+        const totLabel = total > 0 ? `<div class="fb-total">${_fbHours(total)}</div>` : '';
+        bars += `<div class="fb-col">${totLabel}<div class="${stackCls}" style="height:${stackH.toFixed(1)}px">${segs}</div></div>`;
+      });
+      let xrow = '';
+      buckets.forEach(b => { const future = b.date && b.date > todayEnd; xrow += `<div class="fb-x${future ? ' fb-future' : ''}">${b.label}</div>`; });
+      let legend = '';
+      FOCUS_SUBJECTS.forEach(s => {
+        const v = subTotals[s.key];
+        const pc = grand > 0 ? Math.round(v / grand * 100) : 0;
+        legend += `<div class="fb-leg"><span class="sw" style="background:${s.color}"></span><span class="nm">${s.label}</span><span class="vl">${_fbHours(v)}</span><span class="pc">${pc}%</span></div>`;
+      });
+      const scopeName = focusBarScope === 'day' ? '近 14 天' : (focusBarScope === 'month' ? '今年各月' : '各年');
+      const summary = `<div class="tiny" style="margin-bottom:10px;color:var(--muted)">${scopeName}共专注 <strong style="color:var(--text)">${_fbHours(grand)}</strong>，把鼠标移到某段色块上可看该科目当期时长。</div>`;
+      host.innerHTML = summary + `<div class="fb-bars">${bars}</div><div class="fb-xrow">${xrow}</div><div class="fb-legend">${legend}</div>`;
     }
 
     // ===== 每日反思 =====
@@ -4048,6 +4174,13 @@ function importData(file){
           renderHeatmap();
         });
       });
+      document.querySelectorAll('.fb-scope-btn').forEach(btn=>{
+        btn.addEventListener('click', ()=>{
+          focusBarScope=btn.dataset.fb;
+          document.querySelectorAll('.fb-scope-btn').forEach(b=>{ b.className = b.dataset.fb===focusBarScope ? 'btn-primary fb-scope-btn' : 'btn-soft fb-scope-btn'; });
+          renderFocusBar();
+        });
+      });
       const muyuBtn = document.getElementById('muyuBtn');
       if (muyuBtn) {
           muyuBtn.addEventListener('click', function() {
@@ -4082,6 +4215,7 @@ function renderAll(){
       renderExercise();
       renderTasks();
       renderHeatmap();
+      renderFocusBar();
       renderTodoCalendar();
       renderStats();
       renderReport();
