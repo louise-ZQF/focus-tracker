@@ -1083,6 +1083,12 @@ td button {
     .cal-add:hover{ background:var(--primary); color:#fff; }
     /* 倒计时横幅响应式 */
     @media (max-width:600px){ #goalRing svg{ width:110px; height:110px; } }
+    .week-goal{ text-align:center; }
+    .wg-dot{ width:27px; height:27px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:600; color:var(--muted); background:var(--primary-soft); border:1px solid var(--line); }
+    .wg-dot.partial{ background:#9be9a8; color:#1f5130; border-color:transparent; }
+    .wg-dot.done{ background:#2fb15f; color:#fff; border-color:transparent; }
+    .wg-dot.today{ box-shadow:0 0 0 2px var(--primary); }
+    .wg-dot.future{ opacity:.35; }
     /* 深色模式 */
     body.dark{
       --card:#222a28; --line:#33403d; --text:#e7efed; --muted:#9fb2ae; --primary-soft:#26332f;
@@ -1321,6 +1327,11 @@ td button {
           <span style="font-size:18px"> 天</span>
         </div>
         <div class="tiny">初试日期：<input id="examDateInput" type="date" style="width:auto" /></div>
+      </div>
+      <div class="week-goal">
+        <div class="tiny" style="margin-bottom:8px">本周达标</div>
+        <div id="weekGoalDots" style="display:flex; gap:8px; justify-content:center"></div>
+        <div class="tiny" id="weekGoalText" style="margin-top:8px">-</div>
       </div>
       <div style="display:flex; align-items:center; gap:14px">
         <div id="goalRing"></div>
@@ -3457,6 +3468,33 @@ function importData(file){
       }
       const gin=document.getElementById('goalHoursInput');
       if(gin && document.activeElement!==gin) gin.value=goal;
+      renderWeekGoal();
+    }
+    // 本周达标：周一~周日 7 个圆点，达到每日目标的天变绿
+    function renderWeekGoal(){
+      const host=document.getElementById('weekGoalDots');
+      if(!host) return;
+      const goal=state.dailyGoalHours!=null?state.dailyGoalHours:8;
+      const tds=todayStr();
+      const today=new Date(tds+'T12:00:00');
+      const wd=today.getDay()||7;
+      const mon=new Date(today); mon.setDate(today.getDate()-wd+1);
+      const labels=['一','二','三','四','五','六','日'];
+      let met=0, html='';
+      for(let i=0;i<7;i++){
+        const d=new Date(mon); d.setDate(mon.getDate()+i);
+        const ds=toDateStr(d);
+        const h=getFocusMsByDate(ds)/3600000;
+        let cls='wg-dot';
+        if(goal>0 && h>=goal){ cls+=' done'; met++; }
+        else if(h>0){ cls+=' partial'; }
+        if(d>today) cls+=' future';
+        if(ds===tds) cls+=' today';
+        html+=`<div class="${cls}" title="${ds} 周${labels[i]}：${h.toFixed(1)}h / ${goal}h">${labels[i]}</div>`;
+      }
+      host.innerHTML=html;
+      const txt=document.getElementById('weekGoalText');
+      if(txt) txt.textContent=`已达标 ${met}/7 天`;
     }
     function toggleDark(){ state.darkMode=!state.darkMode; saveState(); applyDark(); }
     function applyDark(){
