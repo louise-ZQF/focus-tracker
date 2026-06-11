@@ -3654,7 +3654,7 @@ function importData(file){
       if(!host) return;
       const mins = _dailyFocusMin();
       const isDark = document.body.classList.contains('dark');
-      const emptyColor = isDark ? '#373d42' : '#d0d9d6';
+      const emptyColor = isDark ? '#373d42' : '#ebedf0';
       const ringColor = isDark ? '#f5f5f7' : '#1d1d1f';
       const colors = [emptyColor, '#9be9a8', '#40c463', '#30a14e', '#216e39'];
       const today = new Date(todayStr() + 'T12:00:00');
@@ -3727,23 +3727,26 @@ function importData(file){
       const legend = '<div style="display:flex;align-items:center;gap:4px;margin-top:8px;font-size:11px;color:var(--muted)">少 ' +
         colors.map(c => `<span class="hm-cell" style="background:${c};cursor:default;width:14px;height:14px"></span>`).join('') + ' 多</div>';
 
-      // 年份切换条（GitHub 风：年份标签 + 前后翻年；仅年视图显示）
-      let yearNav = '';
+      // 顶部周期条（GitHub 风）：年视图可切换年份；月/周视图显示所属年月
+      let periodBar = '';
       if(heatmapScope === 'year'){
         const curY = today.getFullYear();
         const dataYears = Object.keys(mins).filter(k => mins[k] > 0).map(k => +k.slice(0, 4));
         const allY = [curY, ...dataYears];
         const minY = Math.min(curY - 1, ...allY), maxY = Math.max(...allY);   // 至少能往回翻到去年
         const yb = (delta, txt, dis) => `<button class="btn-soft" onclick="hmShiftYear(${delta})" ${dis ? 'disabled' : ''} style="padding:2px 11px;font-size:15px;line-height:1.2${dis ? ';opacity:.4;cursor:default' : ''}">${txt}</button>`;
-        yearNav =
+        periodBar =
           '<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">' +
             yb(-1, '‹', heatmapYear <= minY) +
             `<span style="font-size:15px;font-weight:700;min-width:46px;text-align:center">${heatmapYear} 年</span>` +
             yb(1, '›', heatmapYear >= maxY) +
           '</div>';
+      } else {
+        const label = `${today.getFullYear()} 年 ${today.getMonth() + 1} 月` + (heatmapScope === 'week' ? '（本周）' : '');
+        periodBar = `<div style="font-size:15px;font-weight:700;margin-bottom:10px">${label}</div>`;
       }
 
-      host.innerHTML = yearNav +
+      host.innerHTML = periodBar +
         '<div style="display:flex;gap:6px">' +
           '<div style="display:grid;grid-template-rows:repeat(7,14px);gap:3px;padding-top:16px">' + dayTags + '</div>' +
           '<div>' +
