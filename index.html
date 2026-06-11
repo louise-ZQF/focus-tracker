@@ -3716,9 +3716,8 @@ function importData(file){
           const bg = colors[_hmLevel(min)];
           const isToday = ds === tds;
           const ring = isToday ? `box-shadow:inset 0 0 0 1.5px ${ringColor};` : '';
-          const future = d > today;
-          const opacity = future ? 'opacity:0.5' : '';
-          colsHtml += `<span class="hm-cell" onclick="showHeatmapDay('${ds}')" title="${ds}：${Math.round(min)}分钟" style="background:${bg};${ring}${opacity}"></span>`;
+          // GitHub 风：所有空白格统一颜色，过去/未来不做透明度区分（用「今天」描边标记当前位置）
+          colsHtml += `<span class="hm-cell" onclick="showHeatmapDay('${ds}')" title="${ds}：${Math.round(min)}分钟" style="background:${bg};${ring}"></span>`;
         });
         colsHtml += '</div>';
       });
