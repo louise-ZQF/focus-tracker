@@ -3733,7 +3733,7 @@ function importData(file){
         const curY = today.getFullYear();
         const dataYears = Object.keys(mins).filter(k => mins[k] > 0).map(k => +k.slice(0, 4));
         const allY = [curY, ...dataYears];
-        const minY = Math.min(...allY), maxY = Math.max(...allY);
+        const minY = Math.min(curY - 1, ...allY), maxY = Math.max(...allY);   // 至少能往回翻到去年
         const yb = (delta, txt, dis) => `<button class="btn-soft" onclick="hmShiftYear(${delta})" ${dis ? 'disabled' : ''} style="padding:2px 11px;font-size:15px;line-height:1.2${dis ? ';opacity:.4;cursor:default' : ''}">${txt}</button>`;
         yearNav =
           '<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">' +
