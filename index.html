@@ -913,6 +913,20 @@
       box-sizing: border-box !important;
     }
 
+    /* === 修复「今日状态」顶部四张卡片大小不一 ===
+       上面的全局 .grid{align-items:start} 会让四张卡按各自内容高度显示（高度不齐），
+       而全局 input{font-size:14px;height:44px} 又把「开始学习」卡里的时间输入压成小号，
+       与其它卡的大数字不一致。这里针对该区域定向恢复（特异性更高，能压过上面的 !important）。 */
+    #section-overview .grid.cols-4{ align-items:stretch !important; }
+    #section-overview .grid.cols-4 > .card{ height:auto !important; }
+    #section-overview input.big-number-time{
+      font-size:32px !important;
+      line-height:1 !important;
+      height:auto !important;
+      width:auto !important;
+      padding:2px 8px !important;
+    }
+
 
 /* --- 按钮 & 选项卡完美居中与尺寸恢复 --- */
 button {
