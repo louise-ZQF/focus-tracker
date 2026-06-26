@@ -3560,7 +3560,7 @@ function importData(file){
       const txt=document.getElementById('weekGoalText');
       if(txt) txt.textContent=`已达标 ${met}/7 天`;
     }
-    function toggleDark(){ state.darkMode=!state.darkMode; saveState(); applyDark(); }
+    function toggleDark(){ state.darkMode=!state.darkMode; saveState(); applyDark(); renderHeatmap(); }
     function applyDark(){
       document.body.classList.toggle('dark', !!state.darkMode);
       const b=document.getElementById('darkModeBtn');
