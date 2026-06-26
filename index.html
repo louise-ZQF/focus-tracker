@@ -1929,7 +1929,7 @@ function loadState(){
           links: parsed.links || [],
           targets: parsed.targets || {},
           focusSessions: parsed.focusSessions || [],
-          activeFocus: parsed.activeFocus || null,
+          activeFocus: (parsed.activeFocus && parsed.activeFocus.startTime && !isNaN(new Date(parsed.activeFocus.startTime))) ? parsed.activeFocus : null,
           studyStartOverrides: parsed.studyStartOverrides || {},
           focusMigratedV1: parsed.focusMigratedV1 || false
         };
@@ -1941,8 +1941,10 @@ function loadState(){
     }
  
     function saveState(){
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-      localStorage.setItem(LOCAL_TS_KEY, new Date().toISOString());
+      try{
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+        localStorage.setItem(LOCAL_TS_KEY, new Date().toISOString());
+      }catch(e){ console.warn('saveState failed:', e); }
       scheduleCloudPush();
     }
 
@@ -2006,7 +2008,9 @@ function loadState(){
         const rows=await res.json();
         if(!rows.length){ setCloudStatus('云端暂无数据'); if(manual) showToast('云端暂无数据，可点⬆️先上传'); return; }
         if(manual && !confirm('确定用云端数据覆盖本机当前数据吗？')){ setCloudStatus('已取消'); return; }
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(rows[0].data));
+        const cloudData = rows[0].data;
+        if(!cloudData || typeof cloudData !== 'object' || !Array.isArray(cloudData.focusSessions)) throw new Error('云端数据格式异常');
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(cloudData));
         localStorage.setItem(LOCAL_TS_KEY, rows[0].updated_at||new Date().toISOString());
         showToast('已从云端恢复，正在刷新…');
         setTimeout(()=>location.reload(), 600);
@@ -2030,7 +2034,9 @@ function loadState(){
         if(!rows.length){ await cloudPush(false); return; }
         const cloudTs=rows[0].updated_at||'1970-01-01T00:00:00Z';
         if(new Date(cloudTs).getTime() > new Date(localTs).getTime()+1000){
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(rows[0].data));
+          const syncData = rows[0].data;
+          if(!syncData || typeof syncData !== 'object' || !Array.isArray(syncData.focusSessions)) throw new Error('云端数据格式异常');
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(syncData));
           localStorage.setItem(LOCAL_TS_KEY, cloudTs);
           showToast('检测到云端有更新的数据，正在载入…');
           setTimeout(()=>location.reload(), 600);
@@ -3018,7 +3024,7 @@ function importData(file){
             links: parsed.links || [],
             targets: parsed.targets || {},
             focusSessions: parsed.focusSessions || [],
-            activeFocus: parsed.activeFocus || null,
+            activeFocus: (parsed.activeFocus && parsed.activeFocus.startTime && !isNaN(new Date(parsed.activeFocus.startTime))) ? parsed.activeFocus : null,
             studyStartOverrides: parsed.studyStartOverrides || {},
             focusMigratedV1: parsed.focusMigratedV1 || false
           };
@@ -3053,10 +3059,16 @@ function importData(file){
     }
     // 保存/更新论文信息
     function saveThesisInfo() {
-      const title = document.getElementById('thesisTitleInput').value.trim();
-      const total = parseInt(document.getElementById('thesisTotalInput').value) || 0;
-      const done = parseInt(document.getElementById('thesisDoneInput').value) || 0;
-      const step = document.getElementById('thesisStepInput').value;
+      const titleEl = document.getElementById('thesisTitleInput');
+      const totalEl = document.getElementById('thesisTotalInput');
+      const doneEl  = document.getElementById('thesisDoneInput');
+      const stepEl  = document.getElementById('thesisStepInput');
+      if(!titleEl || !totalEl || !doneEl || !stepEl) return;
+
+      const title = titleEl.value.trim();
+      const total = parseInt(totalEl.value) || 0;
+      const done  = parseInt(doneEl.value)  || 0;
+      const step  = stepEl.value;
 
       if (!title) { showToast('请输入科目/专题。'); return; }
       if (total <= 0) { showToast('总章节数必须大于0。'); return; }
@@ -3076,6 +3088,7 @@ function importData(file){
       state.thesisRecords.unshift(record);
       saveState();
       showToast(`《${title}》复习进度已保存！`);
+      renderThesis();
     }
 
     // 删除论文记录
@@ -3224,7 +3237,7 @@ function importData(file){
       document.getElementById('modalJournalTitle').textContent = sub.journal + " - 成绩追踪";
       document.getElementById('modalStartDate').textContent = sub.startDate;
       
-      const start = new Date(sub.startDate);
+      const start = new Date(sub.startDate + 'T12:00:00');
       const diff = Math.floor((new Date() - start) / (1000 * 60 * 60 * 24));
       document.getElementById('modalDuration').textContent = `${diff} 天`;
       
@@ -3257,6 +3270,7 @@ function importData(file){
       const scoreRaw = document.getElementById('newLogScore').value;
       const note = document.getElementById('newLogNote').value;
       const sub = state.submissions.find(s => s.id === currentSubId);
+      if(!sub){ showToast('记录不存在，请重新打开'); return; }
       sub.logs.unshift({ date, score: scoreRaw!=='' ? Number(scoreRaw) : null, status, note });
       saveState();
       renderTimelineList(sub);
@@ -3355,11 +3369,16 @@ function importData(file){
       const xN=Math.max(1,maxPts-1);
       const xx=i=>padL + (maxPts>1 ? (i/xN):0.5)*plotW;
       const yy=v=>padT + (1-v/100)*plotH;
+      const _dark = document.body.classList.contains('dark');
+      const _axisColor = _dark ? '#6e8680' : '#90a6a2';
+      const _legendColor = _dark ? '#c8d8d4' : '#5c706c';
+      const _annotColor = _dark ? '#c8d8d4' : '#9aa6a3';
+      const _gridColor = _dark ? '#2e3a37' : '#e4eeeb';
       let g='';
       for(let v=0; v<=100; v+=25){
         const y=yy(v);
-        g+=`<line x1="${padL}" y1="${y}" x2="${W-padR}" y2="${y}" stroke="#e4eeeb" stroke-width="1"/>`;
-        g+=`<text x="${padL-6}" y="${y+4}" text-anchor="end" font-size="10" fill="#90a6a2">${v}</text>`;
+        g+=`<line x1="${padL}" y1="${y}" x2="${W-padR}" y2="${y}" stroke="${_gridColor}" stroke-width="1"/>`;
+        g+=`<text x="${padL-6}" y="${y+4}" text-anchor="end" font-size="10" fill="${_axisColor}">${v}</text>`;
       }
       // 目标线（每科一条虚线，按得分率%）
       series.forEach(sb=>{
@@ -3369,7 +3388,7 @@ function importData(file){
       });
       const longest=series.reduce((a,b)=>b.points.length>a.points.length?b:a,series[0]);
       longest.points.forEach((p,i)=>{
-        g+=`<text x="${xx(i)}" y="${H-padB+16}" text-anchor="middle" font-size="10" fill="#90a6a2">${p.label}</text>`;
+        g+=`<text x="${xx(i)}" y="${H-padB+16}" text-anchor="middle" font-size="10" fill="${_axisColor}">${p.label}</text>`;
       });
       series.forEach(sb=>{
         if(sb.points.length===1){
@@ -3381,8 +3400,8 @@ function importData(file){
         sb.points.forEach((p,i)=>{ g+=`<circle cx="${xx(i)}" cy="${yy(p.y)}" r="3.2" fill="${sb.color}"><title>${sb.name} ${p.label}：${p.raw}分（${p.y}%）</title></circle>`; });
       });
       let lg='';
-      series.forEach(sb=>{ lg+=`<span style="display:inline-flex;align-items:center;gap:5px;margin-right:14px;font-size:12px;color:#5c706c"><span style="width:12px;height:12px;border-radius:3px;background:${sb.color};display:inline-block"></span>${sb.name}</span>`; });
-      if(series.some(sb=>sb.targetPct!=null)) lg+=`<span style="font-size:12px;color:#9aa6a3">┄┄ 虚线 = 各科目标</span>`;
+      series.forEach(sb=>{ lg+=`<span style="display:inline-flex;align-items:center;gap:5px;margin-right:14px;font-size:12px;color:${_legendColor}"><span style="width:12px;height:12px;border-radius:3px;background:${sb.color};display:inline-block"></span>${sb.name}</span>`; });
+      if(series.some(sb=>sb.targetPct!=null)) lg+=`<span style="font-size:12px;color:${_annotColor}">┄┄ 虚线 = 各科目标</span>`;
       return `<div style="margin-bottom:8px">${lg}</div><svg viewBox="0 0 ${W} ${H}" width="100%" preserveAspectRatio="xMidYMid meet" style="max-width:100%">${g}</svg>`;
     }
 
@@ -3619,12 +3638,14 @@ function importData(file){
       renderHeatmap();
       renderReflections();
       renderLinks();
+      renderReport();
     }
     function deleteExercise(id){
       state.exercises=(state.exercises||[]).filter(e=>e.id!==id);
       saveState();
       showToast('已删除该锻炼记录。');
       renderExercise();
+      renderReport();
     }
     function renderExercise(){
       const list=(state.exercises||[]).slice().sort((a,b)=>(b.date||'').localeCompare(a.date||''));
@@ -3672,7 +3693,7 @@ function importData(file){
       const ringColor = isDark ? '#f5f5f7' : '#1d1d1f';
       const colors = [emptyColor, '#9be9a8', '#40c463', '#30a14e', '#216e39'];
       const today = new Date(todayStr() + 'T12:00:00');
-      if(heatmapYear === null) heatmapYear = today.getFullYear();
+      const viewYear = heatmapYear !== null ? heatmapYear : today.getFullYear();
 
       let startDate, endDate;
       if(heatmapScope === 'week'){
@@ -3683,8 +3704,8 @@ function importData(file){
         startDate = new Date(today.getFullYear(), today.getMonth(), 1);
         endDate = new Date(today.getFullYear(), today.getMonth() + 1, 0);
       } else {
-        startDate = new Date(heatmapYear, 0, 1);
-        endDate = new Date(heatmapYear, 11, 31);
+        startDate = new Date(viewYear, 0, 1);
+        endDate = new Date(viewYear, 11, 31);
       }
 
       const startDay = startDate.getDay();
@@ -3751,9 +3772,9 @@ function importData(file){
         const yb = (delta, txt, dis) => `<button class="btn-soft" onclick="hmShiftYear(${delta})" ${dis ? 'disabled' : ''} style="padding:2px 11px;font-size:15px;line-height:1.2${dis ? ';opacity:.4;cursor:default' : ''}">${txt}</button>`;
         periodBar =
           '<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">' +
-            yb(-1, '‹', heatmapYear <= minY) +
-            `<span style="font-size:15px;font-weight:700;min-width:46px;text-align:center">${heatmapYear} 年</span>` +
-            yb(1, '›', heatmapYear >= maxY) +
+            yb(-1, '‹', viewYear <= minY) +
+            `<span style="font-size:15px;font-weight:700;min-width:46px;text-align:center">${viewYear} 年</span>` +
+            yb(1, '›', viewYear >= maxY) +
           '</div>';
       } else {
         const label = `${today.getFullYear()} 年 ${today.getMonth() + 1} 月` + (heatmapScope === 'week' ? '（本周）' : '');
@@ -3771,7 +3792,7 @@ function importData(file){
 
       renderHeatmapStats(mins);
     }
-    function hmShiftYear(delta){ heatmapYear += delta; renderHeatmap(); }
+    function hmShiftYear(delta){ if(heatmapYear === null) heatmapYear = new Date().getFullYear(); heatmapYear += delta; renderHeatmap(); }
     window.hmShiftYear = hmShiftYear;
     // 当前/最长连续学习天数（基于全部记录）
     function _focusStreaks(mins){
@@ -3801,7 +3822,7 @@ function importData(file){
         return { start: new Date(today.getFullYear(), today.getMonth(), 1), end: today, label: '本月' };
       }
       const curY = today.getFullYear();
-      const y = heatmapYear || curY;
+      const y = heatmapYear !== null ? heatmapYear : curY;
       const yEnd = y === curY ? today : new Date(y, 11, 31);
       return { start: new Date(y, 0, 1), end: yEnd, label: y === curY ? '本年' : (y + '年') };
     }
