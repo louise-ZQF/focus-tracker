@@ -2,6 +2,7 @@
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8" />
+  <meta http-equiv="Content-Security-Policy" content="default-src * 'unsafe-inline'; frame-src 'none'; object-src 'none';" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>曾庆锋の学习系统 · 11408</title>
   <style>
@@ -1958,7 +1959,7 @@ function loadState(){
 
     // 没自定义就用默认码 → 始终开启同步
     function getSyncCode(){ return (localStorage.getItem(SYNC_CODE_KEY)||'').trim() || DEFAULT_SYNC_CODE; }
-    function cloudHeaders(extra){ return Object.assign({ 'apikey':SUPABASE_KEY, 'Authorization':'Bearer '+SUPABASE_KEY }, extra||{}); }
+    function cloudHeaders(extra){ return Object.assign({ 'apikey':SUPABASE_KEY, 'Authorization':'Bearer '+SUPABASE_KEY, 'Content-Type':'application/json' }, extra||{}); }
     function setCloudStatus(txt){
       const el=document.getElementById('cloudStatusLine'); if(el) el.textContent=txt;
       const b=document.getElementById('cloudSyncBtn'); if(b) b.textContent = getSyncCode() ? '☁️ 已同步' : '☁️ 云同步';
@@ -2103,8 +2104,8 @@ function loadState(){
     function getCategoryClass(category=''){
       if(category.includes('政治')) return 'cat-research';
       if(category.includes('英语')) return 'cat-experiment';
-      if(category.includes('数学')) return 'cat-writing';
       if(category.includes('408')) return 'cat-misc';
+      if(category.includes('数学')) return 'cat-writing';
       if(category.includes('真题')) return 'cat-money';
       return '';
     }
@@ -2231,7 +2232,7 @@ function maybeAutoFinishPomodoro(){
     state.activeFocus = null;
     saveState();
     showToast('番茄时间到！已自动记录本次专注。');
-    try{ alert('番茄时间到！休息一下。'); }catch(e){}
+    showToast('🍅 番茄时间到！休息一下。');
     renderAll();
   }
 }
@@ -2995,32 +2996,44 @@ window.setCalendarFilter = function(mode) {
       URL.revokeObjectURL(a.href);
     }
  
+function validateImportSchema(obj){
+      if(!obj || typeof obj !== 'object' || Array.isArray(obj)) return false;
+      const arrayFields = ['phoneRestraints','tasks','leaveRecords','thesisRecords','submissions','exercises','reflections','links','focusSessions'];
+      const objectFields = ['attendance','achievements','targets','studyStartOverrides'];
+      for(const f of arrayFields){ if(obj[f] !== undefined && !Array.isArray(obj[f])) return false; }
+      for(const f of objectFields){ if(obj[f] !== undefined && (typeof obj[f] !== 'object' || Array.isArray(obj[f]))) return false; }
+      return true;
+    }
 function importData(file){
       const reader = new FileReader();
       reader.onload = () => {
         try{
           const parsed = JSON.parse(reader.result);
+          if(!validateImportSchema(parsed)){
+            showToast('导入失败：JSON 数据结构不匹配，请确认是此系统的备份文件。');
+            return;
+          }
           const merged = {
             attendance: parsed.attendance || {},
-            phoneRestraints: parsed.phoneRestraints || [],
-            tasks: parsed.tasks || [],
-            leaveRecords: parsed.leaveRecords || [],
+            phoneRestraints: Array.isArray(parsed.phoneRestraints) ? parsed.phoneRestraints : [],
+            tasks: Array.isArray(parsed.tasks) ? parsed.tasks : [],
+            leaveRecords: Array.isArray(parsed.leaveRecords) ? parsed.leaveRecords : [],
             achievements: parsed.achievements || {},
-            thesisRecords: parsed.thesisRecords || [],
-            submissions: parsed.submissions || [], // 确保逗号
-            muyuCount: parsed.muyuCount || 0,
-            examDate: parsed.examDate || '2026-12-19',
+            thesisRecords: Array.isArray(parsed.thesisRecords) ? parsed.thesisRecords : [],
+            submissions: Array.isArray(parsed.submissions) ? parsed.submissions : [],
+            muyuCount: typeof parsed.muyuCount === 'number' ? parsed.muyuCount : 0,
+            examDate: typeof parsed.examDate === 'string' ? parsed.examDate : '2026-12-19',
             dailyGoalHours: (parsed.dailyGoalHours != null ? parsed.dailyGoalHours : 8),
-            darkMode: parsed.darkMode || false,
-            exercises: parsed.exercises || [],
-            reflections: parsed.reflections || [],
+            darkMode: !!parsed.darkMode,
+            exercises: Array.isArray(parsed.exercises) ? parsed.exercises : [],
+            reflections: Array.isArray(parsed.reflections) ? parsed.reflections : [],
             muyuPos: parsed.muyuPos || null,
-            links: parsed.links || [],
+            links: Array.isArray(parsed.links) ? parsed.links : [],
             targets: parsed.targets || {},
-            focusSessions: parsed.focusSessions || [],
+            focusSessions: Array.isArray(parsed.focusSessions) ? parsed.focusSessions : [],
             activeFocus: parsed.activeFocus || null,
             studyStartOverrides: parsed.studyStartOverrides || {},
-            focusMigratedV1: parsed.focusMigratedV1 || false
+            focusMigratedV1: !!parsed.focusMigratedV1
           };
           migrateFocusData(merged);
           localStorage.setItem(STORAGE_KEY, JSON.stringify(merged));
@@ -4076,7 +4089,7 @@ function importData(file){
           <div class="card-title"><h3>${escapeHtml(sName)}</h3><span class="pill">${groups[sName].length} 条</span></div>
           <div>${groups[sName].map(l=>`
             <div class="link-row">
-              <a href="${encodeURI(l.url)}" target="_blank" rel="noopener" class="link-title">🔗 ${escapeHtml(l.title||l.url)}</a>
+              <a href="${encodeURI(l.url)}" target="_blank" rel="noopener noreferrer" class="link-title">🔗 ${escapeHtml(l.title||l.url)}</a>
               ${l.note?`<span class="tiny link-note">${escapeHtml(l.note)}</span>`:''}
               <button class="btn-danger" style="padding:2px 10px;height:26px" onclick="deleteLink('${l.id}')">删除</button>
             </div>`).join('')}</div>
@@ -4101,8 +4114,8 @@ function importData(file){
     }
 
     // ===== 任务按科目折叠 =====
-    let taskCollapsed = {};
-    function toggleTaskGroup(cat){ taskCollapsed[cat] = !taskCollapsed[cat]; renderTasks(); }
+    let taskCollapsed = (()=>{ try{ return JSON.parse(localStorage.getItem('niuma-task-collapsed'))||{}; }catch(e){ return {}; } })();
+    function toggleTaskGroup(cat){ taskCollapsed[cat] = !taskCollapsed[cat]; try{ localStorage.setItem('niuma-task-collapsed', JSON.stringify(taskCollapsed)); }catch(e){} renderTasks(); }
 
     function bindEvents(){
 
