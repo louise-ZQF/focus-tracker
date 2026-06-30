@@ -1460,12 +1460,16 @@ td button {
             <label for="taskDateInput">日期</label>
             <input id="taskDateInput" type="date" />
           </div>
+          <div>
+            <label for="backfillMinsInput">补录分钟</label>
+            <input id="backfillMinsInput" type="number" min="1" step="1" inputmode="numeric" placeholder="如 60" />
+          </div>
           <button class="btn-primary" id="startFocusTaskBtn">开始专注</button>
           <button class="btn-warning" id="addBackfillTaskBtn">补录专注</button>
           <button class="btn-secondary" id="quickAddTaskBtn">添加待办</button>
         </div>
         <div class="tiny" style="margin-top:10px">
-          忘记计时？点「补录专注」选好科目和日期，填入分钟数即可补登。
+          忘记计时？选好科目和日期，在「补录分钟」填入分钟数，点「补录专注」即可补登。
         </div>
         <div class="focus-meta" style="grid-template-columns:repeat(2,minmax(0,1fr))">
           <div class="mini-stat">
@@ -3055,13 +3059,26 @@ function importData(file){
     function addBackfillTask() {
       const category = document.getElementById('taskCategoryInput').value || '📕 政治';
       const date = getTaskFormDate();
-      const minsStr = prompt('补录专注时长（分钟）：', '60');
-      if(minsStr === null) return;
-      const mins = parseInt(minsStr) || 0;
-      if(mins <= 0){ showToast('请输入有效的分钟数。'); return; }
+      // 直接读内联输入框，避免 prompt() 在微信/QQ 等内置浏览器里被拦截后静默失败
+      const minsEl = document.getElementById('backfillMinsInput');
+      const mins = parseInt(minsEl && minsEl.value, 10);
+      if(!(mins > 0)){
+        showToast('请先在「补录分钟」里填写大于 0 的分钟数。');
+        if(minsEl) minsEl.focus();
+        return;
+      }
       recordFocusSession(date, category, mins*60000);
+      if(minsEl) minsEl.value = '';
+      // 跳到补录所在日期，确保补录的专注时间立刻可见（尤其是补录过去某天时）
+      if(date && date !== selectedDate){
+        selectedDate = date;
+        const sd = document.getElementById('selectedDate');
+        if(sd) sd.value = date;
+        todoCalendarMonth = date.slice(0,7);
+        syncTaskDateInput(date);
+      }
       saveState();
-      showToast(`已补录 ${category}：${mins} 分钟`);
+      showToast(`已补录 ${category} ${date}：${mins} 分钟`);
       renderAll();
     }
     // 保存/更新论文信息
