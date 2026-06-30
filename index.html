@@ -1292,6 +1292,18 @@ td button {
     body.dark .cloud-box input{ background:#2a2a2c; border-color:#3a3a3c; color:#f5f5f7; }
     .cloud-actions{ display:flex; gap:8px; margin-top:8px; }
     .cloud-actions .btn-primary, .cloud-actions .btn-soft{ flex:1; }
+    /* 通用页面内弹窗（替代会被微信/QQ 等内置浏览器拦截的原生 confirm/prompt） */
+    .ui-modal-overlay{ position:fixed; inset:0; background:rgba(0,0,0,.45); display:flex; align-items:center; justify-content:center; z-index:10000; padding:20px; }
+    .ui-modal{ background:#fff; border-radius:16px; padding:22px; width:min(92vw,380px); box-shadow:0 20px 60px rgba(0,0,0,.28); }
+    body.dark .ui-modal{ background:#1c1c1e; color:#f5f5f7; }
+    .ui-modal-title{ font-size:17px; font-weight:800; margin-bottom:8px; color:#1f2d2b; }
+    body.dark .ui-modal-title{ color:#f5f5f7; }
+    .ui-modal-msg{ font-size:14px; color:var(--muted,#5b6b68); line-height:1.55; white-space:pre-wrap; }
+    .ui-modal-msg:empty{ display:none; }
+    .ui-modal-input{ width:100%; box-sizing:border-box; margin-top:14px; height:44px; padding:0 12px; border:1px solid #d2d2d7; border-radius:10px; font-size:15px; }
+    body.dark .ui-modal-input{ background:#2a2a2c; border-color:#3a3a3c; color:#f5f5f7; }
+    .ui-modal-btns{ display:flex; gap:10px; justify-content:flex-end; margin-top:18px; }
+    .ui-modal-btns button{ flex:0 0 auto; height:40px; padding:0 18px; border-radius:10px; cursor:pointer; font-weight:700; white-space:nowrap; }
 </style>
 </head>
 <body>
@@ -2010,7 +2022,7 @@ function loadState(){
         if(!res.ok) throw new Error('HTTP '+res.status+' '+(await res.text()));
         const rows=await res.json();
         if(!rows.length){ setCloudStatus('云端暂无数据'); if(manual) showToast('云端暂无数据，可点⬆️先上传'); return; }
-        if(manual && !confirm('确定用云端数据覆盖本机当前数据吗？')){ setCloudStatus('已取消'); return; }
+        if(manual && !(await uiConfirm('确定用云端数据覆盖本机当前数据吗？'))){ setCloudStatus('已取消'); return; }
         localStorage.setItem(STORAGE_KEY, JSON.stringify(rows[0].data));
         localStorage.setItem(LOCAL_TS_KEY, rows[0].updated_at||new Date().toISOString());
         showToast('已从云端恢复，正在刷新…');
@@ -2242,14 +2254,14 @@ function maybeAutoFinishPomodoro(){
 }
 
 // 结束专注并记录（只存时长，不动任务）
-function finishTask(){
+async function finishTask(){
   const a = state.activeFocus;
   if(!a){
     showToast('当前没有正在进行的专注。');
     return;
   }
   let ms = getActiveFocusMs();
-  const input = prompt('本次专注分钟数（忘记/有误可直接修改后回车）：', Math.round(ms/60000));
+  const input = await uiPrompt('本次专注分钟数（忘记/有误可直接修改）：', Math.round(ms/60000), { inputType:'number' });
   if(input === null) return;
   const v = parseInt(input);
   if(!isNaN(v) && v >= 0) ms = v*60000;
@@ -2981,7 +2993,59 @@ window.setCalendarFilter = function(mode) {
       clearTimeout(toastTimer);
       toastTimer = setTimeout(()=>toast.classList.remove('show'), 2600);
     }
- 
+
+    // ===== 页面内弹窗：替代 confirm()/prompt()（它们在微信/QQ 等 App 内置浏览器里会被拦截而静默失败）=====
+    function uiModal({ title='提示', message='', withInput=false, defaultValue='', placeholder='', okText='确定', cancelText='取消', inputType='text' }={}){
+      return new Promise(resolve=>{
+        const overlay = document.createElement('div');
+        overlay.className = 'ui-modal-overlay';
+        const box = document.createElement('div');
+        box.className = 'ui-modal';
+        box.innerHTML = `<div class="ui-modal-title"></div><div class="ui-modal-msg"></div>`
+          + (withInput ? `<input class="ui-modal-input">` : '')
+          + `<div class="ui-modal-btns"><button class="btn-soft ui-modal-cancel"></button><button class="btn-primary ui-modal-ok"></button></div>`;
+        box.querySelector('.ui-modal-title').textContent = title;
+        box.querySelector('.ui-modal-msg').textContent = message;
+        const okBtn = box.querySelector('.ui-modal-ok');
+        const cancelBtn = box.querySelector('.ui-modal-cancel');
+        okBtn.textContent = okText;
+        cancelBtn.textContent = cancelText;
+        const input = box.querySelector('.ui-modal-input');
+        if(input){
+          input.type = inputType;
+          input.value = defaultValue;
+          if(placeholder) input.placeholder = placeholder;
+        }
+        overlay.appendChild(box);
+        document.body.appendChild(overlay);
+
+        let done = false;
+        const close = (val)=>{
+          if(done) return; done = true;
+          document.removeEventListener('keydown', onKey);
+          overlay.remove();
+          resolve(val);
+        };
+        const onOk = ()=> close(withInput ? (input ? input.value : '') : true);
+        const onCancel = ()=> close(withInput ? null : false);
+        function onKey(e){
+          if(e.key === 'Escape') onCancel();
+          else if(e.key === 'Enter' && (withInput || document.activeElement === okBtn)) onOk();
+        }
+        okBtn.addEventListener('click', onOk);
+        cancelBtn.addEventListener('click', onCancel);
+        overlay.addEventListener('mousedown', e=>{ if(e.target === overlay) onCancel(); });
+        document.addEventListener('keydown', onKey);
+        setTimeout(()=>{ (input || okBtn).focus(); if(input) input.select(); }, 30);
+      });
+    }
+    function uiConfirm(message, title='确认'){ return uiModal({ title, message, withInput:false }); }
+    function uiPrompt(message, defaultValue='', opts={}){
+      return uiModal({ title: opts.title||'输入', message, withInput:true,
+        defaultValue: defaultValue==null ? '' : String(defaultValue),
+        placeholder: opts.placeholder||'', inputType: opts.inputType||'text', okText: opts.okText||'确定' });
+    }
+
     function switchTab(tab){
       document.querySelectorAll('.tab').forEach(btn=>{
         btn.classList.toggle('active', btn.dataset.tab === tab);
@@ -3049,8 +3113,8 @@ function importData(file){
       reader.readAsText(file, 'utf-8');
     }
  
-    function resetAll(){
-      if(!confirm('确定要清空全部数据吗？此操作不可恢复。')) return;
+    async function resetAll(){
+      if(!(await uiConfirm('确定要清空全部数据吗？此操作不可恢复。'))) return;
       localStorage.removeItem(STORAGE_KEY);
       location.reload();
     }
@@ -3109,8 +3173,8 @@ function importData(file){
     }
 
     // 删除论文记录
-    function deleteThesis(id) {
-      if(!confirm('确定要删除这条复习记录吗？')) return;
+    async function deleteThesis(id) {
+      if(!(await uiConfirm('确定要删除这条复习记录吗？'))) return;
       state.thesisRecords = state.thesisRecords.filter(r => r.id !== id);
       saveState();
       showToast('记录已删除。');
@@ -3300,8 +3364,8 @@ function importData(file){
       document.getElementById('submissionModal').style.display = 'none';
     }
 
-    function deleteSubmission(id) {
-      if(!confirm('确定删除此条模考记录吗？')) return;
+    async function deleteSubmission(id) {
+      if(!(await uiConfirm('确定删除此条模考记录吗？'))) return;
       state.submissions = state.submissions.filter(s => s.id !== id);
       saveState();
       renderSubmissions();
@@ -3471,8 +3535,8 @@ function importData(file){
         <div class="tiny" style="margin-top:6px;color:var(--muted)">合计「距目标」只统计同时设了目标且有成绩的科目；「最近 / 最高」为各科最近一次 / 历史最高成绩之和。</div>`;
     }
 
-    function addCalendarPlan(dateStr){
-      const name = prompt(`给 ${dateStr} 添加一条计划：`);
+    async function addCalendarPlan(dateStr){
+      const name = await uiPrompt(`给 ${dateStr} 添加一条计划：`, '', { placeholder:'计划内容' });
       if(name===null) return;
       _createPlan(dateStr, name);
     }
@@ -3974,8 +4038,8 @@ function importData(file){
       showToast('已记录这条思考 ✍️');
       renderReflections();
     }
-    function deleteReflection(id){
-      if(!confirm('确定删除这条思考吗？')) return;
+    async function deleteReflection(id){
+      if(!(await uiConfirm('确定删除这条思考吗？'))) return;
       state.reflections=(state.reflections||[]).filter(r=>r.id!==id);
       saveState();
       renderReflections();
@@ -4114,12 +4178,12 @@ function importData(file){
     }
 
     // ===== 修改已创建任务 =====
-    function editTask(id){
+    async function editTask(id){
       const t=state.tasks.find(x=>x.id===id);
       if(!t) return;
-      const name=prompt('任务名称：', t.name||'');
+      const name=await uiPrompt('任务名称：', t.name||'');
       if(name===null) return;
-      const date=prompt('日期（YYYY-MM-DD）：', t.date||todayStr());
+      const date=await uiPrompt('日期（YYYY-MM-DD）：', t.date||todayStr(), { inputType:'date' });
       if(date===null) return;
       const nm=(name||'').trim();
       if(nm) t.name=nm;
