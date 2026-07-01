@@ -2253,6 +2253,24 @@ function maybeAutoFinishPomodoro(){
   }
 }
 
+// 1.5 每天超过 22:30 自动结束正在进行的专注（默认 22:30，可按需修改这两个常量）
+const AUTO_STOP_H = 22, AUTO_STOP_M = 30;
+function maybeAutoStopLate(){
+  const a = state.activeFocus;
+  if(!a || !a.startTime) return;
+  const now = new Date();
+  const cutoff = new Date(now.getFullYear(), now.getMonth(), now.getDate(), AUTO_STOP_H, AUTO_STOP_M, 0, 0);
+  if(now < cutoff) return;                        // 还没到 22:30
+  const start = new Date(a.startTime);
+  if(start >= cutoff) return;                     // 22:30 之后才开始的（主动熬夜）不强制停
+  const ms = cutoff.getTime() - start.getTime();  // 只记录到 22:30 为止，不计入更晚的时间
+  recordFocusSession(a.date, a.category, ms, a.startTime);
+  state.activeFocus = null;
+  saveState();
+  showToast(`⏰ 已过 ${AUTO_STOP_H}:${String(AUTO_STOP_M).padStart(2,'0')}，已自动结束并记录 ${Math.round(ms/60000)} 分钟，早点休息～`);
+  renderAll();
+}
+
 // 结束专注并记录（只存时长，不动任务）
 async function finishTask(){
   const a = state.activeFocus;
@@ -4418,6 +4436,7 @@ function renderAll(){
       const active = getActiveTask();
       if(active) {
           maybeAutoFinishPomodoro();
+          maybeAutoStopLate();
           renderTasks();
           renderHero();      // 今日学习时长 / 今日累计专注
           renderOverview();  // 今日/本周/累计专注、开始学习时间
