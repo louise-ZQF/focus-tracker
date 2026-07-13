@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta http-equiv="Content-Security-Policy" content="default-src * 'unsafe-inline'; frame-src 'none'; object-src 'none';" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>曾庆锋の学习系统 · 11408</title>
+  <title>时间</title>
   <style>
     :root {
     --bg:#edf3f2;
@@ -1304,6 +1304,16 @@ td button {
     body.dark .ui-modal-input{ background:#2a2a2c; border-color:#3a3a3c; color:#f5f5f7; }
     .ui-modal-btns{ display:flex; gap:10px; justify-content:flex-end; margin-top:18px; }
     .ui-modal-btns button{ flex:0 0 auto; height:40px; padding:0 18px; border-radius:10px; cursor:pointer; font-weight:700; white-space:nowrap; }
+    /* 今日冲刺 · 压力卡 */
+    .pressure-card{ border-left:6px solid var(--pc,#e0322d); }
+    .pressure-grid{ display:flex; gap:20px; flex-wrap:wrap; align-items:flex-end; }
+    .pressure-main{ flex:1 1 200px; }
+    .pressure-big{ font-size:34px; font-weight:900; line-height:1.1; margin:4px 0; color:var(--pc,#e0322d); }
+    .pressure-bar-wrap{ flex:1 1 220px; }
+    .pressure-bar{ height:12px; border-radius:8px; background:#eceff1; overflow:hidden; }
+    body.dark .pressure-bar{ background:#2a2a2c; }
+    .pressure-bar-fill{ height:100%; width:0; border-radius:8px; background:var(--pc,#e0322d); transition:width .4s ease; }
+    .pressure-msg{ margin-top:14px; font-weight:700; font-size:14px; color:var(--pc,#e0322d); line-height:1.5; }
 </style>
 </head>
 <body>
@@ -1326,7 +1336,8 @@ td button {
     <section class="hero">
       <div class="hero-main">
         <div class="quote-kicker">Daily Inspiration / 每日好运签</div>
-        <h1>曾庆锋の学习系统</h1>
+        <h1>时间</h1>
+        <p class="hero-quote">别把梦想埋没了</p>
         <p id="nowText">正在读取当前时间...</p>
         <p class="hero-caption">您已成功登录学习中心</p>
         <div class="toolbar">
@@ -1340,8 +1351,8 @@ td button {
             <button class="btn-secondary" id="exportBtn">导出数据</button>
             <button class="btn-soft" id="importBtn">导入数据</button>
             <input type="file" id="importFile" accept=".json" style="display:none" />
-            <button class="btn-soft" id="cloudSyncBtn">☁️ 云同步</button>
-            <button class="btn-soft" id="darkModeBtn">🌙 深色</button>
+            <button class="btn-soft" id="cloudSyncBtn">云同步</button>
+            <button class="btn-soft" id="darkModeBtn">深色</button>
           </div>
         </div>
       </div>
@@ -1391,9 +1402,48 @@ td button {
       </div>
     </div>
 
+    <div class="card pressure-card" id="pressureCard" style="margin-top:16px">
+      <div class="card-title">
+        <h3>今日冲刺</h3>
+        <span class="pill" id="pressurePill">-</span>
+      </div>
+      <div class="pressure-grid">
+        <div class="pressure-main">
+          <div class="tiny">距 21:00 收工 · 今天还能学</div>
+          <div class="pressure-big" id="pressureRemain">--</div>
+          <div class="tiny" id="pressureSub">-</div>
+        </div>
+        <div class="pressure-bar-wrap">
+          <div class="pressure-bar"><div class="pressure-bar-fill" id="pressureBarFill"></div></div>
+          <div class="tiny" id="pressureGoalText" style="margin-top:6px">-</div>
+        </div>
+      </div>
+      <div class="pressure-msg" id="pressureMsg">-</div>
+    </div>
+
+    <div class="card pressure-card" id="goal2kCard" style="margin-top:16px">
+      <div class="card-title">
+        <h3>两千小时计划</h3>
+        <span class="pill" id="goal2kPill">-</span>
+      </div>
+      <div class="pressure-grid">
+        <div class="pressure-main">
+          <div class="tiny">以后平均每天需专注</div>
+          <div class="pressure-big" id="goal2kPerDay">--</div>
+          <div class="tiny" id="goal2kSub">-</div>
+        </div>
+        <div class="pressure-bar-wrap">
+          <div class="pressure-bar"><div class="pressure-bar-fill" id="goal2kBarFill"></div></div>
+          <div class="tiny" id="goal2kGoalText" style="margin-top:6px">-</div>
+        </div>
+      </div>
+      <div class="pressure-msg" id="goal2kMsg">-</div>
+      <div class="tiny" style="margin-top:10px">总目标 <input id="goal2kInput" type="number" step="50" min="0" style="width:88px" /> 小时 · 距考试天数取自上方「初试日期」</div>
+    </div>
+
     <div class="card" style="margin-top:16px">
       <div class="card-title">
-        <h3>🔥 专注热力图</h3>
+        <h3>专注热力图</h3>
         <div class="button-row">
           <button class="btn-primary hm-scope-btn" data-hm="year">年</button>
           <button class="btn-soft hm-scope-btn" data-hm="month">月</button>
@@ -1407,7 +1457,7 @@ td button {
 
     <div class="card" style="margin-top:16px">
       <div class="card-title">
-        <h3>📊 学习时长分布 · 分科目</h3>
+        <h3>学习时长分布 · 分科目</h3>
         <div class="button-row">
           <button class="btn-primary fb-scope-btn" data-fb="day">日</button>
           <button class="btn-soft fb-scope-btn" data-fb="month">月</button>
@@ -1584,7 +1634,7 @@ td button {
     <section class="section" id="section-exercise">
       <div class="grid cols-2">
         <div class="card">
-          <div class="card-title"><h2>🏃 添加锻炼</h2><span class="pill good">动起来</span></div>
+          <div class="card-title"><h2>添加锻炼</h2><span class="pill good">动起来</span></div>
           <div class="inline-form">
             <div><label>项目</label><select id="exTypeInput">
               <option>跑步</option><option>步行</option><option>骑行</option><option>游泳</option>
@@ -1614,7 +1664,7 @@ td button {
     <section class="section" id="section-submission">
       <div class="card sub-card" style="border-left-color: #b794f4 !important;">
         <div class="card-title">
-          <h2 style="color:#9f7aea">🚀 模考成绩追踪</h2>
+          <h2 style="color:#9f7aea">模考成绩追踪</h2>
           <span class="pill" style="background:#f3f0ff; color:#9f7aea">淡紫色模式</span>
         </div>
         <div class="inline-form">
@@ -1632,7 +1682,7 @@ td button {
       </div>
       <div class="card" style="margin-top:20px; border-left:4px solid #b794f4 !important;">
         <div class="card-title">
-          <h2 style="color:#9f7aea">🎯 目标分数 &amp; 达成情况</h2>
+          <h2 style="color:#9f7aea">目标分数 &amp; 达成情况</h2>
           <span class="pill" style="background:#f3f0ff; color:#9f7aea" id="targetTotalPill">目标总分 0 / 500</span>
         </div>
         <div class="tiny" style="margin-bottom:10px">设定各科目标分，下表与「统计分析」走势图会显示与目标的差距（图中虚线为目标线）。</div>
@@ -1648,7 +1698,7 @@ td button {
         <div id="submissionTableWrap"></div>
       </div>
       <div class="card" style="margin-top:20px">
-        <div class="card-title"><h2 style="color:#9f7aea">📊 分科目统计</h2><span class="pill" style="background:#f3f0ff; color:#9f7aea">按科目</span></div>
+        <div class="card-title"><h2 style="color:#9f7aea">分科目统计</h2><span class="pill" style="background:#f3f0ff; color:#9f7aea">按科目</span></div>
         <div id="subjectStatsWrap"></div>
       </div>
     </section>
@@ -1716,7 +1766,7 @@ td button {
         </div>
 
         <div class="card" style="margin-top:16px; background:var(--primary-soft); border:1px solid var(--line)">
-          <div class="card-title"><h3>📝 学习报告</h3><span class="pill good" id="reportScopePill">本周</span></div>
+          <div class="card-title"><h3>学习报告</h3><span class="pill good" id="reportScopePill">本周</span></div>
           <div id="reportWrap" style="font-size:14px; line-height:1.9; color:var(--text)"></div>
         </div>
  
@@ -1735,7 +1785,7 @@ td button {
  
     <section class="section" id="section-links">
       <div class="card">
-        <div class="card-title"><h2>🔖 再看一遍</h2><span class="pill" id="linkCountPill">0 条</span></div>
+        <div class="card-title"><h2>再看一遍</h2><span class="pill" id="linkCountPill">0 条</span></div>
         <div class="inline-form">
           <div><label>科目</label><select id="linkSubjectInput">
             <option>政治</option><option>英语</option><option>数学</option><option>408</option><option>综合 / 其它</option>
@@ -1753,7 +1803,7 @@ td button {
     <section class="section" id="section-reflection">
       <div class="grid cols-2">
         <div class="card">
-          <div class="card-title"><h2>✍️ 写下此刻的思考</h2><span class="pill good">每日反思总结</span></div>
+          <div class="card-title"><h2>写下此刻的思考</h2><span class="pill good">每日反思总结</span></div>
           <textarea id="reflectInput" rows="4" placeholder="今天的复盘、灵感、情绪、计划……想到什么写什么，一天可以写多条。" style="width:100%;resize:vertical"></textarea>
           <div class="spacer"></div>
           <button class="btn-primary btn-block" id="addReflectBtn">记录这条思考</button>
@@ -1765,31 +1815,31 @@ td button {
         </div>
       </div>
       <div class="card" style="margin-top:16px">
-        <div class="card-title"><h2>🕰️ 思考时间轴</h2><span class="pill">最新在上</span></div>
+        <div class="card-title"><h2>思考时间轴</h2><span class="pill">最新在上</span></div>
         <div id="reflectTimelineWrap"></div>
       </div>
     </section>
 
     <div class="footer-note">
-      已开启全自动云同步：任意设备 / 浏览器打开都是最新数据，无需任何操作。（右上角「☁️ 云同步」可设自定义同步码以增强私密性）
+      已开启全自动云同步：任意设备 / 浏览器打开都是最新数据，无需任何操作。（右上角「云同步」可设自定义同步码以增强私密性）
     </div>
   </div>
  
   <div class="cloud-modal" id="cloudModal" style="display:none">
     <div class="cloud-box">
       <div class="cloud-head">
-        <strong>☁️ 云同步</strong>
+        <strong>云同步</strong>
         <button class="cloud-x" onclick="closeCloudModal()">✕</button>
       </div>
-      <p class="tiny">✅ 已默认开启全自动同步，<b>你什么都不用设置</b>——打开任意设备 / 浏览器，数据都一直在，改动自动上传、自动拉取最新。<br><br>下面是<b>进阶选项</b>：如果你想让数据更私密（不让任何看到本页源码的人访问），可以自定义一个只有你知道的同步码，并在你所有设备上填同一个。</p>
+      <p class="tiny">已默认开启全自动同步，<b>你什么都不用设置</b>——打开任意设备 / 浏览器，数据都一直在，改动自动上传、自动拉取最新。<br><br>下面是<b>进阶选项</b>：如果你想让数据更私密（不让任何看到本页源码的人访问），可以自定义一个只有你知道的同步码，并在你所有设备上填同一个。</p>
       <label class="tiny">自定义同步码（可留空，留空就用默认自动同步）</label>
       <input id="syncCodeInput" type="text" placeholder="例如 zqf-kaoyan-2026" />
       <div class="cloud-actions">
         <button class="btn-primary" onclick="saveSyncCode()">保存并开启自动同步</button>
       </div>
       <div class="cloud-actions">
-        <button class="btn-soft" onclick="cloudPull(true)">⬇️ 从云端恢复到本机</button>
-        <button class="btn-soft" onclick="cloudPush(true)">⬆️ 把本机上传到云端</button>
+        <button class="btn-soft" onclick="cloudPull(true)">从云端恢复到本机</button>
+        <button class="btn-soft" onclick="cloudPush(true)">把本机上传到云端</button>
       </div>
       <div class="tiny" id="cloudStatusLine" style="margin-top:10px">未开启</div>
     </div>
@@ -1873,6 +1923,7 @@ function defaultState(){
     muyuCount: 0,
     examDate: '2026-12-19',
     dailyGoalHours: 8,
+    totalHoursGoal: 2000,
     darkMode: false,
     exercises: [],
     reflections: [],
@@ -1939,6 +1990,7 @@ function loadState(){
           muyuCount: parsed.muyuCount || 0,
           examDate: parsed.examDate || '2026-12-19',
           dailyGoalHours: (parsed.dailyGoalHours != null ? parsed.dailyGoalHours : 8),
+          totalHoursGoal: (parsed.totalHoursGoal != null ? parsed.totalHoursGoal : 2000),
           darkMode: parsed.darkMode || false,
           exercises: parsed.exercises || [],
           reflections: parsed.reflections || [],
@@ -1978,7 +2030,7 @@ function loadState(){
     function cloudHeaders(extra){ return Object.assign({ 'apikey':SUPABASE_KEY, 'Authorization':'Bearer '+SUPABASE_KEY, 'Content-Type':'application/json' }, extra||{}); }
     function setCloudStatus(txt){
       const el=document.getElementById('cloudStatusLine'); if(el) el.textContent=txt;
-      const b=document.getElementById('cloudSyncBtn'); if(b) b.textContent = getSyncCode() ? '☁️ 已同步' : '☁️ 云同步';
+      const b=document.getElementById('cloudSyncBtn'); if(b) b.textContent = getSyncCode() ? '已同步' : '云同步';
     }
     function isCustomCode(){ return !!(localStorage.getItem(SYNC_CODE_KEY)||'').trim(); }
     function syncStatusText(){ return isCustomCode() ? ('已开启 · 自定义同步码：'+getSyncCode()) : '已开启 · 默认自动同步（无需设置，数据一直都在）'; }
@@ -1999,7 +2051,7 @@ function loadState(){
     async function cloudPush(manual){
       const code=getSyncCode();
       if(!code){ if(manual) showToast('请先设置同步码'); return; }
-      if(_loadFailed && !manual){ setCloudStatus('⚠️ 本地数据读取异常，已暂停自动上传以保护云端备份'); return; }
+      if(_loadFailed && !manual){ setCloudStatus('本地数据读取异常，已暂停自动上传以保护云端备份'); return; }
       const ts=localStorage.getItem(LOCAL_TS_KEY)||new Date().toISOString();
       setCloudStatus('上传中…');
       try{
@@ -2009,9 +2061,9 @@ function loadState(){
           body:JSON.stringify([{ id:code, data:state, updated_at:ts }])
         });
         if(!res.ok) throw new Error('HTTP '+res.status+' '+(await res.text()));
-        setCloudStatus('✅ 已同步到云端 · '+new Date().toLocaleTimeString());
+        setCloudStatus('已同步到云端 · '+new Date().toLocaleTimeString());
         if(manual) showToast('已上传到云端');
-      }catch(e){ setCloudStatus('❌ 上传失败：'+e.message); if(manual) showToast('上传失败：'+e.message); }
+      }catch(e){ setCloudStatus('上传失败：'+e.message); if(manual) showToast('上传失败：'+e.message); }
     }
     async function cloudPull(manual){
       const code=getSyncCode();
@@ -2021,13 +2073,13 @@ function loadState(){
         const res=await fetch(SUPABASE_URL+'/rest/v1/app_state?id=eq.'+encodeURIComponent(code)+'&select=data,updated_at', { headers:cloudHeaders() });
         if(!res.ok) throw new Error('HTTP '+res.status+' '+(await res.text()));
         const rows=await res.json();
-        if(!rows.length){ setCloudStatus('云端暂无数据'); if(manual) showToast('云端暂无数据，可点⬆️先上传'); return; }
+        if(!rows.length){ setCloudStatus('云端暂无数据'); if(manual) showToast('云端暂无数据，可点先上传'); return; }
         if(manual && !(await uiConfirm('确定用云端数据覆盖本机当前数据吗？'))){ setCloudStatus('已取消'); return; }
         localStorage.setItem(STORAGE_KEY, JSON.stringify(rows[0].data));
         localStorage.setItem(LOCAL_TS_KEY, rows[0].updated_at||new Date().toISOString());
         showToast('已从云端恢复，正在刷新…');
         setTimeout(()=>location.reload(), 600);
-      }catch(e){ setCloudStatus('❌ 读取失败：'+e.message); if(manual) showToast('读取失败：'+e.message); }
+      }catch(e){ setCloudStatus('读取失败：'+e.message); if(manual) showToast('读取失败：'+e.message); }
     }
     function scheduleCloudPush(){
       if(!getSyncCode()) return;
@@ -2053,9 +2105,9 @@ function loadState(){
           setTimeout(()=>location.reload(), 600);
         } else {
           await cloudPush(false);
-          setCloudStatus('✅ 已同步 · 同步码：'+code);
+          setCloudStatus('已同步 · 同步码：'+code);
         }
-      }catch(e){ setCloudStatus('❌ 同步检查失败：'+e.message); }
+      }catch(e){ setCloudStatus('同步检查失败：'+e.message); }
     }
  
     function todayStr(date = new Date()){
@@ -2248,7 +2300,7 @@ function maybeAutoFinishPomodoro(){
     state.activeFocus = null;
     saveState();
     showToast('番茄时间到！已自动记录本次专注。');
-    showToast('🍅 番茄时间到！休息一下。');
+    showToast('番茄时间到！休息一下。');
     renderAll();
   }
 }
@@ -2270,7 +2322,7 @@ function maybeAutoStopLate(){
   state.activeFocus = null;
   saveState();
   const hm = `${AUTO_STOP_H}:${String(AUTO_STOP_M).padStart(2,'0')}`;
-  showToast(`⏰ 到 ${hm} 了，已自动结束并记录 ${Math.round(ms/60000)} 分钟，早点休息～`);
+  showToast(`到 ${hm} 了，已自动结束并记录 ${Math.round(ms/60000)} 分钟，早点休息～`);
   renderAll();
 }
 
@@ -2841,11 +2893,11 @@ function renderTodoCalendar() {
       cellDate === selectedDate ? 'selected' : ''
     ].filter(Boolean).join(' ');
 
-    // --- 修改点：渲染任务条，增加 ✅ 图标 ---
+    // --- 修改点：渲染任务条，增加 图标 ---
     const preview = allTasks.slice(0, 3).map(t => {
       const isDone = t.status === '已完成';
       return `<div class="calendar-task-item ${isDone ? 'status-completed' : ''}">
-        ${isDone ? '✅' : '⏳'} ${escapeHtml(t.name)}
+        ${isDone ? '' : ''} ${escapeHtml(t.name)}
       </div>`;
     }).join('');
 
@@ -3080,7 +3132,7 @@ window.setCalendarFilter = function(mode) {
       const a = document.createElement('a');
       const dateLabel = selectedDate || todayStr();
       a.href = URL.createObjectURL(blob);
-      a.download = `曾庆锋の学习系统数据备份_${dateLabel}.json`;
+      a.download = `时间_学习数据备份_${dateLabel}.json`;
       a.click();
       URL.revokeObjectURL(a.href);
     }
@@ -3113,6 +3165,7 @@ function importData(file){
             muyuCount: typeof parsed.muyuCount === 'number' ? parsed.muyuCount : 0,
             examDate: typeof parsed.examDate === 'string' ? parsed.examDate : '2026-12-19',
             dailyGoalHours: (parsed.dailyGoalHours != null ? parsed.dailyGoalHours : 8),
+            totalHoursGoal: (parsed.totalHoursGoal != null ? parsed.totalHoursGoal : 2000),
             darkMode: !!parsed.darkMode,
             exercises: Array.isArray(parsed.exercises) ? parsed.exercises : [],
             reflections: Array.isArray(parsed.reflections) ? parsed.reflections : [],
@@ -3324,7 +3377,7 @@ function importData(file){
                 <td>${statusPill(lastLog.status)}</td>
                 <td>
                   <button class="btn-success" style="background:#b794f4; border:none; color:#fff" onclick="openSubModal(${s.id})">成绩管理</button>
-                  <button class="btn-danger" onclick="deleteSubmission(${s.id})">🗑️</button>
+                  <button class="btn-danger" onclick="deleteSubmission(${s.id})">✕</button>
                 </td>
               </tr>`;            }).join('')}
           </tbody>
@@ -3527,7 +3580,7 @@ function importData(file){
         if(tg<=0) gapCell='<span class="tiny">未设目标</span>';
         else if(latest==null) gapCell='<span class="tiny">暂无成绩</span>';
         else { const gap=tg-latest; gapCell = gap<=0
-          ? '<span style="color:#2e9e6b;font-weight:700">达标 ✅ (+'+(-gap)+')</span>'
+          ? '<span style="color:#2e9e6b;font-weight:700">达标 (+'+(-gap)+')</span>'
           : '<span style="color:#d9893f;font-weight:700">还差 '+gap+' 分</span>'; }
         return `<tr>
           <td>${categoryBadge(m.key)}</td>
@@ -3540,7 +3593,7 @@ function importData(file){
       let totGapCell;
       if(!hasMatch) totGapCell='<span class="tiny">设目标并录入成绩后显示</span>';
       else { const gg=matchTarget-matchLatest; totGapCell = gg<=0
-        ? '<span style="color:#2e9e6b;font-weight:700">达标 ✅ (+'+(-gg)+')</span>'
+        ? '<span style="color:#2e9e6b;font-weight:700">达标 (+'+(-gg)+')</span>'
         : '<span style="color:#d9893f;font-weight:700">还差 '+gg+' 分</span>'; }
       wrap.innerHTML=`<table>
         <thead><tr><th>科目</th><th>目标</th><th>最近</th><th>最高</th><th>距目标(按最近)</th></tr></thead>
@@ -3623,7 +3676,7 @@ function importData(file){
       const gt=document.getElementById('goalText');
       if(gt){
         if(goal>0 && h>=goal){
-          gt.innerHTML=`${h.toFixed(1)} / ${goal} h　·　超额 ${(h-goal).toFixed(1)}h 🎉`;
+          gt.innerHTML=`${h.toFixed(1)} / ${goal} h　·　超额 ${(h-goal).toFixed(1)}h`;
         }else{
           gt.textContent=`${h.toFixed(1)} / ${goal} h`;
         }
@@ -3637,7 +3690,7 @@ function importData(file){
           eta.textContent='';
         }else if(h>=goal){
           eta.style.color='#2fb15f';
-          eta.textContent='今日目标已完成 🎉';
+          eta.textContent='今日目标已完成';
         }else{
           const finish=new Date(Date.now()+(goal-h)*3600000);
           const hh=String(finish.getHours()).padStart(2,'0');
@@ -3675,11 +3728,121 @@ function importData(file){
       const txt=document.getElementById('weekGoalText');
       if(txt) txt.textContent=`已达标 ${met}/7 天`;
     }
+
+    // ===== 今日冲刺 · 压力卡（作息参数，按需修改）=====
+    // 晚上 21:00 收工；中午固定午休 12:00–14:00（两小时）
+    const STUDY_END_H = 21, STUDY_END_M = 0;
+    const NOON_REST_START_H = 12, NOON_REST_END_H = 14;
+    // 从 now 到今天 21:00，扣掉仍在前方的午休后，还剩多少毫秒可学
+    function usableStudyMsLeft(now){
+      const end=new Date(now); end.setHours(STUDY_END_H,STUDY_END_M,0,0);
+      if(now.getTime()>=end.getTime()) return 0;
+      let ms=end.getTime()-now.getTime();
+      const rs=new Date(now); rs.setHours(NOON_REST_START_H,0,0,0);
+      const re=new Date(now); re.setHours(NOON_REST_END_H,0,0,0);
+      const os=Math.max(now.getTime(), rs.getTime());
+      const oe=Math.min(end.getTime(), re.getTime());
+      if(oe>os) ms-=(oe-os);              // 扣掉午休与剩余时段的重叠
+      return Math.max(0,ms);
+    }
+    function renderPressure(){
+      const card=document.getElementById('pressureCard'); if(!card) return;
+      const now=new Date();
+      const goalH=state.dailyGoalHours!=null?state.dailyGoalHours:8;
+      const goalMin=goalH*60;
+      const doneMin=todayFocusMs()/60000;
+      const usableMin=usableStudyMsLeft(now)/60000;
+      const bigEl=document.getElementById('pressureRemain');
+      const subEl=document.getElementById('pressureSub');
+      const pill=document.getElementById('pressurePill');
+      const msgEl=document.getElementById('pressureMsg');
+      const goalTxt=document.getElementById('pressureGoalText');
+      const barFill=document.getElementById('pressureBarFill');
+      const fmt=(m)=>{ m=Math.max(0,Math.round(m)); const h=Math.floor(m/60), mm=m%60; return h>0?`${h} 小时 ${mm} 分`:`${mm} 分钟`; };
+      bigEl.textContent=fmt(usableMin);
+      const pct=goalMin>0?Math.min(100,Math.round(doneMin/goalMin*100)):0;
+      barFill.style.width=pct+'%';
+      goalTxt.textContent=goalMin>0?`今日目标 ${(doneMin/60).toFixed(1)} / ${goalH} 小时（${pct}%）`:'未设置每日目标';
+      const inRest=now.getHours()>=NOON_REST_START_H && now.getHours()<NOON_REST_END_H;
+      const endT=new Date(now); endT.setHours(STUDY_END_H,STUDY_END_M,0,0);
+      const afterEnd=now.getTime()>=endT.getTime();
+      const remainGoalMin=Math.max(0,goalMin-doneMin);
+      let color,pillTxt,msg;
+      if(goalMin<=0){
+        color='#8a8f98'; pillTxt='未设目标'; subEl.textContent='先设一个每日目标';
+        msg='上面「每日学习目标」先填个小时数，才能帮你算今天的冲刺压力。';
+      }else if(afterEnd){
+        color='#8a8f98'; pillTxt='已收工'; subEl.textContent='今天到 21:00 了';
+        msg=remainGoalMin<=0?'今天圆满收工，好好休息！':`今天收工了，目标还差 ${Math.round(remainGoalMin)} 分钟没补上——记住这份遗憾，明天早点开始。`;
+      }else if(remainGoalMin<=0){
+        color='#2fb15f'; pillTxt='已达标'; subEl.textContent=inRest?'午休中':'目标已完成';
+        msg='今日目标达成！剩下的都是超额，能多冲一点是一点。';
+      }else if(usableMin<=0){
+        color='#c0121b'; pillTxt='时间用尽'; subEl.textContent='今天没有可学时间了';
+        msg=`今天可学时间用完了，目标还差 ${Math.round(remainGoalMin)} 分钟。差在哪一段？记住这种感觉。`;
+      }else{
+        const rate=remainGoalMin/usableMin, rp=Math.round(rate*100);
+        subEl.textContent=inRest?'午休中，为下午蓄力':'时间在流逝，专注起来';
+        if(rate<0.6){ color='#2fb15f'; pillTxt='从容'; msg=`还差 ${Math.round(remainGoalMin)} 分钟达标，平均每小时专注 ${Math.round(rate*60)} 分钟就够，别浪费领先。`; }
+        else if(rate<0.85){ color='#e0902a'; pillTxt='抓紧'; msg=`还差 ${Math.round(remainGoalMin)} 分钟、只剩 ${Math.round(usableMin)} 分钟可学——接下来 ${rp}% 的时间都得在学，少碰手机。`; }
+        else if(rate<1){ color='#e0322d'; pillTxt='拉满'; msg=`紧了！剩 ${Math.round(usableMin)} 分钟要补 ${Math.round(remainGoalMin)} 分钟，几乎 ${rp}% 满负荷，一刻别停。`; }
+        else{ color='#a10c14'; pillTxt='超载'; msg=`按现在的节奏今天要欠账了（需要 ${rp}% 的时间全用上）。要么立刻玩命冲，要么接受差距——你自己选。`; }
+      }
+      card.style.setProperty('--pc',color);
+      pill.textContent=pillTxt; pill.style.background=color; pill.style.color='#fff';
+      bigEl.style.color=color; msgEl.style.color=color; msgEl.textContent=msg;
+    }
+
+    // ===== 两千小时计划（考前累计目标）=====
+    function renderGoal2k(){
+      const card=document.getElementById('goal2kCard'); if(!card) return;
+      const goalH=state.totalHoursGoal!=null?state.totalHoursGoal:2000;
+      let doneMs=(state.focusSessions||[]).reduce((a,f)=>a+(f.durationMs||0),0);
+      if(state.activeFocus && state.activeFocus.startTime) doneMs+=getActiveFocusMs();
+      const doneH=doneMs/3600000;
+      const remainH=Math.max(0,goalH-doneH);
+      const exam=state.examDate||'2026-12-19';
+      const daysLeft=Math.ceil((new Date(exam+'T00:00:00').getTime()-new Date(todayStr()+'T00:00:00').getTime())/86400000);
+      const perDayEl=document.getElementById('goal2kPerDay');
+      const subEl=document.getElementById('goal2kSub');
+      const pill=document.getElementById('goal2kPill');
+      const msgEl=document.getElementById('goal2kMsg');
+      const goalTxt=document.getElementById('goal2kGoalText');
+      const barFill=document.getElementById('goal2kBarFill');
+      const gin=document.getElementById('goal2kInput');
+      if(gin && document.activeElement!==gin) gin.value=goalH;
+      const pct=goalH>0?Math.min(100,Math.round(doneH/goalH*100)):0;
+      barFill.style.width=pct+'%';
+      goalTxt.textContent=`已累计 ${doneH.toFixed(1)} / ${goalH} 小时（${pct}%）`;
+      subEl.textContent=`距考试 ${daysLeft} 天 · 还差 ${remainH.toFixed(0)} 小时`;
+      let color,pillTxt,msg,perDayTxt;
+      if(goalH<=0){
+        color='#8a8f98'; pillTxt='未设目标'; perDayTxt='--';
+        msg='下面填一个总目标小时数（默认 2000）。';
+      }else if(remainH<=0){
+        color='#2fb15f'; pillTxt='已达成'; perDayTxt='0 小时';
+        msg=`已经学满 ${goalH} 小时，目标达成，太强了！`;
+      }else if(daysLeft<=0){
+        color='#c0121b'; pillTxt='已到期'; perDayTxt=`还差 ${remainH.toFixed(0)} 小时`;
+        msg=`距考试已到，还差 ${remainH.toFixed(0)} 小时没学满——把剩下的时间都用满。`;
+      }else{
+        const perDay=remainH/daysLeft;
+        perDayTxt=`${perDay.toFixed(1)} 小时`;
+        if(perDay<=4){ color='#2fb15f'; pillTxt='从容'; msg=`每天平均 ${perDay.toFixed(1)} 小时就能到 ${goalH} 小时，稳扎稳打。`; }
+        else if(perDay<=8){ color='#e0902a'; pillTxt='要保持'; msg=`得每天专注 ${perDay.toFixed(1)} 小时才能达标，别断更。`; }
+        else if(perDay<=12){ color='#e0322d'; pillTxt='强度高'; msg=`每天要 ${perDay.toFixed(1)} 小时，强度很高，注意身体、也更要盯紧进度。`; }
+        else{ color='#a10c14'; pillTxt='几乎排满'; msg=`每天需 ${perDay.toFixed(1)} 小时，几乎排满全天——建议现在就加量，或把总目标调到更现实的数。`; }
+      }
+      perDayEl.textContent=perDayTxt;
+      card.style.setProperty('--pc',color);
+      pill.textContent=pillTxt; pill.style.background=color; pill.style.color='#fff';
+      perDayEl.style.color=color; msgEl.style.color=color; msgEl.textContent=msg;
+    }
     function toggleDark(){ state.darkMode=!state.darkMode; saveState(); applyDark(); }
     function applyDark(){
       document.body.classList.toggle('dark', !!state.darkMode);
       const b=document.getElementById('darkModeBtn');
-      if(b) b.textContent = state.darkMode ? '☀️ 浅色' : '🌙 深色';
+      if(b) b.textContent = state.darkMode ? '浅色' : '深色';
     }
     function renderReport(){
       const wrap=document.getElementById('reportWrap');
@@ -3936,7 +4099,7 @@ function importData(file){
       host.innerHTML =
         stat(`${label}专注`, hv(totalMin)) +
         stat('学习天数', `${studyDays}<small> 天</small>`) +
-        stat('🔥 当前连续', `${cur}<small> 天</small>`) +
+        stat('当前连续', `${cur}<small> 天</small>`) +
         stat('最长连续', `${longest}<small> 天</small>`) +
         stat('日均(学习日)', hv(avgMin));
     }
@@ -4056,7 +4219,7 @@ function importData(file){
       state.reflections.unshift({ id:`${Date.now()}_${Math.random().toString(36).slice(2,8)}`, text, ts:now.toISOString(), date:todayStr() });
       saveState();
       el.value='';
-      showToast('已记录这条思考 ✍️');
+      showToast('已记录这条思考');
       renderReflections();
     }
     async function deleteReflection(id){
@@ -4077,7 +4240,7 @@ function importData(file){
       }
       const wrap=document.getElementById('reflectTimelineWrap');
       if(!wrap) return;
-      if(!list.length){ wrap.innerHTML='<div class="empty">还没有思考记录。写下第一条吧 ✍️</div>'; return; }
+      if(!list.length){ wrap.innerHTML='<div class="empty">还没有思考记录。写下第一条吧</div>'; return; }
       let html='', lastDate=null, lastMonth=null;
       list.forEach(r=>{
         const d=(r.date||r.ts||'').slice(0,10);
@@ -4167,7 +4330,7 @@ function importData(file){
       document.getElementById('linkTitleInput').value='';
       document.getElementById('linkUrlInput').value='';
       document.getElementById('linkNoteInput').value='';
-      showToast('网址已收藏 🔖');
+      showToast('网址已收藏');
       renderLinks();
     }
     function deleteLink(id){
@@ -4180,7 +4343,7 @@ function importData(file){
       const pill=document.getElementById('linkCountPill'); if(pill) pill.textContent=`${list.length} 条`;
       const wrap=document.getElementById('linksWrap');
       if(!wrap) return;
-      if(!list.length){ wrap.innerHTML='<div class="card"><div class="empty">还没有收藏网址，上面添加第一条吧 🔖</div></div>'; return; }
+      if(!list.length){ wrap.innerHTML='<div class="card"><div class="empty">还没有收藏网址，上面添加第一条吧</div></div>'; return; }
       const order=['政治','英语','数学','408','综合 / 其它'];
       const groups={};
       list.forEach(l=>{ const sName=l.subject||'综合 / 其它'; (groups[sName]=groups[sName]||[]).push(l); });
@@ -4191,7 +4354,7 @@ function importData(file){
           <div class="card-title"><h3>${escapeHtml(sName)}</h3><span class="pill">${groups[sName].length} 条</span></div>
           <div>${groups[sName].map(l=>`
             <div class="link-row">
-              <a href="${encodeURI(l.url)}" target="_blank" rel="noopener noreferrer" class="link-title">🔗 ${escapeHtml(l.title||l.url)}</a>
+              <a href="${encodeURI(l.url)}" target="_blank" rel="noopener noreferrer" class="link-title">${escapeHtml(l.title||l.url)}</a>
               ${l.note?`<span class="tiny link-note">${escapeHtml(l.note)}</span>`:''}
               <button class="btn-danger" style="padding:2px 10px;height:26px" onclick="deleteLink('${l.id}')">删除</button>
             </div>`).join('')}</div>
@@ -4300,6 +4463,8 @@ function importData(file){
       if(_exam){ _exam.value=state.examDate||'2026-12-19'; _exam.addEventListener('change', e=>{ state.examDate=e.target.value||'2026-12-19'; saveState(); renderCountdown(); renderReport(); }); }
       const _goal=document.getElementById('goalHoursInput');
       if(_goal){ _goal.value=state.dailyGoalHours!=null?state.dailyGoalHours:8; _goal.addEventListener('change', e=>{ state.dailyGoalHours=parseFloat(e.target.value)||0; saveState(); renderGoalRing(); }); }
+      const _tot=document.getElementById('goal2kInput');
+      if(_tot){ _tot.value=state.totalHoursGoal!=null?state.totalHoursGoal:2000; _tot.addEventListener('change', e=>{ state.totalHoursGoal=parseFloat(e.target.value)||0; saveState(); renderGoal2k(); }); }
       // 今日开始学习：两处输入框均可手动调控
       ['heroStudyStartInput','ovStudyStartInput'].forEach(id=>{
         const el=document.getElementById(id);
@@ -4366,6 +4531,8 @@ function renderAll(){
       renderOverview();
       renderCountdown();
       renderGoalRing();
+      renderPressure();
+      renderGoal2k();
       renderExercise();
       renderTasks();
       renderHeatmap();
@@ -4432,6 +4599,7 @@ function renderAll(){
     let _lastRenderDay = todayStr();
     setInterval(()=>{
       renderClock();
+      renderPressure();   // 今日冲刺：每秒刷新，让"还能学 X 分"实时倒数施压
       // 跨过午夜：当天日期变了就整体重渲染，让热力图“今天”、年视图范围，
       // 以及「学习时长分布」柱状图的近 14 天窗口自动滚动到新的一天
       const _d = todayStr();
@@ -4444,6 +4612,7 @@ function renderAll(){
           renderHero();      // 今日学习时长 / 今日累计专注
           renderOverview();  // 今日/本周/累计专注、开始学习时间
           renderGoalRing();  // 每日学习目标进度环（与上面同源，保持同步）
+          renderGoal2k();    // 两千小时计划（随专注累计实时更新）
       }
     }, 1000);
 
