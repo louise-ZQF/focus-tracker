@@ -1314,6 +1314,14 @@ td button {
     body.dark .pressure-bar{ background:#2a2a2c; }
     .pressure-bar-fill{ height:100%; width:0; border-radius:8px; background:var(--pc,#e0322d); transition:width .4s ease; }
     .pressure-msg{ margin-top:14px; font-weight:700; font-size:14px; color:var(--pc,#e0322d); line-height:1.5; }
+    .pressure-end-input{
+      font-size:12px !important; font-weight:700 !important; font-family:inherit; color:inherit;
+      height:22px !important; line-height:20px !important;
+      background:rgba(127,127,127,.14); border:1px solid rgba(127,127,127,.30);
+      border-radius:6px; padding:0 6px !important; width:108px !important; cursor:pointer; margin:0 2px;
+      box-sizing:border-box !important; display:inline-block !important;
+    }
+    body.dark .pressure-end-input::-webkit-calendar-picker-indicator{ filter:invert(1); }
 </style>
 </head>
 <body>
@@ -1409,7 +1417,7 @@ td button {
       </div>
       <div class="pressure-grid">
         <div class="pressure-main">
-          <div class="tiny">距 21:00 收工 · 今天还能学</div>
+          <div class="tiny">距 <input type="time" class="pressure-end-input" id="studyEndInput" /> 收工 · 今天还能学</div>
           <div class="pressure-big" id="pressureRemain">--</div>
           <div class="tiny" id="pressureSub">-</div>
         </div>
@@ -1533,7 +1541,6 @@ td button {
         <div class="tiny" style="margin-top:10px">
           忘记计时？选好科目和日期，在「补录分钟」填入分钟数，点「补录专注」即可补登。
         </div>
-        <div class="tiny" id="backfillStatusLine" style="margin-top:6px; min-height:18px; color:var(--primary-strong); font-weight:700"></div>
         <div class="focus-meta" style="grid-template-columns:repeat(2,minmax(0,1fr))">
           <div class="mini-stat">
             <div class="tiny">当前状态</div>
@@ -1924,6 +1931,7 @@ function defaultState(){
     muyuCount: 0,
     examDate: '2026-12-19',
     dailyGoalHours: 8,
+    studyEndTime: '21:00',
     totalHoursGoal: 2000,
     darkMode: false,
     exercises: [],
@@ -1991,6 +1999,7 @@ function loadState(){
           muyuCount: parsed.muyuCount || 0,
           examDate: parsed.examDate || '2026-12-19',
           dailyGoalHours: (parsed.dailyGoalHours != null ? parsed.dailyGoalHours : 8),
+          studyEndTime: (parsed.studyEndTime != null ? parsed.studyEndTime : '21:00'),
           totalHoursGoal: (parsed.totalHoursGoal != null ? parsed.totalHoursGoal : 2000),
           darkMode: parsed.darkMode || false,
           exercises: parsed.exercises || [],
@@ -2056,22 +2065,6 @@ function loadState(){
       const ts=localStorage.getItem(LOCAL_TS_KEY)||new Date().toISOString();
       setCloudStatus('上传中…');
       try{
-        // 自动上传前先核对一次云端时间戳：如果云端已经比这次要传的数据更新
-        // （比如本页在后台挂了很久、内存里还是旧快照，而另一台设备/标签页
-        // 同时改过数据），就跳过这次上传，避免用旧快照覆盖别处更新的数据。
-        // 手动点「上传到云端」视为用户明确要求强制覆盖，不做这个检查。
-        if(!manual){
-          try{
-            const chk=await fetch(SUPABASE_URL+'/rest/v1/app_state?id=eq.'+encodeURIComponent(code)+'&select=updated_at', { headers:cloudHeaders() });
-            if(chk.ok){
-              const chkRows=await chk.json();
-              if(chkRows.length && new Date(chkRows[0].updated_at).getTime() > new Date(ts).getTime()+1000){
-                setCloudStatus('云端有更新的数据，已跳过本次自动上传');
-                return;
-              }
-            }
-          }catch(e){ /* 核对失败就按原逻辑继续上传，不因为检查本身的网络问题卡住自动同步 */ }
-        }
         const res=await fetch(SUPABASE_URL+'/rest/v1/app_state', {
           method:'POST',
           headers:cloudHeaders({'Content-Type':'application/json','Prefer':'resolution=merge-duplicates,return=minimal'}),
@@ -2101,20 +2094,12 @@ function loadState(){
     function scheduleCloudPush(){
       if(!getSyncCode()) return;
       clearTimeout(cloudSyncTimer);
-      cloudSyncTimer=setTimeout(()=>{ cloudSyncTimer=null; cloudPush(false); }, 1500);
+      cloudSyncTimer=setTimeout(()=>cloudPush(false), 1500);
     }
     // 启动/开启时：云端更新就拉回来，本地更新就推上去（最后写入者胜）
     async function cloudSyncOnStart(){
       const code=getSyncCode();
       if(!code) return;
-      // 刚补录/打卡等操作还在 1.5s 防抖里、没来得及推上云端时，
-      // 下面「云端更新就整体覆盖本地」的判断可能会把这次还没上传的修改当成过期数据冲掉。
-      // 这里先把还没推送的这次修改立刻推上去，避免自己刚做的修改被自己的同步检查回滚。
-      if(cloudSyncTimer){
-        clearTimeout(cloudSyncTimer);
-        cloudSyncTimer=null;
-        await cloudPush(false);
-      }
       setCloudStatus('检查云端…');
       try{
         const res=await fetch(SUPABASE_URL+'/rest/v1/app_state?id=eq.'+encodeURIComponent(code)+'&select=data,updated_at', { headers:cloudHeaders() });
@@ -3190,6 +3175,7 @@ function importData(file){
             muyuCount: typeof parsed.muyuCount === 'number' ? parsed.muyuCount : 0,
             examDate: typeof parsed.examDate === 'string' ? parsed.examDate : '2026-12-19',
             dailyGoalHours: (parsed.dailyGoalHours != null ? parsed.dailyGoalHours : 8),
+            studyEndTime: (parsed.studyEndTime != null ? parsed.studyEndTime : '21:00'),
             totalHoursGoal: (parsed.totalHoursGoal != null ? parsed.totalHoursGoal : 2000),
             darkMode: !!parsed.darkMode,
             exercises: Array.isArray(parsed.exercises) ? parsed.exercises : [],
@@ -3241,10 +3227,7 @@ function importData(file){
         syncTaskDateInput(date);
       }
       saveState();
-      const dayTotalMin = Math.round(getFocusMsByDate(date)/60000);
       showToast(`已补录 ${category} ${date}：${mins} 分钟`);
-      const statusEl = document.getElementById('backfillStatusLine');
-      if(statusEl) statusEl.textContent = `✅ 刚补录 ${category} ${mins} 分钟（${date}）· 当天累计已录 ${dayTotalMin} 分钟`;
       renderAll();
     }
     // 保存/更新论文信息
@@ -3757,13 +3740,18 @@ function importData(file){
       if(txt) txt.textContent=`已达标 ${met}/7 天`;
     }
 
-    // ===== 今日冲刺 · 压力卡（作息参数，按需修改）=====
-    // 晚上 21:00 收工；中午固定午休 12:00–14:00（两小时）
-    const STUDY_END_H = 21, STUDY_END_M = 0;
+    // ===== 今日冲刺 · 压力卡（收工时间可在卡片上自行调节，默认 21:00）=====
+    // 中午固定午休 12:00–14:00（两小时）
     const NOON_REST_START_H = 12, NOON_REST_END_H = 14;
-    // 从 now 到今天 21:00，扣掉仍在前方的午休后，还剩多少毫秒可学
+    function getStudyEndHM(){
+      const m=/^(\d{1,2}):(\d{2})$/.exec(state.studyEndTime||'21:00');
+      if(!m) return [21,0];
+      return [Math.min(23,Math.max(0,parseInt(m[1],10))), Math.min(59,Math.max(0,parseInt(m[2],10)))];
+    }
+    // 从 now 到今天收工时间，扣掉仍在前方的午休后，还剩多少毫秒可学
     function usableStudyMsLeft(now){
-      const end=new Date(now); end.setHours(STUDY_END_H,STUDY_END_M,0,0);
+      const [endH,endM]=getStudyEndHM();
+      const end=new Date(now); end.setHours(endH,endM,0,0);
       if(now.getTime()>=end.getTime()) return 0;
       let ms=end.getTime()-now.getTime();
       const rs=new Date(now); rs.setHours(NOON_REST_START_H,0,0,0);
@@ -3776,6 +3764,8 @@ function importData(file){
     function renderPressure(){
       const card=document.getElementById('pressureCard'); if(!card) return;
       const now=new Date();
+      const endInput=document.getElementById('studyEndInput');
+      if(endInput && document.activeElement!==endInput) endInput.value = state.studyEndTime || '21:00';
       const goalH=state.dailyGoalHours!=null?state.dailyGoalHours:8;
       const goalMin=goalH*60;
       const doneMin=todayFocusMs()/60000;
@@ -3792,7 +3782,9 @@ function importData(file){
       barFill.style.width=pct+'%';
       goalTxt.textContent=goalMin>0?`今日目标 ${(doneMin/60).toFixed(1)} / ${goalH} 小时（${pct}%）`:'未设置每日目标';
       const inRest=now.getHours()>=NOON_REST_START_H && now.getHours()<NOON_REST_END_H;
-      const endT=new Date(now); endT.setHours(STUDY_END_H,STUDY_END_M,0,0);
+      const [endH,endM]=getStudyEndHM();
+      const endHM=`${String(endH).padStart(2,'0')}:${String(endM).padStart(2,'0')}`;
+      const endT=new Date(now); endT.setHours(endH,endM,0,0);
       const afterEnd=now.getTime()>=endT.getTime();
       const remainGoalMin=Math.max(0,goalMin-doneMin);
       let color,pillTxt,msg;
@@ -3800,7 +3792,7 @@ function importData(file){
         color='#8a8f98'; pillTxt='未设目标'; subEl.textContent='先设一个每日目标';
         msg='上面「每日学习目标」先填个小时数，才能帮你算今天的冲刺压力。';
       }else if(afterEnd){
-        color='#8a8f98'; pillTxt='已收工'; subEl.textContent='今天到 21:00 了';
+        color='#8a8f98'; pillTxt='已收工'; subEl.textContent=`今天到 ${endHM} 了`;
         msg=remainGoalMin<=0?'今天圆满收工，好好休息！':`今天收工了，目标还差 ${Math.round(remainGoalMin)} 分钟没补上——记住这份遗憾，明天早点开始。`;
       }else if(remainGoalMin<=0){
         color='#2fb15f'; pillTxt='已达标'; subEl.textContent=inRest?'午休中':'目标已完成';
@@ -3814,7 +3806,7 @@ function importData(file){
         if(rate<0.6){ color='#2fb15f'; pillTxt='从容'; msg=`还差 ${Math.round(remainGoalMin)} 分钟达标，平均每小时专注 ${Math.round(rate*60)} 分钟就够，别浪费领先。`; }
         else if(rate<0.85){ color='#e0902a'; pillTxt='抓紧'; msg=`还差 ${Math.round(remainGoalMin)} 分钟、只剩 ${Math.round(usableMin)} 分钟可学——接下来 ${rp}% 的时间都得在学，少碰手机。`; }
         else if(rate<1){ color='#e0322d'; pillTxt='拉满'; msg=`紧了！剩 ${Math.round(usableMin)} 分钟要补 ${Math.round(remainGoalMin)} 分钟，几乎 ${rp}% 满负荷，一刻别停。`; }
-        else{ color='#a10c14'; pillTxt='超载'; msg=`按现在的节奏今天要欠账了（需要 ${rp}% 的时间全用上）。要么立刻玩命冲，要么接受差距——你自己选。`; }
+        else{ color='#a10c14'; pillTxt='超载'; msg=`按现在的节奏今天要欠账了。要么立刻玩命冲，要么接受差距——你自己选。`; }
       }
       card.style.setProperty('--pc',color);
       pill.textContent=pillTxt; pill.style.background=color; pill.style.color='#fff';
@@ -4491,6 +4483,8 @@ function importData(file){
       if(_exam){ _exam.value=state.examDate||'2026-12-19'; _exam.addEventListener('change', e=>{ state.examDate=e.target.value||'2026-12-19'; saveState(); renderCountdown(); renderReport(); }); }
       const _goal=document.getElementById('goalHoursInput');
       if(_goal){ _goal.value=state.dailyGoalHours!=null?state.dailyGoalHours:8; _goal.addEventListener('change', e=>{ state.dailyGoalHours=parseFloat(e.target.value)||0; saveState(); renderGoalRing(); }); }
+      const _studyEnd=document.getElementById('studyEndInput');
+      if(_studyEnd){ _studyEnd.value=state.studyEndTime||'21:00'; _studyEnd.addEventListener('change', e=>{ state.studyEndTime=e.target.value||'21:00'; saveState(); renderPressure(); }); }
       const _tot=document.getElementById('goal2kInput');
       if(_tot){ _tot.value=state.totalHoursGoal!=null?state.totalHoursGoal:2000; _tot.addEventListener('change', e=>{ state.totalHoursGoal=parseFloat(e.target.value)||0; saveState(); renderGoal2k(); }); }
       // 今日开始学习：两处输入框均可手动调控
