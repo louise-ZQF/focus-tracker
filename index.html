@@ -1533,6 +1533,7 @@ td button {
         <div class="tiny" style="margin-top:10px">
           忘记计时？选好科目和日期，在「补录分钟」填入分钟数，点「补录专注」即可补登。
         </div>
+        <div class="tiny" id="backfillStatusLine" style="margin-top:6px; min-height:18px; color:var(--primary-strong); font-weight:700"></div>
         <div class="focus-meta" style="grid-template-columns:repeat(2,minmax(0,1fr))">
           <div class="mini-stat">
             <div class="tiny">当前状态</div>
@@ -2055,6 +2056,22 @@ function loadState(){
       const ts=localStorage.getItem(LOCAL_TS_KEY)||new Date().toISOString();
       setCloudStatus('上传中…');
       try{
+        // 自动上传前先核对一次云端时间戳：如果云端已经比这次要传的数据更新
+        // （比如本页在后台挂了很久、内存里还是旧快照，而另一台设备/标签页
+        // 同时改过数据），就跳过这次上传，避免用旧快照覆盖别处更新的数据。
+        // 手动点「上传到云端」视为用户明确要求强制覆盖，不做这个检查。
+        if(!manual){
+          try{
+            const chk=await fetch(SUPABASE_URL+'/rest/v1/app_state?id=eq.'+encodeURIComponent(code)+'&select=updated_at', { headers:cloudHeaders() });
+            if(chk.ok){
+              const chkRows=await chk.json();
+              if(chkRows.length && new Date(chkRows[0].updated_at).getTime() > new Date(ts).getTime()+1000){
+                setCloudStatus('云端有更新的数据，已跳过本次自动上传');
+                return;
+              }
+            }
+          }catch(e){ /* 核对失败就按原逻辑继续上传，不因为检查本身的网络问题卡住自动同步 */ }
+        }
         const res=await fetch(SUPABASE_URL+'/rest/v1/app_state', {
           method:'POST',
           headers:cloudHeaders({'Content-Type':'application/json','Prefer':'resolution=merge-duplicates,return=minimal'}),
@@ -2084,12 +2101,20 @@ function loadState(){
     function scheduleCloudPush(){
       if(!getSyncCode()) return;
       clearTimeout(cloudSyncTimer);
-      cloudSyncTimer=setTimeout(()=>cloudPush(false), 1500);
+      cloudSyncTimer=setTimeout(()=>{ cloudSyncTimer=null; cloudPush(false); }, 1500);
     }
     // 启动/开启时：云端更新就拉回来，本地更新就推上去（最后写入者胜）
     async function cloudSyncOnStart(){
       const code=getSyncCode();
       if(!code) return;
+      // 刚补录/打卡等操作还在 1.5s 防抖里、没来得及推上云端时，
+      // 下面「云端更新就整体覆盖本地」的判断可能会把这次还没上传的修改当成过期数据冲掉。
+      // 这里先把还没推送的这次修改立刻推上去，避免自己刚做的修改被自己的同步检查回滚。
+      if(cloudSyncTimer){
+        clearTimeout(cloudSyncTimer);
+        cloudSyncTimer=null;
+        await cloudPush(false);
+      }
       setCloudStatus('检查云端…');
       try{
         const res=await fetch(SUPABASE_URL+'/rest/v1/app_state?id=eq.'+encodeURIComponent(code)+'&select=data,updated_at', { headers:cloudHeaders() });
@@ -3216,7 +3241,10 @@ function importData(file){
         syncTaskDateInput(date);
       }
       saveState();
+      const dayTotalMin = Math.round(getFocusMsByDate(date)/60000);
       showToast(`已补录 ${category} ${date}：${mins} 分钟`);
+      const statusEl = document.getElementById('backfillStatusLine');
+      if(statusEl) statusEl.textContent = `✅ 刚补录 ${category} ${mins} 分钟（${date}）· 当天累计已录 ${dayTotalMin} 分钟`;
       renderAll();
     }
     // 保存/更新论文信息
