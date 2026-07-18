@@ -1427,7 +1427,7 @@ td button {
       </div>
       <div class="pressure-grid">
         <div class="pressure-main">
-          <div class="tiny">今日数学已学</div>
+          <div class="tiny">还需要学习</div>
           <div class="pressure-big" id="mathPressureDone">--</div>
           <div class="tiny" id="mathPressureSub">-</div>
         </div>
@@ -3835,8 +3835,8 @@ function importData(file){
       const pill=document.getElementById('mathPressurePill');
       const goalTxt=document.getElementById('mathPressureGoalText');
       const barFill=document.getElementById('mathPressureBarFill');
-      // 大字：今日数学已学时间
-      bigEl.textContent=fmtHM(doneMin);
+      // 大字：还需要学多久
+      bigEl.textContent=goalMin>0?fmtHM(remainGoalMin):'--';
       const pct=goalMin>0?Math.min(100,Math.round(doneMin/goalMin*100)):0;
       barFill.style.width=pct+'%';
       goalTxt.textContent=goalMin>0?`数学目标 ${doneH.toFixed(1)} / ${goalH} 小时（${pct}%）`:'未设置数学目标';
@@ -3848,16 +3848,8 @@ function importData(file){
       card.style.setProperty('--pc',st.color);
       pill.textContent=st.pillTxt; pill.style.background=st.color; pill.style.color='#fff';
       bigEl.style.color=st.color;
-      // 副文本：距目标还差 + 剩余可学时间，逻辑清晰
-      if(goalMin<=0){
-        subEl.textContent='先设置数学目标';
-      }else if(afterEnd){
-        subEl.textContent='今天已收工';
-      }else if(remainGoalMin<=0){
-        subEl.textContent='数学目标已完成 ✓';
-      }else{
-        subEl.textContent=`距目标还差 ${fmtHM(remainGoalMin)} · 剩余可学 ${fmtHM(usableMin)}`;
-      }
+      // 副文本：只显示已学时间
+      subEl.textContent=`今日数学已学 ${fmtHM(doneMin)}`;
     }
 
     // ===== 两千小时计划（考前累计目标）=====
