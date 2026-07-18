@@ -1427,8 +1427,8 @@ td button {
       </div>
       <div class="pressure-grid">
         <div class="pressure-main">
-          <div class="tiny">今天还能学</div>
-          <div class="pressure-big" id="mathPressureRemain">--</div>
+          <div class="tiny">今日数学已学</div>
+          <div class="pressure-big" id="mathPressureDone">--</div>
           <div class="tiny" id="mathPressureSub">-</div>
         </div>
         <div class="pressure-bar-wrap">
@@ -3827,16 +3827,19 @@ function importData(file){
       const goalH=state.mathGoalHours!=null?state.mathGoalHours:2;
       const goalMin=goalH*60;
       const doneMin=todayFocusMsByCategory(MATH_CATEGORY)/60000;
+      const doneH=doneMin/60;
       const usableMin=usableStudyMsLeft(now)/60000;
-      const bigEl=document.getElementById('mathPressureRemain');
+      const remainGoalMin=Math.max(0,goalMin-doneMin);
+      const bigEl=document.getElementById('mathPressureDone');
       const subEl=document.getElementById('mathPressureSub');
       const pill=document.getElementById('mathPressurePill');
       const goalTxt=document.getElementById('mathPressureGoalText');
       const barFill=document.getElementById('mathPressureBarFill');
-      bigEl.textContent=fmtHM(usableMin);
+      // 大字：今日数学已学时间
+      bigEl.textContent=fmtHM(doneMin);
       const pct=goalMin>0?Math.min(100,Math.round(doneMin/goalMin*100)):0;
       barFill.style.width=pct+'%';
-      goalTxt.textContent=goalMin>0?`今日数学 ${(doneMin/60).toFixed(1)} / ${goalH} 小时（${pct}%）`:'未设置数学目标';
+      goalTxt.textContent=goalMin>0?`数学目标 ${doneH.toFixed(1)} / ${goalH} 小时（${pct}%）`:'未设置数学目标';
       const inRest=now.getHours()>=NOON_REST_START_H && now.getHours()<NOON_REST_END_H;
       const [endH,endM]=studyEndHM();
       const endT=new Date(now); endT.setHours(endH,endM,0,0);
@@ -3844,7 +3847,17 @@ function importData(file){
       const st=pressureStatus(goalMin, doneMin, usableMin, afterEnd, inRest);
       card.style.setProperty('--pc',st.color);
       pill.textContent=st.pillTxt; pill.style.background=st.color; pill.style.color='#fff';
-      bigEl.style.color=st.color; subEl.textContent=st.sub;
+      bigEl.style.color=st.color;
+      // 副文本：距目标还差 + 剩余可学时间，逻辑清晰
+      if(goalMin<=0){
+        subEl.textContent='先设置数学目标';
+      }else if(afterEnd){
+        subEl.textContent='今天已收工';
+      }else if(remainGoalMin<=0){
+        subEl.textContent='数学目标已完成 ✓';
+      }else{
+        subEl.textContent=`距目标还差 ${fmtHM(remainGoalMin)} · 剩余可学 ${fmtHM(usableMin)}`;
+      }
     }
 
     // ===== 两千小时计划（考前累计目标）=====
