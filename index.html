@@ -1409,7 +1409,7 @@ td button {
       </div>
       <div class="pressure-grid">
         <div class="pressure-main">
-          <div class="tiny">距 21:00 收工 · 今天还能学</div>
+          <div class="tiny">距 <input id="studyEndTimeInput" type="time" style="width:auto" /> 收工 · 今天还能学</div>
           <div class="pressure-big" id="pressureRemain">--</div>
           <div class="tiny" id="pressureSub">-</div>
         </div>
@@ -1922,6 +1922,7 @@ function defaultState(){
     muyuCount: 0,
     examDate: '2026-12-19',
     dailyGoalHours: 8,
+    studyEndTime: '21:00',
     totalHoursGoal: 2000,
     darkMode: false,
     exercises: [],
@@ -1989,6 +1990,7 @@ function loadState(){
           muyuCount: parsed.muyuCount || 0,
           examDate: parsed.examDate || '2026-12-19',
           dailyGoalHours: (parsed.dailyGoalHours != null ? parsed.dailyGoalHours : 8),
+          studyEndTime: parsed.studyEndTime || '21:00',
           totalHoursGoal: (parsed.totalHoursGoal != null ? parsed.totalHoursGoal : 2000),
           darkMode: parsed.darkMode || false,
           exercises: parsed.exercises || [],
@@ -3164,6 +3166,7 @@ function importData(file){
             muyuCount: typeof parsed.muyuCount === 'number' ? parsed.muyuCount : 0,
             examDate: typeof parsed.examDate === 'string' ? parsed.examDate : '2026-12-19',
             dailyGoalHours: (parsed.dailyGoalHours != null ? parsed.dailyGoalHours : 8),
+            studyEndTime: typeof parsed.studyEndTime === 'string' ? parsed.studyEndTime : '21:00',
             totalHoursGoal: (parsed.totalHoursGoal != null ? parsed.totalHoursGoal : 2000),
             darkMode: !!parsed.darkMode,
             exercises: Array.isArray(parsed.exercises) ? parsed.exercises : [],
@@ -3728,13 +3731,16 @@ function importData(file){
       if(txt) txt.textContent=`已达标 ${met}/7 天`;
     }
 
-    // ===== 今日冲刺 · 压力卡（作息参数，按需修改）=====
-    // 晚上 21:00 收工；中午固定午休 12:00–14:00（两小时）
-    const STUDY_END_H = 21, STUDY_END_M = 0;
+    // ===== 今日冲刺 · 压力卡（收工时间在卡片里可改；午休固定 12:00–14:00）=====
     const NOON_REST_START_H = 12, NOON_REST_END_H = 14;
-    // 从 now 到今天 21:00，扣掉仍在前方的午休后，还剩多少毫秒可学
+    function studyEndHM(){
+      const parts=(state.studyEndTime||'21:00').split(':');
+      return [parseInt(parts[0],10)||0, parseInt(parts[1],10)||0];
+    }
+    // 从 now 到今天收工时间，扣掉仍在前方的午休后，还剩多少毫秒可学
     function usableStudyMsLeft(now){
-      const end=new Date(now); end.setHours(STUDY_END_H,STUDY_END_M,0,0);
+      const [endH,endM]=studyEndHM();
+      const end=new Date(now); end.setHours(endH,endM,0,0);
       if(now.getTime()>=end.getTime()) return 0;
       let ms=end.getTime()-now.getTime();
       const rs=new Date(now); rs.setHours(NOON_REST_START_H,0,0,0);
@@ -3762,14 +3768,15 @@ function importData(file){
       barFill.style.width=pct+'%';
       goalTxt.textContent=goalMin>0?`今日目标 ${(doneMin/60).toFixed(1)} / ${goalH} 小时（${pct}%）`:'未设置每日目标';
       const inRest=now.getHours()>=NOON_REST_START_H && now.getHours()<NOON_REST_END_H;
-      const endT=new Date(now); endT.setHours(STUDY_END_H,STUDY_END_M,0,0);
+      const [endH,endM]=studyEndHM();
+      const endT=new Date(now); endT.setHours(endH,endM,0,0);
       const afterEnd=now.getTime()>=endT.getTime();
       const remainGoalMin=Math.max(0,goalMin-doneMin);
       let color,pillTxt;
       if(goalMin<=0){
         color='#8a8f98'; pillTxt='未设目标'; subEl.textContent='先设一个每日目标';
       }else if(afterEnd){
-        color='#8a8f98'; pillTxt='已收工'; subEl.textContent='今天到 21:00 了';
+        color='#8a8f98'; pillTxt='已收工'; subEl.textContent=`今天到 ${state.studyEndTime||'21:00'} 了`;
       }else if(remainGoalMin<=0){
         color='#2fb15f'; pillTxt='已达标'; subEl.textContent=inRest?'午休中':'目标已完成';
       }else if(usableMin<=0){
@@ -4457,6 +4464,8 @@ function importData(file){
       if(_exam){ _exam.value=state.examDate||'2026-12-19'; _exam.addEventListener('change', e=>{ state.examDate=e.target.value||'2026-12-19'; saveState(); renderCountdown(); renderReport(); }); }
       const _goal=document.getElementById('goalHoursInput');
       if(_goal){ _goal.value=state.dailyGoalHours!=null?state.dailyGoalHours:8; _goal.addEventListener('change', e=>{ state.dailyGoalHours=parseFloat(e.target.value)||0; saveState(); renderGoalRing(); }); }
+      const _endTime=document.getElementById('studyEndTimeInput');
+      if(_endTime){ _endTime.value=state.studyEndTime||'21:00'; _endTime.addEventListener('change', e=>{ state.studyEndTime=e.target.value||'21:00'; saveState(); renderPressure(); }); }
       const _tot=document.getElementById('goal2kInput');
       if(_tot){ _tot.value=state.totalHoursGoal!=null?state.totalHoursGoal:2000; _tot.addEventListener('change', e=>{ state.totalHoursGoal=parseFloat(e.target.value)||0; saveState(); renderGoal2k(); }); }
       // 今日开始学习：两处输入框均可手动调控
