@@ -1418,7 +1418,6 @@ td button {
           <div class="tiny" id="pressureGoalText" style="margin-top:6px">-</div>
         </div>
       </div>
-      <div class="pressure-msg" id="pressureMsg">-</div>
     </div>
 
     <div class="card pressure-card" id="goal2kCard" style="margin-top:16px">
@@ -3755,7 +3754,6 @@ function importData(file){
       const bigEl=document.getElementById('pressureRemain');
       const subEl=document.getElementById('pressureSub');
       const pill=document.getElementById('pressurePill');
-      const msgEl=document.getElementById('pressureMsg');
       const goalTxt=document.getElementById('pressureGoalText');
       const barFill=document.getElementById('pressureBarFill');
       const fmt=(m)=>{ m=Math.max(0,Math.round(m)); const h=Math.floor(m/60), mm=m%60; return h>0?`${h} 小时 ${mm} 分`:`${mm} 分钟`; };
@@ -3767,30 +3765,26 @@ function importData(file){
       const endT=new Date(now); endT.setHours(STUDY_END_H,STUDY_END_M,0,0);
       const afterEnd=now.getTime()>=endT.getTime();
       const remainGoalMin=Math.max(0,goalMin-doneMin);
-      let color,pillTxt,msg;
+      let color,pillTxt;
       if(goalMin<=0){
         color='#8a8f98'; pillTxt='未设目标'; subEl.textContent='先设一个每日目标';
-        msg='上面「每日学习目标」先填个小时数，才能帮你算今天的冲刺压力。';
       }else if(afterEnd){
         color='#8a8f98'; pillTxt='已收工'; subEl.textContent='今天到 21:00 了';
-        msg=remainGoalMin<=0?'今天圆满收工，好好休息！':`今天收工了，目标还差 ${Math.round(remainGoalMin)} 分钟没补上——记住这份遗憾，明天早点开始。`;
       }else if(remainGoalMin<=0){
         color='#2fb15f'; pillTxt='已达标'; subEl.textContent=inRest?'午休中':'目标已完成';
-        msg='今日目标达成！剩下的都是超额，能多冲一点是一点。';
       }else if(usableMin<=0){
         color='#c0121b'; pillTxt='时间用尽'; subEl.textContent='今天没有可学时间了';
-        msg=`今天可学时间用完了，目标还差 ${Math.round(remainGoalMin)} 分钟。差在哪一段？记住这种感觉。`;
       }else{
-        const rate=remainGoalMin/usableMin, rp=Math.round(rate*100);
+        const rate=remainGoalMin/usableMin;
         subEl.textContent=inRest?'午休中，为下午蓄力':'时间在流逝，专注起来';
-        if(rate<0.6){ color='#2fb15f'; pillTxt='从容'; msg=`还差 ${Math.round(remainGoalMin)} 分钟达标，平均每小时专注 ${Math.round(rate*60)} 分钟就够，别浪费领先。`; }
-        else if(rate<0.85){ color='#e0902a'; pillTxt='抓紧'; msg=`还差 ${Math.round(remainGoalMin)} 分钟、只剩 ${Math.round(usableMin)} 分钟可学——接下来 ${rp}% 的时间都得在学，少碰手机。`; }
-        else if(rate<1){ color='#e0322d'; pillTxt='拉满'; msg=`紧了！剩 ${Math.round(usableMin)} 分钟要补 ${Math.round(remainGoalMin)} 分钟，几乎 ${rp}% 满负荷，一刻别停。`; }
-        else{ color='#a10c14'; pillTxt='超载'; msg=`按现在的节奏今天要欠账了（需要 ${rp}% 的时间全用上）。要么立刻玩命冲，要么接受差距——你自己选。`; }
+        if(rate<0.6){ color='#2fb15f'; pillTxt='从容'; }
+        else if(rate<0.85){ color='#e0902a'; pillTxt='抓紧'; }
+        else if(rate<1){ color='#e0322d'; pillTxt='拉满'; }
+        else{ color='#a10c14'; pillTxt='超载'; }
       }
       card.style.setProperty('--pc',color);
       pill.textContent=pillTxt; pill.style.background=color; pill.style.color='#fff';
-      bigEl.style.color=color; msgEl.style.color=color; msgEl.textContent=msg;
+      bigEl.style.color=color;
     }
 
     // ===== 两千小时计划（考前累计目标）=====
