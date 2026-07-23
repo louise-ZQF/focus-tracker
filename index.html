@@ -1412,6 +1412,8 @@ td button {
           <div class="tiny">距 <input id="studyEndTimeInput" type="time" style="width:auto" /> 收工 · 今天还能学</div>
           <div class="pressure-big" id="pressureRemain">--</div>
           <div class="tiny" id="pressureSub">-</div>
+          <div class="tiny" id="pressureNeed" style="margin-top:4px">-</div>
+          <div class="tiny" id="pressureMargin" style="margin-top:2px;font-weight:700">-</div>
         </div>
         <div class="pressure-bar-wrap">
           <div class="pressure-bar"><div class="pressure-bar-fill" id="pressureBarFill"></div></div>
@@ -1430,6 +1432,7 @@ td button {
           <div class="tiny">今天还能学</div>
           <div class="pressure-big" id="mathPressureRemain">--</div>
           <div class="tiny" id="mathPressureSub">-</div>
+          <div class="tiny" id="mathPressureNeed" style="margin-top:4px">-</div>
         </div>
         <div class="pressure-bar-wrap">
           <div class="pressure-bar"><div class="pressure-bar-fill" id="mathPressureBarFill"></div></div>
@@ -3797,11 +3800,14 @@ function importData(file){
       const goalMin=goalH*60;
       const doneMin=todayFocusMs()/60000;
       const usableMin=usableStudyMsLeft(now)/60000;
+      const remainGoalMin=Math.max(0,goalMin-doneMin);
       const bigEl=document.getElementById('pressureRemain');
       const subEl=document.getElementById('pressureSub');
       const pill=document.getElementById('pressurePill');
       const goalTxt=document.getElementById('pressureGoalText');
       const barFill=document.getElementById('pressureBarFill');
+      const needEl=document.getElementById('pressureNeed');
+      const marginEl=document.getElementById('pressureMargin');
       bigEl.textContent=fmtHM(usableMin);
       const pct=goalMin>0?Math.min(100,Math.round(doneMin/goalMin*100)):0;
       barFill.style.width=pct+'%';
@@ -3814,6 +3820,22 @@ function importData(file){
       card.style.setProperty('--pc',st.color);
       pill.textContent=st.pillTxt; pill.style.background=st.color; pill.style.color='#fff';
       bigEl.style.color=st.color; subEl.textContent=st.sub;
+      // 还需要学习 & 时间余量
+      if(needEl){
+        if(goalMin<=0) needEl.textContent='还需要学习：未设目标';
+        else if(remainGoalMin<=0) needEl.textContent='还需要学习：已完成 ✓';
+        else needEl.textContent='还需要学习 '+fmtHM(remainGoalMin);
+      }
+      if(marginEl){
+        if(goalMin<=0) marginEl.textContent='时间余量：未设目标';
+        else{
+          const marginMin=usableMin-remainGoalMin;
+          const sign=marginMin>=0?'+':'';
+          marginEl.textContent='时间余量 '+sign+fmtHM(Math.abs(marginMin));
+          if(marginMin>=0) marginEl.style.color='#2fb15f';
+          else marginEl.style.color='#e0322d';
+        }
+      }
     }
     // ===== 数学冲刺：跟「今日冲刺」共用收工时间和午休（usableStudyMsLeft 一样），目标和已完成时长换成数学专属的 =====
     const MATH_CATEGORY='📘 数学';
@@ -3831,11 +3853,13 @@ function importData(file){
       const goalMin=goalH*60;
       const doneMin=todayFocusMsByCategory(MATH_CATEGORY)/60000;
       const usableMin=usableStudyMsLeft(now)/60000;
+      const remainGoalMin=Math.max(0,goalMin-doneMin);
       const bigEl=document.getElementById('mathPressureRemain');
       const subEl=document.getElementById('mathPressureSub');
       const pill=document.getElementById('mathPressurePill');
       const goalTxt=document.getElementById('mathPressureGoalText');
       const barFill=document.getElementById('mathPressureBarFill');
+      const needEl=document.getElementById('mathPressureNeed');
       bigEl.textContent=fmtHM(usableMin);
       const pct=goalMin>0?Math.min(100,Math.round(doneMin/goalMin*100)):0;
       barFill.style.width=pct+'%';
@@ -3848,6 +3872,12 @@ function importData(file){
       card.style.setProperty('--pc',st.color);
       pill.textContent=st.pillTxt; pill.style.background=st.color; pill.style.color='#fff';
       bigEl.style.color=st.color; subEl.textContent=st.sub;
+      // 还需要学习
+      if(needEl){
+        if(goalMin<=0) needEl.textContent='还需要学习：未设目标';
+        else if(remainGoalMin<=0) needEl.textContent='还需要学习：已完成 ✓';
+        else needEl.textContent='还需要学习 '+fmtHM(remainGoalMin);
+      }
     }
 
     // ===== 两千小时计划（考前累计目标）=====
