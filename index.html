@@ -1315,13 +1315,18 @@ td button {
     .pressure-bar-fill{ height:100%; width:0; border-radius:8px; background:var(--pc,#e0322d); transition:width .4s ease; }
     .pressure-msg{ margin-top:14px; font-weight:700; font-size:14px; color:var(--pc,#e0322d); line-height:1.5; }
     /* 一天时间分布：24 小时时间轴，按科目上色 */
-    .dt-track{ position:relative; height:30px; border-radius:8px; background:#eceff1; overflow:hidden; }
-    body.dark .dt-track{ background:#2a2a2c; }
-    .dt-seg{ position:absolute; top:0; bottom:0; opacity:.92; display:flex; align-items:center; justify-content:center; overflow:hidden; }
-    .dt-seg.dt-active{ opacity:1; box-shadow:inset 0 0 0 2px rgba(255,255,255,.7); }
-    .dt-seg-label{ font-size:10px; font-weight:700; color:#fff; white-space:nowrap; text-shadow:0 1px 2px rgba(0,0,0,.35); pointer-events:none; }
-    .dt-ticks{ position:relative; height:16px; margin-top:6px; }
-    .dt-tick{ position:absolute; transform:translateX(-50%); font-size:11px; color:var(--muted); }
+    .dt-summary{ font-size:13px; font-weight:700; color:var(--text); margin-bottom:10px; }
+    .dt-list{ display:flex; flex-direction:column; gap:6px; }
+    .dt-row{ display:flex; align-items:center; gap:10px; padding:8px 10px; border-radius:10px; background:#f4f8f7; border:1px solid var(--line); }
+    .dt-row.dt-active{ background:#e8f0ee; border-color:#bcd5cf; }
+    body.dark .dt-row{ background:#1c2422; border-color:#33403d; }
+    body.dark .dt-row.dt-active{ background:#1f2c29; border-color:#3d504b; }
+    .dt-time{ font-size:13px; font-weight:700; color:var(--text); white-space:nowrap; min-width:110px; font-variant-numeric:tabular-nums; font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,monospace; }
+    .dt-bar-wrap{ flex:1 1 0; min-width:30px; height:8px; border-radius:4px; background:#eaf1ef; overflow:hidden; }
+    body.dark .dt-bar-wrap{ background:#2a332f; }
+    .dt-bar{ height:100%; border-radius:4px; min-width:2px; }
+    .dt-subject{ font-size:13px; font-weight:600; color:var(--text); white-space:nowrap; min-width:70px; }
+    .dt-hours{ font-size:12px; font-weight:700; color:var(--muted); white-space:nowrap; min-width:40px; text-align:right; }
 </style>
 </head>
 <body>
@@ -2233,13 +2238,30 @@ function loadState(){
       if(state.activeFocus && state.activeFocus.startTime) doneMs+=getActiveFocusMs();
       const totalGoalH=state.totalHoursGoal!=null?state.totalHoursGoal:2000;
       return [
-        '你是一个说话毒舌、不留情面、但完全基于下面这些真实数据做判断的学习教练。发现偷懒、拖延、自我感动式的虚假努力，直接毫不客气地指出来，别哄我开心；但每一句批评都必须能从下面的数据里找到依据，不许凭空上价值、不许无中生有地编造我没提到的缺点。',
-        `每日学习目标 ${goalH} 小时，其中数学目标 ${mathGoalH} 小时/天。距考试还有 ${daysLeft} 天，累计已学 ${(doneMs/3600000).toFixed(1)}/${totalGoalH} 小时。`,
-        `最近 ${days} 天每天的专注分钟数（按科目）：`,
+        '你是一个说话毒舌、不留情面、但完全基于下面这些真实数据做判断的考研学习教练。',
+        '',
+        '【重要：考研常识，必须遵守】',
+        '- 考研科目：政治、英语、数学、408计算机专业课。总分500，政治100+英语100+数学150+408=150',
+        '- 现在是7-8月暑假强化阶段，这个阶段的正确策略是：数学和408投入最多时间（这两门满分300分，决定成败），英语每天保持语感即可，政治9月再开始不晚（现在开始太早、性价比极低）',
+        '- 如果政治目前为0分钟，这是正常的！不要批评政治进度，9月前政治0是合理的',
+        '- 数学满分150分占比最大，7-8月必须猛攻数学，每天至少4-5小时，这是最不能偷懒的科目',
+        '- 408满分150分，内容多且杂，需要和数学一起在暑假打牢基础',
+        '- 英语满分100分，每天1-2小时保持即可，不需要和数学408抢时间',
+        '- 最终目标是四科均衡，不是某科特别突出。但暑假阶段数学和408占比大是正确策略',
+        '- 杜绝"政治今晚立刻开始"这类建议，政治9月开始完全来得及',
+        '',
+        `每日学习目标 ${goalH} 小时，其中数学目标 ${mathGoalH} 小时/天。距考试还有 ${daysLeft} 天。`,
+        `累计已学 ${(doneMs/3600000).toFixed(1)} 小时，总目标 ${totalGoalH} 小时。`,
+        `最近 ${days} 天每天的专注分钟数（按科目分列）：`,
         ...lines,
         '',
-        '标了【】备注的那几天，是我忘记手动结束计时、系统在凌晨自动断开记录导致的，原始总时长明显偏高，请按备注里给出的保守估计数字判断我那天到底学了多久，不要被表面的高时长忽悠、更不要因此夸我那天学得多。',
-        '请分析：1）学习节奏是否稳定，有没有明显断档或注水；2）四门课的时间分配是否合理，哪门明显偏少；3）照现在（调整虚高数据之后）的真实节奏，距考试还有这么多天，能不能达到目标；4）给 2-3 条具体可执行的调整建议，态度可以刻薄，但建议要落地。中文作答，分点，简洁。'
+        '【关于虚高数据】标了【】的那几天是我忘记手动结束计时、系统凌晨自动断开，原始时长水分大。请按备注里的保守估计值判断，不要被表面数字忽悠，也不要夸我学得多。',
+        '',
+        '请分析（中文，分点，简洁，每点控制在3-5句话。不要用特殊符号/emoji/表格，用纯文字）:',
+        '1）学习节奏是否稳定，有没有明显断档或注水；',
+        '2）四科时间分配在当前（暑假阶段）是否合理——数学和408是否投入足够、英语是否适度、政治为0不用批评（正常）；',
+        '3）照真实节奏能否达到目标——暑假是关键窗口，数学和408的基础打不牢后面就崩了；',
+        '4）给2-3条具体建议，态度刻薄但建议要落地。建议要符合暑假阶段特点：推数学和408、稳英语、政治等9月。不要建议现在开始政治。'
       ].join('\n');
     }
     async function runAiAnalysis(){
@@ -4438,40 +4460,46 @@ function importData(file){
         return;
       }
 
-      const dayStart=new Date(ds+'T00:00:00').getTime();
-      const dayMs=24*3600000;
-      const pct=ms=>Math.max(0,Math.min(100,(ms-dayStart)/dayMs*100));
+      // 按开始时间排序
+      segs.sort((a,b)=>a.startMs-b.startMs);
 
-      const blocks=segs.map(s=>{
+      // 合并重叠/相邻（间隔 < 5 分钟）的同一科目段
+      const merged=[];
+      for(const s of segs){
+        const last=merged[merged.length-1];
+        if(last && last.cat===s.cat && s.startMs-last.endMs < 5*60000){
+          last.endMs=Math.max(last.endMs, s.endMs);
+          if(s.active) last.active=true;
+        } else {
+          merged.push({...s});
+        }
+      }
+
+      let totalMs=0;
+      const rows=merged.map(s=>{
         const sk=focusSubjectKey(s.cat);
         const sub=FOCUS_SUBJECTS.find(x=>x.key===sk);
         const color=sub?sub.color:'#9aa1ac';
-        const left=pct(s.startMs), rawWidth=pct(s.endMs)-left;
-        const width=Math.max(0.3, rawWidth);
         const startT=formatTime(new Date(s.startMs));
         const endT=formatTime(new Date(s.endMs));
-        const label=`${sub?sub.label:(s.cat||'-')} ${startT}–${endT}`;
-        const mins=Math.round((s.endMs-s.startMs)/60000);
-        // 宽度够大时在色块内显示科目和起止时间
-        const showText = width > 5; // 约 72 分钟以上
-        const showShort = width > 2.5; // 约 36 分钟以上至少显示科目简称
-        let innerLabel = '';
-        if(showText) innerLabel = `${sub?(sub.key):(s.cat||'')} ${startT}-${endT}`;
-        else if(showShort) innerLabel = sub?sub.key:(s.cat||'');
-        return `<div class="dt-seg${s.active?' dt-active':''}" style="left:${left}%;width:${width}%;background:${color}" title="${escapeHtml(label)}"><span class="dt-seg-label">${escapeHtml(innerLabel)}</span></div>`;
+        const h=((s.endMs-s.startMs)/3600000).toFixed(1);
+        totalMs+=(s.endMs-s.startMs);
+        const pctW=Math.max(3, (s.endMs-s.startMs)/(24*3600000)*100);
+        return `<div class="dt-row${s.active?' dt-active':''}">
+          <span class="dt-time">${startT} – ${endT}</span>
+          <span class="dt-bar-wrap"><span class="dt-bar" style="width:${pctW.toFixed(1)}%;background:${color}"></span></span>
+          <span class="dt-subject">${sub?sub.label:(s.cat||'-')}</span>
+          <span class="dt-hours">${h} h</span>
+        </div>`;
       }).join('');
 
-      let ticks='';
-      for(let h=0; h<=24; h+=1){ ticks += `<div class="dt-tick" style="left:${(h/24*100).toFixed(2)}%">${h}</div>`; }
-
-      let legend='';
-      FOCUS_SUBJECTS.forEach(s=>{ legend += `<div class="fb-leg"><span class="sw" style="background:${s.color}"></span><span class="nm">${s.label}</span></div>`; });
+      const summary = `<div class="dt-summary">共 ${merged.length} 段，合计 ${(totalMs/3600000).toFixed(1)} 小时</div>`;
 
       const untimedNote = untimedMs>0
-        ? `<div class="tiny" style="margin-top:8px;color:var(--muted)">另有 ${Math.round(untimedMs/60000)} 分钟补录时间没写具体时段，没画在时间轴里。</div>`
+        ? `<div class="tiny" style="margin-top:8px;color:var(--muted)">另有 ${Math.round(untimedMs/60000)} 分钟补录时间没写具体时段，没列在下面。</div>`
         : '';
 
-      host.innerHTML = `<div class="dt-track" style="height:38px">${blocks}</div><div class="dt-ticks">${ticks}</div><div class="fb-legend">${legend}</div>${untimedNote}`;
+      host.innerHTML = summary + `<div class="dt-list">${rows}</div>` + untimedNote;
     }
 
     // ===== 每日反思 =====
