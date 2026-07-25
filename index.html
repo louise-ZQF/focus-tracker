@@ -1314,6 +1314,13 @@ td button {
     body.dark .pressure-bar{ background:#2a2a2c; }
     .pressure-bar-fill{ height:100%; width:0; border-radius:8px; background:var(--pc,#e0322d); transition:width .4s ease; }
     .pressure-msg{ margin-top:14px; font-weight:700; font-size:14px; color:var(--pc,#e0322d); line-height:1.5; }
+    /* 一天时间分布：24 小时时间轴，按科目上色 */
+    .dt-track{ position:relative; height:30px; border-radius:8px; background:#eceff1; overflow:hidden; }
+    body.dark .dt-track{ background:#2a2a2c; }
+    .dt-seg{ position:absolute; top:0; bottom:0; opacity:.92; }
+    .dt-seg.dt-active{ opacity:1; box-shadow:inset 0 0 0 2px rgba(255,255,255,.7); }
+    .dt-ticks{ position:relative; height:16px; margin-top:6px; }
+    .dt-tick{ position:absolute; transform:translateX(-50%); font-size:11px; color:var(--muted); }
 </style>
 </head>
 <body>
@@ -1412,8 +1419,6 @@ td button {
           <div class="tiny">距 <input id="studyEndTimeInput" type="time" style="width:auto" /> 收工 · 今天还能学</div>
           <div class="pressure-big" id="pressureRemain">--</div>
           <div class="tiny" id="pressureSub">-</div>
-          <div id="pressureNeed" style="margin-top:6px;font-size:14px">-</div>
-          <div id="pressureMargin" style="margin-top:4px;font-size:14px;font-weight:700">-</div>
         </div>
         <div class="pressure-bar-wrap">
           <div class="pressure-bar"><div class="pressure-bar-fill" id="pressureBarFill"></div></div>
@@ -1432,7 +1437,6 @@ td button {
           <div class="tiny">今天还能学</div>
           <div class="pressure-big" id="mathPressureRemain">--</div>
           <div class="tiny" id="mathPressureSub">-</div>
-          <div id="mathPressureNeed" style="margin-top:6px;font-size:14px">-</div>
         </div>
         <div class="pressure-bar-wrap">
           <div class="pressure-bar"><div class="pressure-bar-fill" id="mathPressureBarFill"></div></div>
@@ -1486,6 +1490,31 @@ td button {
         </div>
       </div>
       <div id="focusBarWrap"></div>
+    </div>
+
+    <div class="card" style="margin-top:16px">
+      <div class="card-title">
+        <h3>一天时间分布</h3>
+        <span class="tiny" id="dayTimelineDateLabel">-</span>
+      </div>
+      <div id="dayTimelineWrap"></div>
+    </div>
+
+    <div class="card" style="margin-top:16px">
+      <div class="card-title">
+        <h3>AI 学习分析</h3>
+        <span class="tiny" id="aiKeyStatus">-</span>
+      </div>
+      <div class="tiny" style="margin-bottom:10px">DeepSeek API Key 只存在这台设备的浏览器里，不会同步、不会进导出的备份文件</div>
+      <div class="focus-form">
+        <div>
+          <label for="deepseekKeyInput">DeepSeek API Key</label>
+          <input id="deepseekKeyInput" type="password" placeholder="sk-..." autocomplete="off" />
+        </div>
+        <button class="btn-secondary" id="saveDeepseekKeyBtn">保存 Key</button>
+        <button class="btn-primary" id="aiAnalysisBtn">生成分析</button>
+      </div>
+      <div id="aiAnalysisResult" class="tiny" style="margin-top:14px; white-space:pre-wrap; line-height:1.7"></div>
     </div>
 
     <div class="tabs">
@@ -2134,7 +2163,116 @@ function loadState(){
         }
       }catch(e){ setCloudStatus('同步检查失败：'+e.message); }
     }
- 
+
+    // ===== AI 学习分析（DeepSeek）=====
+    // Key 只存本机 localStorage，故意不放进 state：state 会同步到云端、也会整份进导出备份文件，
+    // 混进去等于把 Key 发到别处 / 存进下载的文件里。
+    const DEEPSEEK_KEY_STORAGE = 'niuma-deepseek-key';
+    function getDeepseekKey(){ return (localStorage.getItem(DEEPSEEK_KEY_STORAGE)||'').trim(); }
+    function renderAiKeyStatus(){
+      const el=document.getElementById('aiKeyStatus');
+      if(!el) return;
+      const k=getDeepseekKey();
+      el.textContent = k ? `已保存在本机（末 4 位 ${k.slice(-4)}）` : '还没设置 Key';
+    }
+    function saveDeepseekKey(){
+      const input=document.getElementById('deepseekKeyInput');
+      const v=(input && input.value || '').trim();
+      if(v) localStorage.setItem(DEEPSEEK_KEY_STORAGE, v);
+      else localStorage.removeItem(DEEPSEEK_KEY_STORAGE);
+      if(input) input.value='';
+      renderAiKeyStatus();
+      showToast(v ? 'API Key 已保存在本机浏览器里' : '已清除本机保存的 Key');
+    }
+    // 忘记手动「结束并记录」、被 maybeAutoStopLate 在午夜自动停止的专注，原始时长大概率虚高
+    // （人早就不在学了，计时器还在走到零点）。新产生的记录会被直接打上 autoStoppedAtMidnight 标记；
+    // 这次改动之前已经存在的历史记录没有这个标记，用时间特征去认：自动停止的结束时刻必然精确落在
+    // 本地零点整（手动点「结束并记录」不可能刚好卡在 00:00:00），据此推断补标一次。
+    const AUTO_STOP_ASSUMED_WASTED_MS = 2*3600000; // 用户自述：这种情况大概会多算 2 小时左右
+    function isAutoStoppedAtMidnight(f){
+      if(f.autoStoppedAtMidnight) return true;
+      if(!f.startedAt || !(f.durationMs>0)) return false;
+      const end=new Date(new Date(f.startedAt).getTime()+f.durationMs);
+      return end.getHours()===0 && end.getMinutes()===0 && end.getSeconds()===0;
+    }
+    // 汇总最近 N 天分科目专注时长喂给模型分析，只发汇总数字，不发逐条原始记录
+    function buildAiAnalysisPrompt(days){
+      days = days || 14;
+      const today = new Date(todayStr()+'T12:00:00');
+      const lines=[];
+      for(let i=days-1; i>=0; i--){
+        const d=new Date(today); d.setDate(today.getDate()-i);
+        const ds=toDateStr(d);
+        const sessions=getFocusByDate(ds);
+        const byCat={};
+        let autoStopMs=0;
+        sessions.forEach(f=>{
+          byCat[f.category||'其它']=(byCat[f.category||'其它']||0)+(f.durationMs||0);
+          if(isAutoStoppedAtMidnight(f)) autoStopMs += (f.durationMs||0);
+        });
+        const a=state.activeFocus;
+        if(a && a.startTime && a.date===ds) byCat[a.category||'其它']=(byCat[a.category||'其它']||0)+getActiveFocusMs();
+        const total=Object.values(byCat).reduce((s,v)=>s+v,0);
+        const parts=FOCUS_SUBJECTS.map(s=>{
+          const ms=Object.keys(byCat).filter(c=>focusSubjectKey(c)===s.key).reduce((sum,c)=>sum+byCat[c],0);
+          return `${s.label} ${Math.round(ms/60000)}分`;
+        }).join('，');
+        let line=`${ds}：${parts}，合计 ${Math.round(total/60000)} 分钟`;
+        if(autoStopMs>0){
+          const adjustedTotal=Math.max(0, total-AUTO_STOP_ASSUMED_WASTED_MS);
+          line += `【这天有专注是忘记手动结束、系统凌晨自动断开记录的，原始时长水分很大，保守按合计约 ${Math.round(adjustedTotal/60000)} 分钟估算更真实】`;
+        }
+        lines.push(line);
+      }
+      const goalH=state.dailyGoalHours!=null?state.dailyGoalHours:8;
+      const mathGoalH=state.mathGoalHours!=null?state.mathGoalHours:2;
+      const exam=state.examDate||'2026-12-19';
+      const daysLeft=Math.ceil((new Date(exam+'T00:00:00').getTime()-new Date(todayStr()+'T00:00:00').getTime())/86400000);
+      let doneMs=(state.focusSessions||[]).reduce((a,f)=>a+(f.durationMs||0),0);
+      if(state.activeFocus && state.activeFocus.startTime) doneMs+=getActiveFocusMs();
+      const totalGoalH=state.totalHoursGoal!=null?state.totalHoursGoal:2000;
+      return [
+        '你是一个说话毒舌、不留情面、但完全基于下面这些真实数据做判断的学习教练。发现偷懒、拖延、自我感动式的虚假努力，直接毫不客气地指出来，别哄我开心；但每一句批评都必须能从下面的数据里找到依据，不许凭空上价值、不许无中生有地编造我没提到的缺点。',
+        `每日学习目标 ${goalH} 小时，其中数学目标 ${mathGoalH} 小时/天。距考试还有 ${daysLeft} 天，累计已学 ${(doneMs/3600000).toFixed(1)}/${totalGoalH} 小时。`,
+        `最近 ${days} 天每天的专注分钟数（按科目）：`,
+        ...lines,
+        '',
+        '标了【】备注的那几天，是我忘记手动结束计时、系统在凌晨自动断开记录导致的，原始总时长明显偏高，请按备注里给出的保守估计数字判断我那天到底学了多久，不要被表面的高时长忽悠、更不要因此夸我那天学得多。',
+        '请分析：1）学习节奏是否稳定，有没有明显断档或注水；2）四门课的时间分配是否合理，哪门明显偏少；3）照现在（调整虚高数据之后）的真实节奏，距考试还有这么多天，能不能达到目标；4）给 2-3 条具体可执行的调整建议，态度可以刻薄，但建议要落地。中文作答，分点，简洁。'
+      ].join('\n');
+    }
+    async function runAiAnalysis(){
+      const key=getDeepseekKey();
+      if(!key){ showToast('请先在下面填 DeepSeek API Key 并保存。'); return; }
+      const btn=document.getElementById('aiAnalysisBtn');
+      const out=document.getElementById('aiAnalysisResult');
+      if(btn){ btn.disabled=true; btn.textContent='分析中…'; }
+      if(out) out.textContent='正在请求 DeepSeek，稍等…';
+      try{
+        const prompt=buildAiAnalysisPrompt(14);
+        const res=await fetch('https://api.deepseek.com/chat/completions', {
+          method:'POST',
+          headers:{ 'Content-Type':'application/json', 'Authorization':'Bearer '+key },
+          body:JSON.stringify({
+            model:'deepseek-chat',
+            messages:[{ role:'user', content:prompt }],
+            temperature:0.6
+          })
+        });
+        if(!res.ok){
+          const errBody=await res.text().catch(()=>'');
+          throw new Error(`HTTP ${res.status}${errBody?('：'+errBody.slice(0,200)):''}`);
+        }
+        const data=await res.json();
+        const content=data && data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content;
+        if(out) out.textContent = content || '（DeepSeek 没有返回内容）';
+      }catch(e){
+        if(out) out.textContent = `分析失败：${e.message}\n\n如果浏览器控制台里看到的是 CORS / Failed to fetch 之类的网络错误，说明 DeepSeek 接口不允许网页直接调用，得加一个小中转服务才行，不是 Key 填错了。`;
+      }finally{
+        if(btn){ btn.disabled=false; btn.textContent='生成分析'; }
+      }
+    }
+
     function todayStr(date = new Date()){
       return toDateStr(date);
     }
@@ -2343,7 +2481,7 @@ function maybeAutoStopLate(){
   if(cutoff.getTime() <= start.getTime()) cutoff = new Date(cutoff.getTime() + 24*3600*1000);
   if(Date.now() < cutoff.getTime()) return;        // 还没到停止时刻
   const ms = cutoff.getTime() - start.getTime();    // 只记录到停止时刻为止，不计入更晚的时间
-  recordFocusSession(a.date, a.category, ms, a.startTime);
+  recordFocusSession(a.date, a.category, ms, a.startTime, { autoStoppedAtMidnight: true });
   state.activeFocus = null;
   saveState();
   const hm = `${AUTO_STOP_H}:${String(AUTO_STOP_M).padStart(2,'0')}`;
@@ -2505,7 +2643,7 @@ async function finishTask(){
     function getFocusMsByDate(ds){
       return sumFocusMs(f => f.date === ds);
     }
-    function recordFocusSession(date, category, durationMs, startedAt){
+    function recordFocusSession(date, category, durationMs, startedAt, opts){
       if(!(durationMs > 0)) return;
       state.focusSessions = state.focusSessions || [];
       state.focusSessions.unshift({
@@ -2514,7 +2652,8 @@ async function finishTask(){
         category: category || '📕 政治',
         durationMs: durationMs,
         startedAt: startedAt || null,
-        createdAt: new Date().toISOString()
+        createdAt: new Date().toISOString(),
+        autoStoppedAtMidnight: !!(opts && opts.autoStoppedAtMidnight)
       });
     }
 
@@ -3800,14 +3939,11 @@ function importData(file){
       const goalMin=goalH*60;
       const doneMin=todayFocusMs()/60000;
       const usableMin=usableStudyMsLeft(now)/60000;
-      const remainGoalMin=Math.max(0,goalMin-doneMin);
       const bigEl=document.getElementById('pressureRemain');
       const subEl=document.getElementById('pressureSub');
       const pill=document.getElementById('pressurePill');
       const goalTxt=document.getElementById('pressureGoalText');
       const barFill=document.getElementById('pressureBarFill');
-      const needEl=document.getElementById('pressureNeed');
-      const marginEl=document.getElementById('pressureMargin');
       bigEl.textContent=fmtHM(usableMin);
       const pct=goalMin>0?Math.min(100,Math.round(doneMin/goalMin*100)):0;
       barFill.style.width=pct+'%';
@@ -3820,22 +3956,6 @@ function importData(file){
       card.style.setProperty('--pc',st.color);
       pill.textContent=st.pillTxt; pill.style.background=st.color; pill.style.color='#fff';
       bigEl.style.color=st.color; subEl.textContent=st.sub;
-      // 还需要学习 & 时间余量
-      if(needEl){
-        if(goalMin<=0) needEl.textContent='还需要学习：未设目标';
-        else if(remainGoalMin<=0) needEl.textContent='还需要学习：已完成 ✓';
-        else needEl.textContent='还需要学习 '+fmtHM(remainGoalMin);
-      }
-      if(marginEl){
-        if(goalMin<=0) marginEl.textContent='时间余量：未设目标';
-        else{
-          const marginMin=usableMin-remainGoalMin;
-          const sign=marginMin>=0?'+':'';
-          marginEl.textContent='时间余量 '+sign+fmtHM(Math.abs(marginMin));
-          if(marginMin>=0) marginEl.style.color='#2fb15f';
-          else marginEl.style.color='#e0322d';
-        }
-      }
     }
     // ===== 数学冲刺：跟「今日冲刺」共用收工时间和午休（usableStudyMsLeft 一样），目标和已完成时长换成数学专属的 =====
     const MATH_CATEGORY='📘 数学';
@@ -3853,13 +3973,11 @@ function importData(file){
       const goalMin=goalH*60;
       const doneMin=todayFocusMsByCategory(MATH_CATEGORY)/60000;
       const usableMin=usableStudyMsLeft(now)/60000;
-      const remainGoalMin=Math.max(0,goalMin-doneMin);
       const bigEl=document.getElementById('mathPressureRemain');
       const subEl=document.getElementById('mathPressureSub');
       const pill=document.getElementById('mathPressurePill');
       const goalTxt=document.getElementById('mathPressureGoalText');
       const barFill=document.getElementById('mathPressureBarFill');
-      const needEl=document.getElementById('mathPressureNeed');
       bigEl.textContent=fmtHM(usableMin);
       const pct=goalMin>0?Math.min(100,Math.round(doneMin/goalMin*100)):0;
       barFill.style.width=pct+'%';
@@ -3872,12 +3990,6 @@ function importData(file){
       card.style.setProperty('--pc',st.color);
       pill.textContent=st.pillTxt; pill.style.background=st.color; pill.style.color='#fff';
       bigEl.style.color=st.color; subEl.textContent=st.sub;
-      // 还需要学习
-      if(needEl){
-        if(goalMin<=0) needEl.textContent='还需要学习：未设目标';
-        else if(remainGoalMin<=0) needEl.textContent='还需要学习：已完成 ✓';
-        else needEl.textContent='还需要学习 '+fmtHM(remainGoalMin);
-      }
     }
 
     // ===== 两千小时计划（考前累计目标）=====
@@ -4295,6 +4407,62 @@ function importData(file){
       host.innerHTML = summary + `<div class="fb-bars">${bars}</div><div class="fb-xrow">${xrow}</div><div class="fb-legend">${legend}</div>`;
     }
 
+    // ===== 一天时间分布：把某天带具体起止时间的专注记录画成 24 小时时间轴，按科目上色 =====
+    // 只有「开始专注→结束并记录」（或番茄钟/自动收工）留下的记录才有 startedAt，能精确定位到几点几分；
+    // 纯粹「补录专注」只填了分钟数、没有起止时间，没法画在时间轴上，改成下面单列一行提示。
+    function renderDayTimeline(){
+      const host=document.getElementById('dayTimelineWrap');
+      if(!host) return;
+      const ds=selectedDate;
+      const labelEl=document.getElementById('dayTimelineDateLabel');
+      if(labelEl) labelEl.textContent = ds===todayStr() ? `${ds} · 今天` : ds;
+
+      const segs=[];
+      let untimedMs=0;
+      getFocusByDate(ds).forEach(f=>{
+        if(f.startedAt){
+          const startMs=new Date(f.startedAt).getTime();
+          segs.push({ startMs, endMs:startMs+(f.durationMs||0), cat:f.category });
+        } else {
+          untimedMs += (f.durationMs||0);
+        }
+      });
+      const a=state.activeFocus;
+      if(a && a.startTime && a.date===ds){
+        segs.push({ startMs:new Date(a.startTime).getTime(), endMs:Date.now(), cat:a.category, active:true });
+      }
+
+      if(!segs.length){
+        host.innerHTML = `<div class="empty">这天没有带具体起止时间的专注记录——点「开始专注」计时的才会显示在时间轴上；纯粹补录（没写起止时间）不算。</div>`;
+        return;
+      }
+
+      const dayStart=new Date(ds+'T00:00:00').getTime();
+      const dayMs=24*3600000;
+      const pct=ms=>Math.max(0,Math.min(100,(ms-dayStart)/dayMs*100));
+
+      const blocks=segs.map(s=>{
+        const sk=focusSubjectKey(s.cat);
+        const sub=FOCUS_SUBJECTS.find(x=>x.key===sk);
+        const color=sub?sub.color:'#9aa1ac';
+        const left=pct(s.startMs), width=Math.max(0.3, pct(s.endMs)-left);
+        const label=`${sub?sub.label:(s.cat||'-')} ${formatTime(new Date(s.startMs))}–${formatTime(new Date(s.endMs))}`;
+        return `<div class="dt-seg${s.active?' dt-active':''}" style="left:${left}%;width:${width}%;background:${color}" title="${escapeHtml(label)}"></div>`;
+      }).join('');
+
+      let ticks='';
+      for(let h=0; h<=24; h+=3){ ticks += `<div class="dt-tick" style="left:${(h/24*100).toFixed(2)}%">${h}</div>`; }
+
+      let legend='';
+      FOCUS_SUBJECTS.forEach(s=>{ legend += `<div class="fb-leg"><span class="sw" style="background:${s.color}"></span><span class="nm">${s.label}</span></div>`; });
+
+      const untimedNote = untimedMs>0
+        ? `<div class="tiny" style="margin-top:8px;color:var(--muted)">另有 ${Math.round(untimedMs/60000)} 分钟补录时间没写具体时段，没画在时间轴里。</div>`
+        : '';
+
+      host.innerHTML = `<div class="dt-track">${blocks}</div><div class="dt-ticks">${ticks}</div><div class="fb-legend">${legend}</div>${untimedNote}`;
+    }
+
     // ===== 每日反思 =====
     function weekdayCn(ds){ const w=['周日','周一','周二','周三','周四','周五','周六']; const dt=new Date(ds+'T12:00:00'); return isNaN(dt.getTime())?'':w[dt.getDay()]; }
     function addReflection(){
@@ -4554,6 +4722,11 @@ function importData(file){
       if(_endTime){ _endTime.value=state.studyEndTime||'21:00'; _endTime.addEventListener('change', e=>{ state.studyEndTime=e.target.value||'21:00'; saveState(); renderPressure(); renderMathPressure(); }); }
       const _mathGoal=document.getElementById('mathGoalHoursInput');
       if(_mathGoal){ _mathGoal.value=state.mathGoalHours!=null?state.mathGoalHours:2; _mathGoal.addEventListener('change', e=>{ state.mathGoalHours=parseFloat(e.target.value)||0; saveState(); renderMathPressure(); }); }
+      renderAiKeyStatus();
+      const _saveKeyBtn=document.getElementById('saveDeepseekKeyBtn');
+      if(_saveKeyBtn) _saveKeyBtn.addEventListener('click', saveDeepseekKey);
+      const _aiBtn=document.getElementById('aiAnalysisBtn');
+      if(_aiBtn) _aiBtn.addEventListener('click', runAiAnalysis);
       const _tot=document.getElementById('goal2kInput');
       if(_tot){ _tot.value=state.totalHoursGoal!=null?state.totalHoursGoal:2000; _tot.addEventListener('change', e=>{ state.totalHoursGoal=parseFloat(e.target.value)||0; saveState(); renderGoal2k(); }); }
       // 今日开始学习：两处输入框均可手动调控
@@ -4629,6 +4802,7 @@ function renderAll(){
       renderTasks();
       renderHeatmap();
       renderFocusBar();
+      renderDayTimeline();
       renderTodoCalendar();
       renderStats();
       renderReport();
@@ -4713,6 +4887,7 @@ function renderAll(){
           renderOverview();  // 今日/本周/累计专注、开始学习时间
           renderGoalRing();  // 每日学习目标进度环（与上面同源，保持同步）
           renderGoal2k();    // 两千小时计划（随专注累计实时更新）
+          renderDayTimeline(); // 一天时间分布：正在进行的那段随时间往右延伸
       }
     }, 1000);
 
