@@ -1315,18 +1315,13 @@ td button {
     .pressure-bar-fill{ height:100%; width:0; border-radius:8px; background:var(--pc,#e0322d); transition:width .4s ease; }
     .pressure-msg{ margin-top:14px; font-weight:700; font-size:14px; color:var(--pc,#e0322d); line-height:1.5; }
     /* 一天时间分布：24 小时时间轴，按科目上色 */
-    .dt-summary{ font-size:13px; font-weight:700; color:var(--text); margin-bottom:10px; }
-    .dt-list{ display:flex; flex-direction:column; gap:6px; }
-    .dt-row{ display:flex; align-items:center; gap:10px; padding:8px 10px; border-radius:10px; background:#f4f8f7; border:1px solid var(--line); }
-    .dt-row.dt-active{ background:#e8f0ee; border-color:#bcd5cf; }
-    body.dark .dt-row{ background:#1c2422; border-color:#33403d; }
-    body.dark .dt-row.dt-active{ background:#1f2c29; border-color:#3d504b; }
-    .dt-time{ font-size:13px; font-weight:700; color:var(--text); white-space:nowrap; min-width:110px; font-variant-numeric:tabular-nums; font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,monospace; }
-    .dt-bar-wrap{ flex:1 1 0; min-width:30px; height:8px; border-radius:4px; background:#eaf1ef; overflow:hidden; }
-    body.dark .dt-bar-wrap{ background:#2a332f; }
-    .dt-bar{ height:100%; border-radius:4px; min-width:2px; }
-    .dt-subject{ font-size:13px; font-weight:600; color:var(--text); white-space:nowrap; min-width:70px; }
-    .dt-hours{ font-size:12px; font-weight:700; color:var(--muted); white-space:nowrap; min-width:40px; text-align:right; }
+    .dt-track{ position:relative; height:30px; border-radius:8px; background:#eceff1; overflow:hidden; }
+    body.dark .dt-track{ background:#2a2a2c; }
+    .dt-seg{ position:absolute; top:0; bottom:0; opacity:.92; }
+    .dt-seg.dt-active{ opacity:1; box-shadow:inset 0 0 0 2px rgba(255,255,255,.7); }
+    .dt-seg.dt-estimated{ background-image:repeating-linear-gradient(135deg, rgba(255,255,255,.45) 0 5px, transparent 5px 10px); }
+    .dt-ticks{ position:relative; height:16px; margin-top:6px; }
+    .dt-tick{ position:absolute; transform:translateX(-50%); font-size:11px; color:var(--muted); }
 </style>
 </head>
 <body>
@@ -2238,74 +2233,13 @@ function loadState(){
       if(state.activeFocus && state.activeFocus.startTime) doneMs+=getActiveFocusMs();
       const totalGoalH=state.totalHoursGoal!=null?state.totalHoursGoal:2000;
       return [
-        '你是一位22408考研备考分析师。下面是我最近的真实学习数据，请冷静、客观地分析，直接指出问题所在。',
-        '',
-        '【输出风格要求】',
-        '- 冷静克制，像医生看化验单一样分析数据，不表演毒舌，不说教，不情感绑架',
-        '- 每个结论都从数据中来，标明具体数字依据',
-        '- 只说问题和改进方向，不说"你懒""你态度腐烂"这类人身评价',
-        '',
-        '【硬规则】',
-        '1. 政治现在为0分钟 = 符合22408节奏。暑假阶段数学+408是绝对核心，政治9月开始完全正常。禁止任何形式的"现在开始政治"建议。如果数据中政治为0，只需一句话带过：政治尚未开始，符合暑假阶段安排，9月启动即可。',
-        '2. 禁止编造数据中没有的数字。所有引用的具体时长、天数、比例必须来自我提供的数据。',
-        '3. 输出纯中文白话，禁止markdown格式（禁止**加粗**、-列表、#标题、表格、emoji）。用中文标点分段，列点用"第一""第二""第三"或"其一""其二"。',
-        '',
-        '【22408备考节奏 - 当前阶段参考标准】',
-        '当前7月下旬，处于暑假强化期（7月初-8月底），这是全年最关键的提分窗口。',
-        '',
-        '数学二（150分，高数+线代，不考概率）：',
-        '- 现阶段重心：少听课、多做题。强化课快速过完即可，核心是刷题量。推荐880题（知识点覆盖最全）+660题（选填专项），学有余力加1000题',
-        '- 每日标准：3.5-4.5小时，上午大块时间集中攻坚',
-        '- 暑假结束前应完成：高数强化+线代强化全部结束，880/660核心题一刷完成，错题整理成体系',
-        '- 警戒线：连续2天以上数学低于2小时，或一周内出现3天数学接近0 = 严重偏离',
-        '',
-        '408（150分，DS+计组+OS+计网）：',
-        '- 现阶段重心：收尾一轮知识点（如果还有未完成），重点转向大题专项（Cache计算、PV操作、CPU流水线、虚拟内存、TCP拥塞控制、磁盘调度）',
-        '- 每日标准：3-4小时，下午集中攻克',
-        '- 暑假结束前应完成：四门课一轮知识点全覆盖，王道课后选择题正确率稳定，大题各类型都有练习',
-        '- 推荐顺序：DS→计组→OS→计网，计网可放在最后或9月再深入',
-        '',
-        '英语二（100分）：',
-        '- 每日标准：1-2小时，背单词（每天60-80新词+复习）+ 每天1篇阅读真题精读',
-        '- 如果单日英语超过3小时且数学/408当天偏低，说明在逃避困难科目躲进舒适区',
-        '- 如果连续3天以上英语为0，说明单词和语感在断档',
-        '',
-        '政治（100分）：',
-        '- 9月开始是22408主流节奏，暑假阶段不需要碰。8月下旬开始也算早的。',
-        '- 如果数据中政治为0：正常，不需分析，不需建议启动',
-        '',
-        '【暑假阶段总KPI】',
-        '- 数学+408合计占比应达到总学习时长的60%或以上',
-        '- 数学日均应达到设定目标小时数',
-        '- 每周断档天（总时长低于2小时）不应超过1天',
-        '- 虚高数据（忘记关计时器）占比应逐周下降，重复出现说明计时习惯有问题',
-        '',
-        '【9月后节奏参考 - 用于预判不做当前要求】',
-        '9月：数学开09年后真题套卷，408开真题，政治开始徐涛马原+肖1000题',
-        '10月：数学真题+李林6套卷，408真题逐题拆解2-3遍，英语加入小三门',
-        '11月：数学模拟卷+错题回顾，408回顾薄弱章节，政治肖八选择题',
-        '12月：数学保持手感，408高频考点回顾，政治肖四大题背诵',
-        '',
-        `我的设置：每日学习目标 ${goalH} 小时，其中数学目标 ${mathGoalH} 小时。`,
-        `距初试 ${daysLeft} 天，累计已学 ${(doneMs/3600000).toFixed(1)} 小时（阶段总目标 ${totalGoalH} 小时）。`,
-        `以下为最近 ${days} 天的每日专注分钟数（按 政治/英语/数学/408 分列）：`,
+        '你是一个说话毒舌、不留情面、但完全基于下面这些真实数据做判断的学习教练。发现偷懒、拖延、自我感动式的虚假努力，直接毫不客气地指出来，别哄我开心；但每一句批评都必须能从下面的数据里找到依据，不许凭空上价值、不许无中生有地编造我没提到的缺点。',
+        `每日学习目标 ${goalH} 小时，其中数学目标 ${mathGoalH} 小时/天。距考试还有 ${daysLeft} 天，累计已学 ${(doneMs/3600000).toFixed(1)}/${totalGoalH} 小时。`,
+        `最近 ${days} 天每天的专注分钟数（按科目）：`,
         ...lines,
         '',
-        '数据说明：标注【】的日期表示忘记手动结束计时、系统凌晨自动断开，原始时长含大量水分，请以备注中的保守估计值为准。',
-        '',
-        '请按以下结构分析：',
-        '',
-        '一、节奏诊断',
-        '计算挤水后的真实日均学习时长，对比目标。指出波动幅度（最高/最低的倍数）和断档天数。如果虚高数据占比高，指出计时习惯的问题——反复忘记关计时器会导致数据失真、无法准确评估进度。',
-        '',
-        '二、四科分配分析',
-        '逐科分析：数学日均是否达标、0数学日有几天、占比是否合理。408是否稳定投入。英语时长是否在1-2小时区间、有没有用英语逃避数学的迹象。政治为0是否符合当前阶段。最后计算数学+408合计占比是否达到60%。',
-        '',
-        '三、暑假进度预判',
-        '基于当前节奏，估算暑假结束时各科可能完成的状态：数学强化能否收尾、刷题量是否足够。408一轮能否覆盖、大题训练是否开始。不达预期的科目，说明差距有多大。',
-        '',
-        '四、调整建议',
-        '2-3条具体建议，按优先级排列。建议紧扣暑假阶段特点和22408科目特性。语言直接但就事论事，不说教。每条建议包含：具体做法、时间安排、预期效果。不要建议现在开始政治。'
+        '标了【】备注的那几天，是我忘记手动结束计时、系统在凌晨自动断开记录导致的，原始总时长明显偏高，请按备注里给出的保守估计数字判断我那天到底学了多久，不要被表面的高时长忽悠、更不要因此夸我那天学得多。',
+        '请分析：1）学习节奏是否稳定，有没有明显断档或注水；2）四门课的时间分配是否合理，哪门明显偏少；3）照现在（调整虚高数据之后）的真实节奏，距考试还有这么多天，能不能达到目标；4）给 2-3 条具体可执行的调整建议，态度可以刻薄，但建议要落地。中文作答，分点，简洁。'
       ].join('\n');
     }
     async function runAiAnalysis(){
@@ -2321,7 +2255,7 @@ function loadState(){
           method:'POST',
           headers:{ 'Content-Type':'application/json', 'Authorization':'Bearer '+key },
           body:JSON.stringify({
-            model:'deepseek-v4-pro',
+            model:'deepseek-chat',
             messages:[{ role:'user', content:prompt }],
             temperature:0.6
           })
@@ -4474,9 +4408,11 @@ function importData(file){
       host.innerHTML = summary + `<div class="fb-bars">${bars}</div><div class="fb-xrow">${xrow}</div><div class="fb-legend">${legend}</div>`;
     }
 
-    // ===== 一天时间分布：把某天带具体起止时间的专注记录画成 24 小时时间轴，按科目上色 =====
-    // 只有「开始专注→结束并记录」（或番茄钟/自动收工）留下的记录才有 startedAt，能精确定位到几点几分；
-    // 纯粹「补录专注」只填了分钟数、没有起止时间，没法画在时间轴上，改成下面单列一行提示。
+    // ===== 一天时间分布：24 小时时间轴，按科目上色 =====
+    // 「开始专注→结束并记录」（或番茄钟/自动收工）留下的记录有 startedAt，精确定位到几点几分；
+    // 纯粹「补录专注」只有分钟数、没有具体时段，没法知道真实发生在几点——
+    // 就近塞进当天还空着的时间里（优先塞在最早一段真实记录前面），用斜纹跟真实时段区分开，
+    // 鼠标移上去会提示这是估算位置，不是真实打卡时间。
     function renderDayTimeline(){
       const host=document.getElementById('dayTimelineWrap');
       if(!host) return;
@@ -4484,66 +4420,87 @@ function importData(file){
       const labelEl=document.getElementById('dayTimelineDateLabel');
       if(labelEl) labelEl.textContent = ds===todayStr() ? `${ds} · 今天` : ds;
 
-      const segs=[];
-      let untimedMs=0;
+      const dayStart=new Date(ds+'T00:00:00').getTime();
+      const dayMs=24*3600000;
+      const dayEnd=dayStart+dayMs;
+
+      const timedSegs=[];
+      const untimed=[];
       getFocusByDate(ds).forEach(f=>{
         if(f.startedAt){
-          const startMs=new Date(f.startedAt).getTime();
-          segs.push({ startMs, endMs:startMs+(f.durationMs||0), cat:f.category });
-        } else {
-          untimedMs += (f.durationMs||0);
+          const startMs=Math.max(dayStart, new Date(f.startedAt).getTime());
+          const endMs=Math.min(dayEnd, startMs+(f.durationMs||0));
+          if(endMs>startMs) timedSegs.push({ startMs, endMs, cat:f.category });
+        } else if(f.durationMs>0){
+          untimed.push({ cat:f.category, ms:f.durationMs });
         }
       });
       const a=state.activeFocus;
       if(a && a.startTime && a.date===ds){
-        segs.push({ startMs:new Date(a.startTime).getTime(), endMs:Date.now(), cat:a.category, active:true });
+        timedSegs.push({ startMs:new Date(a.startTime).getTime(), endMs:Date.now(), cat:a.category, active:true });
       }
+      timedSegs.sort((x,y)=>x.startMs-y.startMs);
 
-      if(!segs.length){
-        host.innerHTML = `<div class="empty">这天没有带具体起止时间的专注记录——点「开始专注」计时的才会显示在时间轴上；纯粹补录（没写起止时间）不算。</div>`;
+      // 当天还空着（没有任何专注占用）的时间段
+      let gaps=[]; let cursor=dayStart;
+      timedSegs.forEach(s=>{
+        if(s.startMs>cursor) gaps.push([cursor, s.startMs]);
+        cursor=Math.max(cursor, s.endMs);
+      });
+      if(cursor<dayEnd) gaps.push([cursor, dayEnd]);
+
+      // 补录（没有具体时段）的记录，紧贴着最早一段真实记录前面塞进去；那个空隙塞满了，
+      // 就找当天剩下最大的空隙——反正本来就不知道具体几点学的，只是让它在时间轴上有地方看
+      const firstRealStart = timedSegs.length ? timedSegs[0].startMs : dayEnd;
+      const placedUntimed=[];
+      untimed.forEach(u=>{
+        let ms=u.ms;
+        while(ms>0 && gaps.length){
+          gaps.sort((g1,g2)=>{
+            const pref=g=>(g[1]===firstRealStart)?-1:0;
+            const p1=pref(g1), p2=pref(g2);
+            if(p1!==p2) return p1-p2;
+            return (g2[1]-g2[0])-(g1[1]-g1[0]); // 其次选最大的空隙
+          });
+          const g=gaps[0];
+          const gapLen=g[1]-g[0];
+          const take=Math.min(ms, gapLen);
+          const blockStart=g[1]-take; // 紧贴着空隙右端放，也就是紧贴着后面那段真实记录（如果有的话）
+          placedUntimed.push({ startMs:blockStart, endMs:g[1], cat:u.cat, estimated:true });
+          if(take>=gapLen) gaps.shift(); else g[1]=blockStart;
+          ms-=take;
+        }
+      });
+
+      const allSegs=[...timedSegs, ...placedUntimed];
+      if(!allSegs.length){
+        host.innerHTML = `<div class="empty">这天没有专注记录。</div>`;
         return;
       }
 
-      // 按开始时间排序
-      segs.sort((a,b)=>a.startMs-b.startMs);
-
-      // 合并重叠/相邻（间隔 < 5 分钟）的同一科目段
-      const merged=[];
-      for(const s of segs){
-        const last=merged[merged.length-1];
-        if(last && last.cat===s.cat && s.startMs-last.endMs < 5*60000){
-          last.endMs=Math.max(last.endMs, s.endMs);
-          if(s.active) last.active=true;
-        } else {
-          merged.push({...s});
-        }
-      }
-
-      let totalMs=0;
-      const rows=merged.map(s=>{
+      const pct=ms=>Math.max(0,Math.min(100,(ms-dayStart)/dayMs*100));
+      const blocks=allSegs.map(s=>{
         const sk=focusSubjectKey(s.cat);
         const sub=FOCUS_SUBJECTS.find(x=>x.key===sk);
         const color=sub?sub.color:'#9aa1ac';
-        const startT=formatTime(new Date(s.startMs));
-        const endT=formatTime(new Date(s.endMs));
-        const h=((s.endMs-s.startMs)/3600000).toFixed(1);
-        totalMs+=(s.endMs-s.startMs);
-        const pctW=Math.max(3, (s.endMs-s.startMs)/(24*3600000)*100);
-        return `<div class="dt-row${s.active?' dt-active':''}">
-          <span class="dt-time">${startT} – ${endT}</span>
-          <span class="dt-bar-wrap"><span class="dt-bar" style="width:${pctW.toFixed(1)}%;background:${color}"></span></span>
-          <span class="dt-subject">${sub?sub.label:(s.cat||'-')}</span>
-          <span class="dt-hours">${h} h</span>
-        </div>`;
+        const left=pct(s.startMs), width=Math.max(0.3, pct(s.endMs)-left);
+        const timeLabel = s.estimated ? '时段为估算（补录，无具体时间）' : `${formatTime(new Date(s.startMs))}–${formatTime(new Date(s.endMs))}`;
+        const label=`${sub?sub.label:(s.cat||'-')} ${timeLabel}`;
+        const cls='dt-seg'+(s.active?' dt-active':'')+(s.estimated?' dt-estimated':'');
+        return `<div class="${cls}" style="left:${left}%;width:${width}%;background-color:${color}" title="${escapeHtml(label)}"></div>`;
       }).join('');
 
-      const summary = `<div class="dt-summary">共 ${merged.length} 段，合计 ${(totalMs/3600000).toFixed(1)} 小时</div>`;
+      let ticks='';
+      for(let h=0; h<=24; h+=3){ ticks += `<div class="dt-tick" style="left:${(h/24*100).toFixed(2)}%">${h}</div>`; }
 
-      const untimedNote = untimedMs>0
-        ? `<div class="tiny" style="margin-top:8px;color:var(--muted)">另有 ${Math.round(untimedMs/60000)} 分钟补录时间没写具体时段，没列在下面。</div>`
+      let legend='';
+      FOCUS_SUBJECTS.forEach(s=>{ legend += `<div class="fb-leg"><span class="sw" style="background:${s.color}"></span><span class="nm">${s.label}</span></div>`; });
+
+      const estimatedNote = placedUntimed.length
+        ? `<div class="tiny" style="margin-top:8px;color:var(--muted)">斜纹色块 = 补录时间（没写具体时段，位置是估算塞进空隙的，不代表真实打卡时间）。</div>`
         : '';
 
-      host.innerHTML = summary + `<div class="dt-list">${rows}</div>` + untimedNote;
+      host.innerHTML = `<div class="dt-track">${blocks}</div><div class="dt-ticks">${ticks}</div><div class="fb-legend">${legend}</div>${estimatedNote}`;
     }
 
     // ===== 每日反思 =====
