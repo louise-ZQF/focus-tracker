@@ -1327,6 +1327,12 @@ td button {
     .dt-tick{ position:absolute; transform:translateX(-50%); font-size:10px; color:var(--muted); font-weight:600; }
     .dt-tick::before{ content:''; display:block; width:1px; height:6px; background:#c5cecb; margin:0 auto 2px; }
     body.dark .dt-tick::before{ background:#4a5754; }
+    .dt-hover-tip{ position:absolute; top:-22px; transform:translateX(-50%); background:#4f6764; color:#fff; font-size:11px; font-weight:700; padding:2px 8px; border-radius:6px; pointer-events:none; z-index:10; white-space:nowrap; opacity:0; transition:opacity .12s; }
+    .dt-hover-tip.show{ opacity:1; }
+    .dt-hover-line{ position:absolute; top:0; bottom:0; width:1px; background:rgba(0,0,0,.18); pointer-events:none; z-index:5; opacity:0; transition:opacity .12s; }
+    .dt-hover-line.show{ opacity:1; }
+    body.dark .dt-hover-line{ background:rgba(255,255,255,.25); }
+    body.dark .dt-hover-tip{ background:#2b3531; }
 </style>
 </head>
 <body>
@@ -4505,7 +4511,31 @@ function importData(file){
         ? `<div class="tiny" style="margin-top:8px;color:var(--muted)">虚线斜纹 = 补录时间（没写具体时段，从当天 0 点往前塞进空隙，不代表真实打卡时间）。</div>`
         : '';
 
-      host.innerHTML = `<div class="dt-axis-wrap"><div class="dt-axis-line"></div><div class="dt-track">${blocks}</div></div><div class="dt-ticks">${ticks}</div><div class="fb-legend">${legend}</div>${estimatedNote}`;
+      host.innerHTML = `<div class="dt-axis-wrap" id="dtAxisWrap"><div class="dt-axis-line"></div><div class="dt-track">${blocks}</div><div class="dt-hover-line" id="dtHoverLine"></div><div class="dt-hover-tip" id="dtHoverTip"></div></div><div class="dt-ticks">${ticks}</div><div class="fb-legend">${legend}</div>${estimatedNote}`;
+
+      // 鼠标悬停数轴时显示对应时间
+      const axisWrap = document.getElementById('dtAxisWrap');
+      const hoverLine = document.getElementById('dtHoverLine');
+      const hoverTip = document.getElementById('dtHoverTip');
+      if(axisWrap && hoverLine && hoverTip){
+        axisWrap.onmousemove = function(e){
+          const rect = axisWrap.getBoundingClientRect();
+          const pct = (e.clientX - rect.left) / rect.width;
+          const totalMin = Math.round(pct * 24 * 60);
+          const h = Math.floor(totalMin / 60) % 24;
+          const m = totalMin % 60;
+          const leftPct = pct * 100;
+          hoverLine.style.left = leftPct + '%';
+          hoverLine.classList.add('show');
+          hoverTip.style.left = leftPct + '%';
+          hoverTip.textContent = `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`;
+          hoverTip.classList.add('show');
+        };
+        axisWrap.onmouseleave = function(){
+          hoverLine.classList.remove('show');
+          hoverTip.classList.remove('show');
+        };
+      }
     }
 
     // ===== 每日反思 =====
