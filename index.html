@@ -1314,14 +1314,19 @@ td button {
     body.dark .pressure-bar{ background:#2a2a2c; }
     .pressure-bar-fill{ height:100%; width:0; border-radius:8px; background:var(--pc,#e0322d); transition:width .4s ease; }
     .pressure-msg{ margin-top:14px; font-weight:700; font-size:14px; color:var(--pc,#e0322d); line-height:1.5; }
-    /* 一天时间分布：24 小时时间轴，按科目上色 */
-    .dt-track{ position:relative; height:30px; border-radius:8px; background:#eceff1; overflow:hidden; }
-    body.dark .dt-track{ background:#2a2a2c; }
-    .dt-seg{ position:absolute; top:0; bottom:0; opacity:.92; }
-    .dt-seg.dt-active{ opacity:1; box-shadow:inset 0 0 0 2px rgba(255,255,255,.7); }
-    .dt-seg.dt-estimated{ background-image:repeating-linear-gradient(135deg, rgba(255,255,255,.45) 0 5px, transparent 5px 10px); }
-    .dt-ticks{ position:relative; height:16px; margin-top:6px; }
-    .dt-tick{ position:absolute; transform:translateX(-50%); font-size:11px; color:var(--muted); }
+    /* 一天时间分布：24 小时数轴，按科目上色 */
+    .dt-axis-wrap{ position:relative; margin:24px 0 16px; padding:0 2px; }
+    .dt-axis-line{ position:absolute; left:0; right:0; top:50%; height:2px; background:#d2d7d6; border-radius:1px; transform:translateY(-50%); z-index:0; }
+    body.dark .dt-axis-line{ background:#3a4744; }
+    .dt-track{ position:relative; height:36px; z-index:1; }
+    .dt-seg{ position:absolute; top:4px; bottom:4px; opacity:.92; border-radius:4px; min-width:4px; z-index:1; }
+    .dt-seg.dt-active{ opacity:1; box-shadow:0 0 0 3px rgba(255,255,255,.9), 0 1px 4px rgba(0,0,0,.15); animation:dt-pulse 1.6s ease-in-out infinite; }
+    @keyframes dt-pulse{ 0%,100%{box-shadow:0 0 0 3px rgba(255,255,255,.9), 0 1px 4px rgba(0,0,0,.15)} 50%{box-shadow:0 0 0 5px rgba(255,255,255,.95), 0 2px 8px rgba(0,0,0,.2)} }
+    .dt-seg.dt-estimated{ opacity:.78; border-style:dashed; border-width:1.5px; border-color:rgba(0,0,0,.15); background-image:repeating-linear-gradient(135deg, rgba(255,255,255,.35) 0 4px, transparent 4px 8px); }
+    .dt-ticks{ position:relative; height:20px; margin-top:2px; z-index:2; }
+    .dt-tick{ position:absolute; transform:translateX(-50%); font-size:10px; color:var(--muted); font-weight:600; }
+    .dt-tick::before{ content:''; display:block; width:1px; height:6px; background:#c5cecb; margin:0 auto 2px; }
+    body.dark .dt-tick::before{ background:#4a5754; }
 </style>
 </head>
 <body>
@@ -4408,11 +4413,10 @@ function importData(file){
       host.innerHTML = summary + `<div class="fb-bars">${bars}</div><div class="fb-xrow">${xrow}</div><div class="fb-legend">${legend}</div>`;
     }
 
-    // ===== 一天时间分布：24 小时时间轴，按科目上色 =====
-    // 「开始专注→结束并记录」（或番茄钟/自动收工）留下的记录有 startedAt，精确定位到几点几分；
-    // 纯粹「补录专注」只有分钟数、没有具体时段，没法知道真实发生在几点——
-    // 就近塞进当天还空着的时间里（优先塞在最早一段真实记录前面），用斜纹跟真实时段区分开，
-    // 鼠标移上去会提示这是估算位置，不是真实打卡时间。
+    // ===== 一天时间分布：24 小时数轴，按科目上色 =====
+    // 「开始专注→结束并记录」有 startedAt，精确定位；补录只有分钟数、没具体时段——
+    // 从当天最前面（0 点）开始往空隙里填，优先填在真实记录之前的空隙，
+    // 用虚线边框 + 斜纹区分估算位置。鼠标移上去会提示这是估算，不是真实打卡时间。
     function renderDayTimeline(){
       const host=document.getElementById('dayTimelineWrap');
       if(!host) return;
@@ -4441,7 +4445,7 @@ function importData(file){
       }
       timedSegs.sort((x,y)=>x.startMs-y.startMs);
 
-      // 当天还空着（没有任何专注占用）的时间段
+      // 当天还空着的时间段（从 0 点开始往后找）
       let gaps=[]; let cursor=dayStart;
       timedSegs.forEach(s=>{
         if(s.startMs>cursor) gaps.push([cursor, s.startMs]);
@@ -4449,25 +4453,23 @@ function importData(file){
       });
       if(cursor<dayEnd) gaps.push([cursor, dayEnd]);
 
-      // 补录（没有具体时段）的记录，紧贴着最早一段真实记录前面塞进去；那个空隙塞满了，
-      // 就找当天剩下最大的空隙——反正本来就不知道具体几点学的，只是让它在时间轴上有地方看
-      const firstRealStart = timedSegs.length ? timedSegs[0].startMs : dayEnd;
+      // 补录：从空隙的开始端往右填（加在学习之前 / 填在空隙里）
+      // 优先填最早的空隙（靠近 0 点），其次填最大的空隙
       const placedUntimed=[];
       untimed.forEach(u=>{
         let ms=u.ms;
         while(ms>0 && gaps.length){
           gaps.sort((g1,g2)=>{
-            const pref=g=>(g[1]===firstRealStart)?-1:0;
-            const p1=pref(g1), p2=pref(g2);
-            if(p1!==p2) return p1-p2;
-            return (g2[1]-g2[0])-(g1[1]-g1[0]); // 其次选最大的空隙
+            // 最靠前的空隙优先，其次最大的
+            if(g1[0]!==g2[0]) return g1[0]-g2[0];
+            return (g2[1]-g2[0])-(g1[1]-g1[0]);
           });
           const g=gaps[0];
           const gapLen=g[1]-g[0];
           const take=Math.min(ms, gapLen);
-          const blockStart=g[1]-take; // 紧贴着空隙右端放，也就是紧贴着后面那段真实记录（如果有的话）
-          placedUntimed.push({ startMs:blockStart, endMs:g[1], cat:u.cat, estimated:true });
-          if(take>=gapLen) gaps.shift(); else g[1]=blockStart;
+          const blockStart=g[0]; // 从空隙左端开始填（补录加在学习之前）
+          placedUntimed.push({ startMs:blockStart, endMs:blockStart+take, cat:u.cat, estimated:true });
+          if(take>=gapLen) gaps.shift(); else g[0]=blockStart+take;
           ms-=take;
         }
       });
@@ -4490,17 +4492,20 @@ function importData(file){
         return `<div class="${cls}" style="left:${left}%;width:${width}%;background-color:${color}" title="${escapeHtml(label)}"></div>`;
       }).join('');
 
+      // 每小时一个刻度，3 的倍数标数字
       let ticks='';
-      for(let h=0; h<=24; h+=3){ ticks += `<div class="dt-tick" style="left:${(h/24*100).toFixed(2)}%">${h}</div>`; }
+      for(let h=0; h<=24; h++){
+        ticks += `<div class="dt-tick" style="left:${(h/24*100).toFixed(2)}%">${h%3===0?h:''}</div>`;
+      }
 
       let legend='';
       FOCUS_SUBJECTS.forEach(s=>{ legend += `<div class="fb-leg"><span class="sw" style="background:${s.color}"></span><span class="nm">${s.label}</span></div>`; });
 
       const estimatedNote = placedUntimed.length
-        ? `<div class="tiny" style="margin-top:8px;color:var(--muted)">斜纹色块 = 补录时间（没写具体时段，位置是估算塞进空隙的，不代表真实打卡时间）。</div>`
+        ? `<div class="tiny" style="margin-top:8px;color:var(--muted)">虚线斜纹 = 补录时间（没写具体时段，从当天 0 点往前塞进空隙，不代表真实打卡时间）。</div>`
         : '';
 
-      host.innerHTML = `<div class="dt-track">${blocks}</div><div class="dt-ticks">${ticks}</div><div class="fb-legend">${legend}</div>${estimatedNote}`;
+      host.innerHTML = `<div class="dt-axis-wrap"><div class="dt-axis-line"></div><div class="dt-track">${blocks}</div></div><div class="dt-ticks">${ticks}</div><div class="fb-legend">${legend}</div>${estimatedNote}`;
     }
 
     // ===== 每日反思 =====
